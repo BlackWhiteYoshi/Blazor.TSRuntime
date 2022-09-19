@@ -4,14 +4,11 @@ public sealed class SyntaxTree {
     public required List<TSModule> ModuleList { get; set; }
     
     public static SyntaxTree ParseFolder(string folder) {
-        string[] filePathes = Directory.GetFiles(folder, "*", SearchOption.AllDirectories).Select((string filePath) => filePath.Replace('\\', '/')).ToArray();
+        string[] filePathes = Directory.GetFiles(folder, "*.d.ts", SearchOption.AllDirectories).Select((string filePath) => filePath.Replace('\\', '/')).ToArray();
         List<TSModule> moduleList = new(filePathes.Length);
 
-        foreach (string filePath in filePathes) {
-            TSModule? tsModule = TSModule.Parse(filePath);
-            if (tsModule != null)
-                moduleList.Add(tsModule);
-        }
+        foreach (string filePath in filePathes)
+            moduleList.Add(TSModule.Parse(filePath));
 
         return new SyntaxTree() {
             ModuleList = moduleList

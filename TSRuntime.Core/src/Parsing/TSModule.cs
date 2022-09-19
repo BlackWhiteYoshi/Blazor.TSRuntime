@@ -10,11 +10,7 @@ public sealed class TSModule {
     public required List<TSFunction> FunctionList { get; set; }
 
 
-    public static TSModule? Parse(string filePath) {
-        if (!filePath.EndsWith(".d.ts"))
-            return null;
-
-
+    public static TSModule Parse(string filePath) {
         TSModule module = new() {
             FunctionList = new List<TSFunction>(),
             FilePath = filePath
