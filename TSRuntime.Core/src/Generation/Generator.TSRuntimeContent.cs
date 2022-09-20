@@ -78,8 +78,12 @@ public static partial class Generator {
 
             private readonly Task<IJSObjectReference>?[] modules = new Task<IJSObjectReference>?[ITSRuntime.MODULE_COUNT];
 
-            Task<IJSObjectReference> ITSRuntime.GetOrLoadModule(int index, string url)
-                => modules[index] ??= _jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationTokenSource.Token, url).AsTask();
+            Task<IJSObjectReference> ITSRuntime.GetOrLoadModule(int index, string url) {
+                if (modules[index]?.IsCompletedSuccessfully == true)
+                    return modules[index]!;
+
+                return modules[index] = _jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationTokenSource.Token, url).AsTask();
+            }
 
             #endregion
         }

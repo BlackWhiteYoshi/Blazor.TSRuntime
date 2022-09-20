@@ -27,10 +27,10 @@ public sealed class TSModule {
         // ModulePath
         path = path[..^5]; // skip ".d.ts"
 
-        if (path.StartsWith($"wwwroot{Path.DirectorySeparatorChar}"))
+        if (path.StartsWith($"wwwroot/"))
             path = path[8..];
 
-        module.ModulePath = $"{path}.js";
+        module.ModulePath = $"/{path}.js";
 
 
         // FileName
