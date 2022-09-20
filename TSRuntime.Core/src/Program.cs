@@ -9,8 +9,11 @@ public sealed class Program {
     public static async Task Main() {
         Config config = new();
 
-        //string absolutePath = Path.GetFullPath($"{Directory.GetCurrentDirectory()}/{DECLARATION_PATH}");
-        SyntaxTree syntaxTree = SyntaxTree.ParseFolder(Config.DECLARATION_PATH);
+        SyntaxTree syntaxTree = new() {
+            ModuleList = new(),
+            FunctionList = new()
+        };
+        syntaxTree.ParseModules(Config.DECLARATION_PATH);
 
         byte[] buffer = new byte[65536];
         

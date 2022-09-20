@@ -1,5 +1,5 @@
 # TSRuntime 
-A typed JSRuntime for easy js-module management and more guidance.
+A typed JSRuntime for automatic js-module management and more guidance.
 
 # TODO 
  * XML Summaries
@@ -7,13 +7,14 @@ A typed JSRuntime for easy js-module management and more guidance.
  * Refactoring Generation.cs
  * GenericSupport (INumber<T>)
  * Documentation
+ * Function (non-module) parsing
  * Config
    - include/exclude path
    - Invoke/TrySync/Async enable/disable
    - function-naming [InvokeTrySync_moduleName_functionName]
-   - non-module parsing
+   - Function (non-module) parsing
    - JsRuntime-functions enable/disable)
- * EntryPoints (ictionary for ModuleList (key is filePath, value is index of ModuleList))
+ * EntryPoints (Dictionary for ModuleList (key is filePath, value is index of ModuleList))
 
 
 # Getting Started

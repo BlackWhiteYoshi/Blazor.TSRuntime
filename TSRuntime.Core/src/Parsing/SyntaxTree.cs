@@ -2,16 +2,19 @@
 
 public sealed class SyntaxTree {
     public required List<TSModule> ModuleList { get; set; }
-    
-    public static SyntaxTree ParseFolder(string folder) {
+    public required List<TSFunction> FunctionList { get; set; }
+
+    public void ParseModules(string folder) {
         string[] filePathes = Directory.GetFiles(folder, "*.d.ts", SearchOption.AllDirectories).Select((string filePath) => filePath.Replace('\\', '/')).ToArray();
-        List<TSModule> moduleList = new(filePathes.Length);
+        
+        ModuleList.Clear();
+        ModuleList.EnsureCapacity(filePathes.Length);
 
         foreach (string filePath in filePathes)
-            moduleList.Add(TSModule.Parse(filePath));
+            ModuleList.Add(TSModule.Parse(filePath));
+    }
 
-        return new SyntaxTree() {
-            ModuleList = moduleList
-        };
+    public void ParseFunctions(string folder) {
+        throw new NotImplementedException("not yet implemented");
     }
 }
