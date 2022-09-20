@@ -55,7 +55,7 @@ public static partial class Generator {
                 ) as javascript-module.</para>
                     /// <para>If already loading, it doesn't trigger a second loading and if already loaded, it returns synchronously with a completed task.</para>
                     /// </summary>
-                    public async ValueTask Preload
+                    public async ValueTask PreLoad_
                 """;
             yield return module.ModuleName;
             yield return """
