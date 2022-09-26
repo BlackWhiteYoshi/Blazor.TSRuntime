@@ -1,5 +1,4 @@
-﻿using TSRuntime.Core.Configs;
-using TSRuntime.Core.Parsing;
+﻿using TSRuntime.Core.Parsing;
 
 namespace TSRuntime.Core.Generation;
 
