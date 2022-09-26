@@ -1,4 +1,7 @@
-﻿namespace TSRuntime.Core.Generation;
+﻿using TSRuntime.Core.Configs;
+using TSRuntime.Core.Parsing;
+
+namespace TSRuntime.Core.Generation;
 
 public static partial class Generator {
     public static string TSRuntimeContent => """
@@ -89,4 +92,40 @@ public static partial class Generator {
         }
         
         """;
+
+
+    private static (List<string> parameters, List<string> arguments) ParamterArgumentList(TSFunction function, Dictionary<string, string> typeMap) {
+        List<string> parameters = new(function.ParameterList.Count * 4);
+        List<string> arguments = new(function.ParameterList.Count * 2);
+
+        if (function.ParameterList.Count > 0) {
+            foreach (TSParameter parameter in function.ParameterList) {
+                string mappedType = typeMap.ValueOrKey(parameter.Type);
+
+                parameters.Add(mappedType);
+                if (parameter.TypeNullable)
+                    parameters.Add("?");
+                if (parameter.Array)
+                    parameters.Add("[]");
+                if (parameter.ArrayNullable)
+                    parameters.Add("?");
+                parameters.Add(" ");
+                parameters.Add(parameter.Name);
+                parameters.Add(", ");
+
+                arguments.Add(", ");
+                arguments.Add(parameter.Name);
+            }
+        }
+
+        return (parameters, arguments);
+    }
+
+    private static string ValueOrKey(this Dictionary<string, string> dictionary, string key) {
+        bool success = dictionary.TryGetValue(key, out string? value);
+        if (success)
+            return value!;
+        else
+            return key;
+    }
 }

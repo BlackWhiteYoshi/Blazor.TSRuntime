@@ -1,8 +1,8 @@
 ﻿namespace TSRuntime.Core.Parsing;
 
 public sealed class SyntaxTree {
-    public required List<TSModule> ModuleList { get; set; }
-    public required List<TSFunction> FunctionList { get; set; }
+    public List<TSModule> ModuleList { get; set; } = new();
+    public List<TSFunction> FunctionList { get; set; } = new();
 
     public void ParseModules(string folder) {
         string[] filePathes = Directory.GetFiles(folder, "*.d.ts", SearchOption.AllDirectories).Select((string filePath) => filePath.Replace('\\', '/')).ToArray();

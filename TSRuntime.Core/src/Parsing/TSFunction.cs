@@ -2,7 +2,7 @@
 
 public sealed class TSFunction {
     public string Name { get; set; } = string.Empty;
-    public required List<TSParameter> ParameterList { get; set; }
+    public List<TSParameter> ParameterList { get; set; } = new();
     public TSParameter ReturnType { get; set; } = new() { Name = "ReturnValue" };
     public bool ReturnPromise { get; set; }
 
@@ -11,9 +11,7 @@ public sealed class TSFunction {
         if (!line.StartsWith("export declare function "))
             return null;
 
-        TSFunction tsFunction = new() {
-            ParameterList = new List<TSParameter>()
-        };
+        TSFunction tsFunction = new();
         line = line[24..]; // skip "export declare function "
 
 

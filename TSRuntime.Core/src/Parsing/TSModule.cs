@@ -7,12 +7,11 @@ public sealed class TSModule {
     public string RelativePath { get; set; } = string.Empty;
     public string ModulePath { get; set; } = string.Empty;
     public string ModuleName { get; set; } = string.Empty;
-    public required List<TSFunction> FunctionList { get; set; }
+    public List<TSFunction> FunctionList { get; set; } = new();
 
 
     public static TSModule Parse(string filePath) {
         TSModule module = new() {
-            FunctionList = new List<TSFunction>(),
             FilePath = filePath
         };
 
