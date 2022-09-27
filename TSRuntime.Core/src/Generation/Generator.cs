@@ -1,4 +1,5 @@
-﻿using TSRuntime.Core.Parsing;
+﻿using TSRuntime.Core.Configs;
+using TSRuntime.Core.Parsing;
 
 namespace TSRuntime.Core.Generation;
 
@@ -92,7 +93,9 @@ public static partial class Generator {
         
         """;
 
-
+    public static partial IEnumerable<string> GetITSRuntimeContent(SyntaxTree syntaxTree, Config config);
+    
+    
     private static (List<string> parameters, List<string> arguments) ParamterArgumentList(TSFunction function, Dictionary<string, string> typeMap) {
         List<string> parameters = new(function.ParameterList.Count * 4);
         List<string> arguments = new(function.ParameterList.Count * 2);
@@ -119,7 +122,7 @@ public static partial class Generator {
 
         return (parameters, arguments);
     }
-
+    
     private static string ValueOrKey(this Dictionary<string, string> dictionary, string key) {
         bool success = dictionary.TryGetValue(key, out string? value);
         if (success)

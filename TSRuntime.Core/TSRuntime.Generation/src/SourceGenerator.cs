@@ -1,17 +1,21 @@
-﻿namespace TSRuntime.Generation;
+﻿using Microsoft.CodeAnalysis;
 
-public sealed class Program {
-    public static void Main(string[] args) {
+namespace TSRuntime.Generation;
+
+[Generator]
+public sealed class SourceGenerator : ISourceGenerator {
+    private string source = string.Empty;
+
+    public void Initialize(GeneratorInitializationContext context) {
         Parser parser = new();
 
-        parser.Parse(DECLARATIONS);
-        parser.Parse(PRE_LOAD);
-        parser.Parse(CreateModule());
-        parser.Parse(PRIVATE_INVOKE_METHODS);
-        parser.Parse(NON_TYPED_METHODS);
-        
-        using StreamWriter streamWriter = new("Generator.g.cs");
-        streamWriter.WriteLine("""
+        parser.Parse(DECLARATIONS.AsSpan());
+        parser.Parse(PRE_LOAD.AsSpan());
+        parser.Parse(CreateModule().AsSpan());
+        parser.Parse(PRIVATE_INVOKE_METHODS.AsSpan());
+        parser.Parse(NON_TYPED_METHODS.AsSpan());
+
+        source = $$"""
             // --- <auto generated> ---
         
         
@@ -21,14 +25,14 @@ public sealed class Program {
             namespace TSRuntime.Core.Generation;
         
             public static partial class Generator {
-                public static IEnumerable<string> GetITSRuntimeContent(SyntaxTree syntaxTree, Config config) {
-            """);
-        streamWriter.Write(parser.GetContent());
-        streamWriter.WriteLine("""
-                }
+                public static partial IEnumerable<string> GetITSRuntimeContent(SyntaxTree syntaxTree, Config config) {
+            {{parser.GetContent()}}    }
             }
-            """);
+
+            """;
     }
+
+    public void Execute(GeneratorExecutionContext context) => context.AddSource("Generator.g.cs", source);
 
 
     #region Content
@@ -379,7 +383,7 @@ public sealed class Program {
         
             #endregion
         }
-        
+
         """;
 
     #endregion
