@@ -4,7 +4,6 @@ A typed JSRuntime for automatic js-module management and more guidance.
 # TODO 
  * XML Summaries
  * Tests
- * Refactoring Generation.cs
  * GenericSupport (INumber<T>)
  * Documentation
  * Function (non-module) parsing
