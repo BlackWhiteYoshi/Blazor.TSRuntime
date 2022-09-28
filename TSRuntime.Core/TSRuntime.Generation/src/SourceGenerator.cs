@@ -25,7 +25,7 @@ public sealed class SourceGenerator : ISourceGenerator {
             namespace TSRuntime.Core.Generation;
         
             public static partial class Generator {
-                public static partial IEnumerable<string> GetITSRuntimeContent(SyntaxTree syntaxTree, Config config) {
+                public static partial IEnumerable<string> GetITSRuntimeContent(TSSyntaxTree syntaxTree, Config config) {
             {{parser.GetContent()}}    }
             }
 

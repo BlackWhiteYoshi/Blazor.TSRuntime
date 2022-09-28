@@ -1,12 +1,37 @@
 ﻿namespace TSRuntime.Core.Parsing;
 
+/// <summary>
+/// Represents a js-function inside a <see cref="TSModule"/>.
+/// </summary>
 public sealed class TSFunction {
+    /// <summary>
+    /// The name of the js-function. 
+    /// </summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// List of the parameters of this js-function.
+    /// </summary>
     public List<TSParameter> ParameterList { get; set; } = new();
+
+    /// <summary>
+    /// <para>Holds information about the return value.</para>
+    /// <para>Since return values have no names, the <see cref="TSParameter.Name"/> defaults to "ReturnValue".</para>
+    /// </summary>
     public TSParameter ReturnType { get; set; } = new() { Name = "ReturnValue" };
+    
+    /// <summary>
+    /// Indicates if the <see cref="ReturnType"/> is a promise or not.
+    /// </summary>
     public bool ReturnPromise { get; set; }
 
 
+    /// <summary>
+    /// Creates a TSFunction if the given line represents a exported js-function. 
+    /// </summary>
+    /// <param name="line">An Entire line in a "d.ts"-file.</param>
+    /// <returns>null, if not starting with "export declare function ", otherwise tries to parse and returns a <see cref="TSFunction"/>.</returns>
+    /// <exception cref="Exception">is thrown when a parsing error occurs.</exception>
     public static TSFunction? Parse(ReadOnlySpan<char> line) {
         if (!line.StartsWith("export declare function ".AsSpan()))
             return null;

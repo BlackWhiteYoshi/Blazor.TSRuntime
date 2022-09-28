@@ -3,7 +3,14 @@ using TSRuntime.Core.Parsing;
 
 namespace TSRuntime.Core.Generation;
 
+/// <summary>
+/// Contains the 2 functions for generating the content for the class "TSRuntime" and the interface "ITSRuntime".
+/// </summary>
 public static partial class Generator {
+    /// <summary>
+    /// <para>The content for the TSRuntime file.</para>
+    /// <para>It returns a constant string, so class TSRuntime is always the same.</para>
+    /// </summary>
     public static string TSRuntimeContent => """
         // --- <auto generated> ---
 
@@ -93,9 +100,24 @@ public static partial class Generator {
         
         """;
 
-    public static partial IEnumerable<string> GetITSRuntimeContent(SyntaxTree syntaxTree, Config config);
-    
-    
+    /// <summary>
+    /// <para>Creates the content of the interface "ITSRuntime" based on the given <see cref="TSSyntaxTree">syntaxTree</see> and <see cref="Config">config</see>.</para>
+    /// <para>To avoid string allocations/concationations, the content is delivered as a stream of strings.</para>
+    /// <para>This method is source-generated.</para>
+    /// </summary>
+    /// <param name="syntaxTree"></param>
+    /// <param name="config"></param>
+    /// <returns></returns>
+    public static partial IEnumerable<string> GetITSRuntimeContent(TSSyntaxTree syntaxTree, Config config);
+
+
+    /// <summary>
+    /// <para>Creates a parameter list and a argument list that can be iterated to create generated code.</para>
+    /// <para>Used by the SourceGenerator.</para>
+    /// </summary>
+    /// <param name="function"></param>
+    /// <param name="typeMap"></param>
+    /// <returns></returns>
     private static (List<string> parameters, List<string> arguments) ParamterArgumentList(TSFunction function, Dictionary<string, string> typeMap) {
         List<string> parameters = new(function.ParameterList.Count * 4);
         List<string> arguments = new(function.ParameterList.Count * 2);
@@ -122,7 +144,17 @@ public static partial class Generator {
 
         return (parameters, arguments);
     }
-    
+
+    /// <summary>
+    /// <para>
+    /// Dictionary extension method.<br/>
+    /// Retrieves the value in a Dictionary and defaults to the given key if not found.
+    /// </para>
+    /// <para>Used by the SourceGenerator.</para>
+    /// </summary>
+    /// <param name="dictionary"></param>
+    /// <param name="key"></param>
+    /// <returns></returns>
     private static string ValueOrKey(this Dictionary<string, string> dictionary, string key) {
         bool success = dictionary.TryGetValue(key, out string? value);
         if (success)

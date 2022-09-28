@@ -2,14 +2,41 @@
 
 namespace TSRuntime.Core.Parsing;
 
+/// <summary>
+/// Represents a js-module (a js-file loaded as module).
+/// </summary>
 public sealed class TSModule {
+    /// <summary>
+    /// The raw given filePath to the module.
+    /// </summary>
     public string FilePath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The <see cref="FilePath"/> without starting <see cref="Config.DECLARATION_PATH"/>.
+    /// </summary>
     public string RelativePath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The <see cref="RelativePath"/> but starts with "/" and ends with ".js", also ignoring starting "/wwwroot".
+    /// </summary>
     public string ModulePath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// fileName without ending ".d.ts" or ".razor" and not allowed variable-characters are replaced with '_'.
+    /// </summary>
     public string ModuleName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// List of js-functions of a module (js-file).
+    /// </summary>
     public List<TSFunction> FunctionList { get; set; } = new();
 
 
+    /// <summary>
+    /// Creates a <see cref="TSModule"/> with meta-data of the given file and a <see cref="FunctionList">list of js-functions</see> included in the file.
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <returns></returns>
     public static TSModule Parse(string filePath) {
         TSModule module = new() {
             FilePath = filePath

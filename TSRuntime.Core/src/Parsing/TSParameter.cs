@@ -1,25 +1,50 @@
 ﻿namespace TSRuntime.Core.Parsing;
 
+/// <summary>
+/// Represents a parameter inside a <see cref="TSFunction"/>.
+/// </summary>
 public sealed class TSParameter {
+    /// <summary>
+    /// The given name of the parameter.
+    /// </summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The js-type of the parameter/array.
+    /// </summary>
     public string Type { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Indicates if the type may be null.
+    /// </summary>
     public bool TypeNullable { get; set; }
+
+    /// <summary>
+    /// Indicates if the given parameter is an array.
+    /// </summary>
     public bool Array { get; set; }
+
+    /// <summary>
+    /// Indicates if the array itself may be null.
+    /// </summary>
     public bool ArrayNullable { get; set; }
 
 
+    /// <summary>
+    /// <para>Parses the type of the given parameter.</para>
+    /// <para>
+    /// e.g.<br />
+    /// * number<br />
+    /// * number | null<br />
+    /// * number | undefined<br />
+    /// * number[]<br />
+    /// * Array&lt;number&gt;<br />
+    /// * (number | null)[]<br />
+    /// * (number | null)[] | null
+    /// </para>
+    /// </summary>
+    /// <param name="subStr">Only the part of the string that represents the type of a parameter (starting after ": " and ending before ',' or ')'.</param>
     public void ParseType(ReadOnlySpan<char> subStr) {
-        /** e.g.
-         * 
-         * number
-         * number | null
-         * number[]
-         * Array<number>
-         * (number | null)[]
-         * (number | null)[] | null
-         * 
-         **/
-
         bool nullable;
         Range newRange;
 

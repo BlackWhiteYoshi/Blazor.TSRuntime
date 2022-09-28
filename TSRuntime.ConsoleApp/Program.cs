@@ -9,7 +9,7 @@ public sealed class Program {
     public static async Task Main() {
         Config config = new();
 
-        SyntaxTree syntaxTree = new();
+        TSSyntaxTree syntaxTree = new();
         syntaxTree.ParseModules(Config.DECLARATION_PATH);
 
         byte[] buffer = new byte[65536];
