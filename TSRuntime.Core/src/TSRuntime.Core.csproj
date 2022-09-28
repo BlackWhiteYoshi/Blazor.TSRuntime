@@ -2,12 +2,17 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>preview</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <!--<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+    <PackageReference Include="IndexRange" Version="1.0.2" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\TSRuntime.Generation\src\TSRuntime.Generation.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

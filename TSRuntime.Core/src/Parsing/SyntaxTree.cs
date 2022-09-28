@@ -8,7 +8,8 @@ public sealed class SyntaxTree {
         string[] filePathes = Directory.GetFiles(folder, "*.d.ts", SearchOption.AllDirectories).Select((string filePath) => filePath.Replace('\\', '/')).ToArray();
         
         ModuleList.Clear();
-        ModuleList.EnsureCapacity(filePathes.Length);
+        if (ModuleList.Capacity < filePathes.Length)
+            ModuleList.Capacity = filePathes.Length;
 
         foreach (string filePath in filePathes)
             ModuleList.Add(TSModule.Parse(filePath));

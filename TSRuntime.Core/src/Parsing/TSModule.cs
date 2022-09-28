@@ -20,16 +20,16 @@ public sealed class TSModule {
 
         // RelativePath
         path = path[Config.DECLARATION_PATH.Length..];
-        module.RelativePath = new string(path);
+        module.RelativePath = path.ToString();
 
 
         // ModulePath
         path = path[..^5]; // skip ".d.ts"
 
-        if (path.StartsWith($"wwwroot/"))
+        if (path.StartsWith($"wwwroot/".AsSpan()))
             path = path[8..];
 
-        module.ModulePath = $"/{path}.js";
+        module.ModulePath = $"/{path.ToString()}.js";
 
 
         // FileName
@@ -39,7 +39,7 @@ public sealed class TSModule {
             false => path
         };
 
-        if (rawModuleName.EndsWith(".razor"))
+        if (rawModuleName.EndsWith(".razor".AsSpan()))
             rawModuleName = rawModuleName[..^6]; // skip ".razor"
 
         if (rawModuleName.Length == 0)
@@ -61,7 +61,7 @@ public sealed class TSModule {
                     false => '_'
                 };
 
-            module.ModuleName = new string(saveModuleName);
+            module.ModuleName = saveModuleName.ToString();
         }
 
 

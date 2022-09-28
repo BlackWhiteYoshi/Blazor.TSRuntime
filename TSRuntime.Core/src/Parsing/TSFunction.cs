@@ -8,7 +8,7 @@ public sealed class TSFunction {
 
 
     public static TSFunction? Parse(ReadOnlySpan<char> line) {
-        if (!line.StartsWith("export declare function "))
+        if (!line.StartsWith("export declare function ".AsSpan()))
             return null;
 
         TSFunction tsFunction = new();
@@ -17,7 +17,7 @@ public sealed class TSFunction {
 
         // FunctionName
         int openBracket = IndexOf(line, '(');
-        tsFunction.Name = new string(line[..openBracket]);
+        tsFunction.Name = line[..openBracket].ToString();
 
         line = line[(openBracket + 1)..]; // skip "("
 
@@ -33,7 +33,7 @@ public sealed class TSFunction {
                 
                 // parse Name
                 int colon = IndexOf(line, ':');
-                tsParameter.Name = new string(line[..colon]);
+                tsParameter.Name = line[..colon].ToString();
                 line = line[(colon + 2)..]; // skip ": "
 
                 // parse Type
@@ -51,7 +51,7 @@ public sealed class TSFunction {
 
         // ReturnType/Promise
         int semicolon = IndexOf(line, ';');
-        if (line.StartsWith("Promise<")) {
+        if (line.StartsWith("Promise<".AsSpan())) {
             tsFunction.ReturnPromise = true;
             line = line[8..(semicolon - 1)]; // cut "Promise<..>"
         }
