@@ -1,7 +1,7 @@
 ﻿namespace TSRuntime.Core.Configs;
 
 public sealed class Config {
-    public const string DECLARATION_PATH = @"../../../.typescript-declarations/";
+    public readonly string DeclarationPath = @"../../../.typescript-declarations/";
 
     public readonly string FileOutputClass = "TSRuntime.cs";
     public readonly string FileOutputinterface = "ITSRuntime.cs";

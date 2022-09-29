@@ -10,7 +10,7 @@ public sealed class Program {
         Config config = new();
 
         TSSyntaxTree syntaxTree = new();
-        syntaxTree.ParseModules(Config.DECLARATION_PATH);
+        syntaxTree.ParseModules(config.DeclarationPath);
 
         byte[] buffer = new byte[65536];
 

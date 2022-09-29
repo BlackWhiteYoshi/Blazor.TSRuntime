@@ -1,6 +1,4 @@
-﻿using TSRuntime.Core.Configs;
-
-namespace TSRuntime.Core.Parsing;
+﻿namespace TSRuntime.Core.Parsing;
 
 /// <summary>
 /// Represents a js-module (a js-file loaded as module).
@@ -37,7 +35,7 @@ public sealed class TSModule {
     /// </summary>
     /// <param name="filePath"></param>
     /// <returns></returns>
-    public static TSModule Parse(string filePath) {
+    public static TSModule Parse(string filePath, string rootFolder) {
         TSModule module = new() {
             FilePath = filePath
         };
@@ -46,15 +44,16 @@ public sealed class TSModule {
 
 
         // RelativePath
-        path = path[Config.DECLARATION_PATH.Length..];
+        path = path[rootFolder.Length..];
         module.RelativePath = path.ToString();
 
 
         // ModulePath
-        path = path[..^5]; // skip ".d.ts"
+        if (path.EndsWith(".d.ts".AsSpan()))
+            path = path[..^5]; // skip ".d.ts"
 
         if (path.StartsWith($"wwwroot/".AsSpan()))
-            path = path[8..];
+            path = path[8..]; // skip "wwwroot/"
 
         module.ModulePath = $"/{path.ToString()}.js";
 

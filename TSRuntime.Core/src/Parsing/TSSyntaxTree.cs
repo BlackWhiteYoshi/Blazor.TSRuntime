@@ -29,7 +29,7 @@ public sealed class TSSyntaxTree {
             ModuleList.Capacity = filePathes.Length;
 
         foreach (string filePath in filePathes)
-            ModuleList.Add(TSModule.Parse(filePath));
+            ModuleList.Add(TSModule.Parse(filePath, folder));
     }
 
     /// <summary>

@@ -34,13 +34,13 @@ public sealed class TSParameter {
     /// <para>Parses the type of the given parameter.</para>
     /// <para>
     /// e.g.<br />
-    /// * number<br />
-    /// * number | null<br />
-    /// * number | undefined<br />
-    /// * number[]<br />
-    /// * Array&lt;number&gt;<br />
-    /// * (number | null)[]<br />
-    /// * (number | null)[] | null
+    /// - number<br />
+    /// - number | null<br />
+    /// - number | undefined<br />
+    /// - number[]<br />
+    /// - Array&lt;number&gt;<br />
+    /// - (number | null)[]<br />
+    /// - (number | null)[] | null
     /// </para>
     /// </summary>
     /// <param name="subStr">Only the part of the string that represents the type of a parameter (starting after ": " and ending before ',' or ')'.</param>
