@@ -11,7 +11,7 @@ internal static class ParserExtension {
 
 public class GenratorParserTest {
     [Fact]
-    public void Raw_Text_Converts_To_Yield_Return_Raw_Text() {
+    public void RawText_ConvertsTo_YieldReturnRawText() {
         string result = new Parser().ParseAndGetContent("Example asdf Text");
 
         Assert.Equal(""""
@@ -23,7 +23,7 @@ public class GenratorParserTest {
     }
 
     [Fact]
-    public void Single_Tick_Converts_To_Yield_Return_Raw_Code() {
+    public void SingleTick_ConvertsTo_YieldReturnRawCode() {
         string result = new Parser().ParseAndGetContent("`ExampleVariable`");
 
         Assert.Equal("""
@@ -33,7 +33,7 @@ public class GenratorParserTest {
     }
 
     [Fact]
-    public void Double_Tick_Converts_To_Raw_Code() {
+    public void DoubleTick_ConvertsTo_RawCode() {
         string result = new Parser().ParseAndGetContent("``My Example Code``");
 
         Assert.Equal("""
@@ -43,7 +43,7 @@ public class GenratorParserTest {
     }
 
     [Fact]
-    public void Linebreak_After_Double_Tick_Is_Ignored() {
+    public void LinebreakAfterDoubleTick_IsIgnored() {
         string result = new Parser().ParseAndGetContent("""
             ``My Example Code``
             asdf
@@ -59,7 +59,7 @@ public class GenratorParserTest {
     }
 
     [Fact]
-    public void Double_Tick_Plus_Converts_To_Raw_Code_And_Increases_Indent() {
+    public void DoubleTickPlus_ConvertsTo_RawCodeAndIncreasesIndent() {
         string result = new Parser().ParseAndGetContent("``My Example Code`+asdf");
 
         Assert.Equal(""""
@@ -72,7 +72,7 @@ public class GenratorParserTest {
     }
 
     [Fact]
-    public void Double_Tick_Minus_Converts_To_Raw_Code_And_Decreases_Indent() {
+    public void DoubleTickMinus_ConvertsTo_RawCodeAndDecreasesIndent() {
         string result = new Parser().ParseAndGetContent("``My Example Code`-asdf");
 
         Assert.Equal(""""
@@ -85,7 +85,7 @@ public class GenratorParserTest {
     }
 
     [Fact]
-    public void Emptry_Converts_To_Empty() {
+    public void Emptry_ConvertsTo_Empty() {
         string result = new Parser().ParseAndGetContent(string.Empty);
 
         Assert.Equal(string.Empty, result);
@@ -126,7 +126,7 @@ public class GenratorParserTest {
                 indent-1
 
         """")]
-    public void Combination_Converts_To_Concatenation(string input, string expected) {
+    public void Combination_ConvertsTo_Concatenation(string input, string expected) {
         string result = new Parser().ParseAndGetContent(input);
 
         Assert.Equal(expected, result);

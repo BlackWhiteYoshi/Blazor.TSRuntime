@@ -7,7 +7,7 @@ public class CoreConfigTest {
     // TODO after config is established
 
     [Fact]
-    public void Config_Not_Empty() {
+    public void Config_FieldsAreNotEmpty() {
         Config config = new();
 
         Assert.NotNull(config.FileOutputClass);

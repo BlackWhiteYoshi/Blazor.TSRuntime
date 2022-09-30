@@ -18,7 +18,7 @@ public class CoreParserTest {
     [InlineData("Array<number> | null", "number", false, true, true)]
     [InlineData("(number | null)[]", "number", true, true, false)]
     [InlineData("(number | null)[] | null", "number", true, true, true)]
-    public void Parsing_Parameter_Works(string input, string type, bool typeNullable, bool array, bool arrayNullable) {
+    public void ParsingParameter_Works(string input, string type, bool typeNullable, bool array, bool arrayNullable) {
         TSParameter parameter = new();
 
         parameter.ParseType(input);
@@ -35,13 +35,13 @@ public class CoreParserTest {
     #region TSFunction
 
     [Fact]
-    public void Parsing_Function__Wrong_Start_Retunrs_Null() {
+    public void ParsingFunction_WrongStartRetunrsNull() {
         TSFunction? result = TSFunction.Parse("asdf");
         Assert.Null(result);
     }
 
     [Fact]
-    public void Parsing_Function__Right_Start_But_Wrong_Syntax_Throws() {
+    public void ParsingFunction_RightStartButWrongSyntaxThrows() {
         Assert.Throws<Exception>(() => TSFunction.Parse("export declare function "));
     }
 
@@ -50,7 +50,7 @@ public class CoreParserTest {
     [InlineData("export declare function asdf(): voidy;", "asdf", "voidy", false)]
     [InlineData("export declare function longRunningTask(): Promise<void>;", "longRunningTask", "void", true)]
     [InlineData("export declare function longRunningTask2(): Promise<something>;", "longRunningTask2", "something", true)]
-    public void Parsing_Function_Works(string input, string name, string returnType, bool promise) {
+    public void ParsingFunction_Works(string input, string name, string returnType, bool promise) {
         TSFunction function = TSFunction.Parse(input)!;
 
         Assert.Equal(name, function.Name);
@@ -64,7 +64,7 @@ public class CoreParserTest {
     #region TSModule
 
     [Fact]
-    public void Parsing_Mdule__Wrong_FilePath_Throws() {
+    public void ParsingMdule_WrongFilePathThrows() {
         Assert.Throws<ArgumentException>(() => TSModule.Parse("", string.Empty));
         Assert.Throws<FileNotFoundException>(() => TSModule.Parse("#", string.Empty));
     }
