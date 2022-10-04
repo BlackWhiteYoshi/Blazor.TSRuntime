@@ -13,7 +13,7 @@ public sealed class SourceGenerator : ISourceGenerator {
         parser.Parse(PRE_LOAD.AsSpan());
         parser.Parse(CreateModule().AsSpan());
         parser.Parse(PRIVATE_INVOKE_METHODS.AsSpan());
-        parser.Parse(NON_TYPED_METHODS.AsSpan());
+        parser.Parse(JSRuntime_METHODS.AsSpan());
 
         source = $$"""
             // --- <auto generated> ---
@@ -113,16 +113,44 @@ public sealed class SourceGenerator : ISourceGenerator {
             ``
             if (!function.ReturnPromise) {
             `+
+            ``
+            if (config.ModuleInvokeEnabled) {
+            `+
 
             {{GetInvokeMethod(outParameter: false)}}
-        
+
             {{GetInvokeMethod(outParameter: true)}}
-        
+            ``
+            }
+            `-
+            ``
+            if (config.ModuleTrySyncEnabled) {
+            `+
+
             {{Get_TrySync_Async(trySync: true)}}
             ``
             }
             `-
+            ``
+            if (config.ModuleAsyncEnabled) {
+            `+
+
             {{Get_TrySync_Async(trySync: false)}}
+            ``
+            }
+            `-
+            
+            ``
+            }
+            `-
+            ``
+            else {
+            `+
+
+            {{Get_TrySync_Async(trySync: false)}}
+            ``
+            }
+            `-
             ``
             }
             `-
@@ -163,7 +191,7 @@ public sealed class SourceGenerator : ISourceGenerator {
                     /// </summary>
                 {SUMMARY_PARAMETERS}{summaryOut}
                     /// <returns>default when the module is not loaded, otherwise result of the js-function</returns>
-                    public `returnTypeMapped` Invoke_`module.ModuleName`_`function.Name`({parameters})
+                    public `returnTypeMapped` {GetFunctionNamePattern("Invoke")}({parameters})
                         => Invoke<{MAPPED_IJS_VOID_RESULT}>(`index`, "`module.ModulePath`", "`function.Name`", out {argumentOut}{ARGUMENTS});
                 """;
         }
@@ -187,11 +215,21 @@ public sealed class SourceGenerator : ISourceGenerator {
                 {SUMMARY_PARAMETERS}
                     /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
                     /// <returns></returns>
-                    public {MAPPED_ASYNC} Invoke{methodName}_`module.ModuleName`_`function.Name`({PARAMETERS}CancellationToken cancellationToken = default)
+                    public {MAPPED_ASYNC} {GetFunctionNamePattern(methodName)}({PARAMETERS}CancellationToken cancellationToken = default)
                         =>{MAPPED_AWAIT} Invoke{methodName}<{MAPPED_IJS_VOID_RESULT}>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{ARGUMENTS});
-        
                 """;
         }
+
+
+
+        static string GetFunctionNamePattern(string action) {
+            return $"""
+                ``
+                foreach (string str in config.FunctionNamePattern.GetNaming(function.Name, module.ModuleName, "{action}"))
+                    yield return str;
+                ``
+                """;
+        } 
     }
 
     /// <summary>
@@ -257,11 +295,14 @@ public sealed class SourceGenerator : ISourceGenerator {
     /// <summary>
     /// Includes non typed methods
     /// </summary>
-    private const string NON_TYPED_METHODS = """
+    private const string JSRuntime_METHODS = """
         
         
-            #region non-module methods
-        
+            #region JSRuntime methods
+        ``
+        if (config.JSRuntimeInvokeEnabled) {
+        `+
+
             /// <summary>
             /// Invokes the specified JavaScript function synchronously.
             /// </summary>
@@ -280,8 +321,14 @@ public sealed class SourceGenerator : ISourceGenerator {
             /// <returns>An instance of <typeparamref name="TResult"/> obtained by JSON-deserializing the return value.</returns>
             public TResult Invoke<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] TResult>(string identifier, params object?[]? args)
                 => ((IJSInProcessRuntime)JsRuntime).Invoke<TResult>(identifier, args);
-        
-        
+
+        ``
+        }
+        `-
+        ``
+        if (config.JSRuntimeTrySyncEnabled) {
+        `+
+
             /// <summary>
             /// This method performs synchronous, if the underlying implementation supports synchrounous interoperability.
             /// </summary>
@@ -326,7 +373,13 @@ public sealed class SourceGenerator : ISourceGenerator {
                     return JsRuntime.InvokeAsync<TValue>(identifier, cancellationToken, args);
             }
         
-        
+        ``
+        }
+        `-
+        ``
+        if (config.JSRuntimeAsyncEnabled) {
+        `+
+
             /// <summary>
             /// Invokes the specified JavaScript function asynchronously.
             /// <para>
@@ -380,7 +433,10 @@ public sealed class SourceGenerator : ISourceGenerator {
             /// <returns>An instance of <typeparamref name="TValue"/> obtained by JSON-deserializing the return value.</returns>
             public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, params object?[]? args)
                 => JsRuntime.InvokeAsync<TValue>(identifier, cancellationToken, args);
-        
+
+        ``
+        }
+        `-
             #endregion
         }
 

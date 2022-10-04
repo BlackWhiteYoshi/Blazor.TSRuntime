@@ -10,17 +10,16 @@ The Core itself uses a SourceGenerator ("TSRuntime.Generation") to produce the c
 
 # TODO
  * Config
-   - include/exclude path
-   - Invoke/TrySync/Async enable/disable
-   - function-naming ($function$_$module$_$action$ -> getCookies_Shared_InvokeTrySync)
+   - function-naming (PascalCase, CamelCase)
+   - include/exclude folder, include-file
+   - function list (module, non-module)
    - Function (non-module) parsing
-   - JsRuntime-functions enable/disable)
-   - include/exclude path for non-module
-   - function list (non-module)
+   - include/exclude folder, include-file for non-module
  * EntryPoints (Dictionary for ModuleList (key is filePath, value is index of ModuleList))
    - ConsoleApp
    - SourceGenerator
    - Extension
+ * Config json-file (tsconfig.tsruntime.json)
  * Documentation (readme.md -> hero section, getting started (setup typescript -> entrypoints), explaining configs)
  * GenericSupport (INumber<T>)
  * Function (non-module) parsing
