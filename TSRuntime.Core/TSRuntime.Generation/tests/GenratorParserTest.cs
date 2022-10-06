@@ -9,7 +9,7 @@ internal static class ParserExtension {
     }
 }
 
-public class GenratorParserTest {
+public sealed class GenratorParserTest {
     [Fact]
     public void RawText_ConvertsTo_YieldReturnRawText() {
         string result = new Parser().ParseAndGetContent("Example asdf Text");

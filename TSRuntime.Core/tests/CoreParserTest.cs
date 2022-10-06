@@ -3,7 +3,7 @@ using Xunit;
 
 namespace TSRuntime.Core.Tests;
 
-public class CoreParserTest {
+public sealed class CoreParserTest {
     #region TSParamter
 
     [Theory]

@@ -6,7 +6,7 @@ using Xunit;
 
 namespace TSRuntime.Core.Tests;
 
-public class CoreGeneratorTest {
+public sealed class CoreGeneratorTest {
     // No specific tests here to better adapt to changes.
 
     [Fact]

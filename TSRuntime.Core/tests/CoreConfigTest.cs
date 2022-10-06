@@ -4,7 +4,7 @@ using Xunit;
 
 namespace TSRuntime.Core.Tests;
 
-public class CoreConfigTest {
+public sealed class CoreConfigTest {
     // TODO after config is established
 
     [Fact]
