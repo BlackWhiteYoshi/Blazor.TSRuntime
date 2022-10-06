@@ -1,0 +1,30 @@
+{
+  "declaration path": "../../../.typescript-declarations/",
+  "file output": {
+    "class": "TSRuntime.cs",
+    "interface": "ITSRuntime.cs"
+  },
+  "module": {
+    "invoke enabled": true,
+    "trysync enabled": true,
+    "async enabled": true
+  },
+  "js runtime": {
+    "invoke enabled": true,
+    "trysync enabled": true,
+    "async enabled": true
+  },
+  "function name pattern": {
+    "pattern": "$function$_$module$_$action$",
+    "function transform": "first upper case",
+    "module transform": "none",
+    "action transform": "none"
+  },
+  "using statements": [ "Microsoft.AspNetCore.Components" ],
+  "type map": {
+    "number": "double",
+    "boolean": "bool",
+    "bigint": "long",
+    "HTMLObjectElement": "ElementReference"
+  }
+}

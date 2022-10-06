@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="tsconfig.tsruntime.json" />
+    <Content Include="tsconfig.tsruntime.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\TSRuntime.Core\src\TSRuntime.Core.csproj" />
   </ItemGroup>
 

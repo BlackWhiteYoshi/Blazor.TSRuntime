@@ -7,7 +7,8 @@ namespace TSRuntime.ConsoleApp;
 
 public sealed class Program {
     public static async Task Main() {
-        Config config = new();
+        string json = File.ReadAllText("tsconfig.tsruntime.json");
+        Config config = Config.FromJson(json);
 
         TSSyntaxTree syntaxTree = new();
         syntaxTree.ParseModules(config.DeclarationPath);
