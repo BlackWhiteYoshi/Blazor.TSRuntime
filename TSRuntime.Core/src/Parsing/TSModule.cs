@@ -31,21 +31,18 @@ public sealed class TSModule {
 
 
     /// <summary>
-    /// Creates a <see cref="TSModule"/> with meta-data of the given file and a <see cref="FunctionList">list of js-functions</see> included in the file.
+    /// Writes <see cref="FilePath"/>, <see cref="RelativePath"/>, <see cref="ModulePath"/> and <see cref="ModuleName"/> by reading meta-data of the given file. 
     /// </summary>
     /// <param name="filePath"></param>
-    /// <returns></returns>
-    public static TSModule Parse(string filePath, string rootFolder) {
-        TSModule module = new() {
-            FilePath = filePath
-        };
-
+    /// <param name="rootFolder"></param>
+    public void ParseMetaData(string filePath, string rootFolder) {
+        FilePath = filePath;
         ReadOnlySpan<char> path = filePath.AsSpan();
 
 
         // RelativePath
         path = path[rootFolder.Length..];
-        module.RelativePath = path.ToString();
+        RelativePath = path.ToString();
 
 
         // ModulePath
@@ -55,7 +52,7 @@ public sealed class TSModule {
         if (path.StartsWith($"wwwroot/".AsSpan()))
             path = path[8..]; // skip "wwwroot/"
 
-        module.ModulePath = $"/{path.ToString()}.js";
+        ModulePath = $"/{path.ToString()}.js";
 
 
         // FileName
@@ -69,7 +66,7 @@ public sealed class TSModule {
             rawModuleName = rawModuleName[..^6]; // skip ".razor"
 
         if (rawModuleName.Length == 0)
-            module.ModuleName = string.Empty;
+            ModuleName = string.Empty;
         else {
             Span<char> saveModuleName = stackalloc char[rawModuleName.Length + 1];
             int startIndex;
@@ -87,17 +84,36 @@ public sealed class TSModule {
                     false => '_'
                 };
 
-            module.ModuleName = saveModuleName.ToString();
+            ModuleName = saveModuleName.ToString();
         }
+    }
 
+    /// <summary>
+    /// <para>Parses the file given in <see cref="FilePath"/> and adds the found functions in <see cref="FunctionList"/></para>
+    /// <para><see cref="FunctionList"/> is cleared before adding some functions.</para>
+    /// </summary>
+    public void ParseFunctions() {
+        FunctionList.Clear();
 
-        // FunctionList
-        foreach (string line in File.ReadLines(filePath)) {
+        foreach (string line in File.ReadLines(FilePath)) {
             TSFunction? tsFunction = TSFunction.Parse(line.AsSpan());
             if (tsFunction != null)
-                module.FunctionList.Add(tsFunction);
+                FunctionList.Add(tsFunction);
         }
+    }
 
+
+    /// <summary>
+    /// Creates a <see cref="TSModule"/> with meta-data of the given file and a <see cref="FunctionList">list of js-functions</see> included in the file.
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// /// <param name="rootFolder"></param>
+    /// <returns></returns>
+    public static TSModule Parse(string filePath, string rootFolder) {
+        TSModule module = new();
+
+        module.ParseMetaData(filePath, rootFolder);
+        module.ParseFunctions();
 
         return module;
     }
