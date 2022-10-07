@@ -25,4 +25,10 @@
     <ProjectReference Include="..\src\TSRuntime.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="CoreParserTest.d.ts">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

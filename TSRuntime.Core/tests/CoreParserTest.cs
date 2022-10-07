@@ -63,20 +63,69 @@ public sealed class CoreParserTest {
 
     #region TSModule
 
+    private const string MODULE = "CoreParserTest";
+    private const string MODULE_FILE = $"{MODULE}.d.ts";
+
     [Fact]
-    public void ParsingMdule_WrongFilePathThrows() {
+    public void ParsingModule_WrongFilePathThrows() {
         Assert.Throws<ArgumentException>(() => TSModule.Parse("", string.Empty));
         Assert.Throws<FileNotFoundException>(() => TSModule.Parse("#", string.Empty));
     }
 
-    // TODO after config is established
+    [Fact]
+    public void ParsingModule_MetadataOnlyHasEmptyFunctionList() {
+        TSModule module = new();
+        module.ParseMetaData(MODULE_FILE, string.Empty);
+
+        Assert.NotEqual(string.Empty, module.FilePath);
+        Assert.NotEqual(string.Empty, module.RelativePath);
+        Assert.NotEqual(string.Empty, module.ModulePath);
+        Assert.NotEqual(string.Empty, module.ModuleName);
+        Assert.Empty(module.FunctionList);
+    }
+
+    [Fact]
+    public void ParsingModule_FunctionsOnlyHasEmptyMetaData() {
+        TSModule module = new();
+        module.FilePath = MODULE_FILE;
+        module.ParseFunctions();
+
+        Assert.Equal(MODULE_FILE, module.FilePath);
+        Assert.Equal(string.Empty, module.RelativePath);
+        Assert.Equal(string.Empty, module.ModulePath);
+        Assert.Equal(string.Empty, module.ModuleName);
+        Assert.NotEmpty(module.FunctionList);
+    }
+
+    [Fact]
+    public void ParsingModule_Example() {
+        TSModule module = TSModule.Parse(MODULE_FILE, string.Empty);
+
+        Assert.Equal(MODULE_FILE, module.FilePath);
+        Assert.Equal(MODULE_FILE, module.RelativePath);
+        Assert.Equal($"/{MODULE}.js", module.ModulePath);
+        Assert.Equal(MODULE, module.ModuleName);
+        Assert.Single(module.FunctionList);
+    }
 
     #endregion
 
 
     #region TSSyntaxTree
 
-    // TODO after config is established
+    [Fact]
+    public void SyntaxTree_ParseModulesParsesEvery_d_ts_File() {
+        TSSyntaxTree syntaxTree = new();
+        syntaxTree.ParseModules("./");
+
+        Assert.Single(syntaxTree.ModuleList);
+        Assert.Empty(syntaxTree.FunctionList);
+    }
+
+    [Fact]
+    public void SyntaxTree_ParseFunctionsThrowsNotImplementedException() {
+        Assert.Throws<NotImplementedException>(() => new TSSyntaxTree().ParseFunctions(string.Empty));
+    }
 
     #endregion
 }

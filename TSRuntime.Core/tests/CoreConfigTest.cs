@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using TSRuntime.Core.Configs;
 using Xunit;
@@ -5,16 +6,29 @@ using Xunit;
 namespace TSRuntime.Core.Tests;
 
 public sealed class CoreConfigTest {
-    // TODO after config is established
-
+    
     [Fact]
-    public void Config_FieldsAreNotEmpty() {
+    public void Config_FieldsHaveDefaultValues() {
         Config config = new();
 
-        Assert.NotNull(config.FileOutputClass);
-        Assert.NotNull(config.FileOutputinterface);
-        Assert.NotEmpty(config.TypeMap);
-        Assert.NotEmpty(config.UsingStatements);
+        foreach (PropertyInfo property in typeof(Config).GetProperties()) {
+            object? value = property.GetValue(config);
+            Assert.NotNull(value);
+            if (value is IEnumerable<object?> enumerable)
+                Assert.NotEmpty(enumerable);
+        }
+    }
+
+    [Fact]
+    public void Config_EmptyJsonHaveDefaultValues() {
+        Config config = Config.FromJson("{}");
+
+        foreach (PropertyInfo property in typeof(Config).GetProperties()) {
+            object? value = property.GetValue(config);
+            Assert.NotNull(value);
+            if (value is IEnumerable<object?> enumerable)
+                Assert.NotEmpty(enumerable);
+        }
     }
 
 
