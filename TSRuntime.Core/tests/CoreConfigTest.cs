@@ -32,6 +32,53 @@ public sealed class CoreConfigTest {
     }
 
 
+    [Theory]
+    [InlineData(new string[] { }, """[]""")]
+    [InlineData(new string[] { "Microsoft.AspNetCore.Components" }, """[ "Microsoft.AspNetCore.Components" ]""")]
+    [InlineData(new string[] { "qwer", "asdf", "yxcv" }, """
+                                                        [
+                                                            "qwer",
+                                                            "asdf",
+                                                            "yxcv"
+                                                          ]
+                                                        """)]
+    public void Config_AsJson_UsingStatementsWorks(string[] usingStatements, string expected) {
+        Config config = new() {
+            UsingStatements = usingStatements
+        };
+        string json = config.ToJson();
+
+        Assert.Contains($""" "using statements": {expected},""", json);
+    }
+
+    [Theory]
+    [InlineData(new string[] { }, """{ }""")]
+    [InlineData(new string[] { "key", "value" }, """
+                                                {
+                                                    "key": "value"
+                                                  }
+                                                """)]
+    [InlineData(new string[] { "a", "b", "c", "d", "e", "f" }, """
+                                                            {
+                                                                "a": "b",
+                                                                "c": "d",
+                                                                "e": "f"
+                                                              }
+                                                            """)]
+    public void Config_AsJson_TypeMapWorks(string[] types , string expected) {
+        Dictionary<string, string> map = new(types.Length / 2);
+        for (int i = 0; i < types.Length; i += 2)
+            map.Add(types[i], types[i + 1]);
+
+        Config config = new() {
+            TypeMap = map
+        };
+        string json = config.ToJson();
+
+        Assert.Contains($""" "type map": {expected}""", json);
+    }
+
+
     #region FunctionNaming
 
     private const string FUNCTION = "function";
@@ -72,6 +119,6 @@ public sealed class CoreConfigTest {
 
         Assert.Equal(expected, result);
     }
-
+    
     #endregion
 }

@@ -34,19 +34,21 @@ public struct FunctionNamePattern
 
 
     private readonly List<OutputBlock> outputList = new(5); // default "$function$_$module$_$action$" are 5 entries
-    private readonly NameTransform functionTransform;
-    private readonly NameTransform moduleTransform;
-    private readonly NameTransform actionTransform;
+    public string NamePattern { get; }
+    public NameTransform FunctionTransform { get; }
+    public NameTransform ModuleTransform { get; }
+    public NameTransform ActionTransform { get; }
 
 
-    public FunctionNamePattern(string naming, NameTransform functionTransform, NameTransform moduleTransform, NameTransform actionTransform)
+    public FunctionNamePattern(string namePattern, NameTransform functionTransform, NameTransform moduleTransform, NameTransform actionTransform)
     {
-        this.functionTransform = functionTransform;
-        this.moduleTransform = moduleTransform;
-        this.actionTransform = actionTransform;
+        NamePattern = namePattern;
+        FunctionTransform = functionTransform;
+        ModuleTransform = moduleTransform;
+        ActionTransform = actionTransform;
 
 
-        ReadOnlySpan<char> str = naming.AsSpan();
+        ReadOnlySpan<char> str = namePattern.AsSpan();
 
         while (str.Length > 0)
         {
@@ -98,13 +100,14 @@ public struct FunctionNamePattern
                 NameTransform.UpperCase => name.ToUpper(),
                 NameTransform.LowerCase => name.ToLower(),
                 NameTransform.FirstUpperCase => $"{char.ToUpperInvariant(name[0])}{name[1..]}",
-                NameTransform.FirstLowerCase => $"{char.ToLowerInvariant(name[0])}{name[1..]}"
+                NameTransform.FirstLowerCase => $"{char.ToLowerInvariant(name[0])}{name[1..]}",
+                _ => throw new ArgumentException("Invalid Enum 'NameTransform'")
             };
         }
 
-        string functionName = Transform(function, functionTransform);
-        string moduleName = Transform(module, moduleTransform);
-        string actionName = Transform(action, actionTransform);
+        string functionName = Transform(function, FunctionTransform);
+        string moduleName = Transform(module, ModuleTransform);
+        string actionName = Transform(action, ActionTransform);
 
 
         foreach (OutputBlock block in outputList)

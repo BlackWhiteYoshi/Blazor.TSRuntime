@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Text;
+using System.Text.Json.Nodes;
 
 namespace TSRuntime.Core.Configs;
 
@@ -60,6 +61,78 @@ public sealed class Config {
     };
 
 
+    public string ToJson() {
+        string usingStatements = UsingStatements.Length switch {
+            0 => string.Empty,
+            1 => $""" "{UsingStatements[0]}" """,
+            _ => $"""
+                    
+                        "{string.Join("""
+                            ",
+                                "
+                            """, UsingStatements)}"
+                      
+                    """
+        };
+
+        string typeMap;
+        if (TypeMap.Count == 0)
+            typeMap = " ";
+        else {
+            StringBuilder typeMapBuilder = new(100);
+
+            foreach(KeyValuePair<string, string> pair in TypeMap) {
+                typeMapBuilder.Append("""
+
+                        "
+                    """);
+                typeMapBuilder.Append(pair.Key);
+                typeMapBuilder.Append("""
+                    ": "
+                    """);
+                typeMapBuilder.Append(pair.Value);
+                typeMapBuilder.Append("""
+                    ",
+                    """);
+            }
+            typeMapBuilder.Length--;
+            typeMapBuilder.Append("""
+
+              
+            """);
+            typeMap = typeMapBuilder.ToString();
+        }
+
+        return $$"""
+            {
+              "declaration path": "{{DeclarationPath}}",
+              "file output": {
+                "class": "{{FileOutputClass}}",
+                "interface": "{{FileOutputinterface}}"
+              },
+              "module": {
+                "invoke enabled": {{(ModuleInvokeEnabled ? "true" : "false")}},
+                "trysync enabled": {{(ModuleTrySyncEnabled ? "true" : "false")}},
+                "async enabled": {{(ModuleAsyncEnabled ? "true" : "false")}}
+              },
+              "js runtime": {
+                "invoke enabled": {{(JSRuntimeInvokeEnabled ? "true" : "false")}},
+                "trysync enabled": {{(JSRuntimeTrySyncEnabled ? "true" : "false")}},
+                "async enabled": {{(JSRuntimeAsyncEnabled ? "true" : "false")}}
+              },
+              "function name pattern": {
+                "pattern": "{{FunctionNamePattern.NamePattern}}",
+                "function transform": "{{FunctionNamePattern.FunctionTransform}}",
+                "module transform": "{{FunctionNamePattern.ModuleTransform}}",
+                "action transform": "{{FunctionNamePattern.ActionTransform}}"
+              },
+              "using statements": [{{usingStatements}}],
+              "type map": {{{typeMap}}}
+            }
+
+            """;
+    }
+    
     public static Config FromJson(string json) {
         JsonNode root = JsonNode.Parse(json) ?? throw new ArgumentException($"json is not in a valid format:\n{json}");
 
