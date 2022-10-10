@@ -3,36 +3,36 @@
 namespace TSRuntime.Generation;
 
 [Generator]
-public sealed class SourceGenerator : ISourceGenerator {
-    private string source = string.Empty;
+public sealed class SourceGenerator : IIncrementalGenerator {
+    public void Initialize(IncrementalGeneratorInitializationContext context) {
+        context.RegisterPostInitializationOutput((IncrementalGeneratorPostInitializationContext context) => {
+            Parser parser = new();
 
-    public void Initialize(GeneratorInitializationContext context) {
-        Parser parser = new();
+            parser.Parse(DECLARATIONS.AsSpan());
+            parser.Parse(PRE_LOAD.AsSpan());
+            parser.Parse(CreateModule().AsSpan());
+            parser.Parse(PRIVATE_INVOKE_METHODS.AsSpan());
+            parser.Parse(JSRuntime_METHODS.AsSpan());
 
-        parser.Parse(DECLARATIONS.AsSpan());
-        parser.Parse(PRE_LOAD.AsSpan());
-        parser.Parse(CreateModule().AsSpan());
-        parser.Parse(PRIVATE_INVOKE_METHODS.AsSpan());
-        parser.Parse(JSRuntime_METHODS.AsSpan());
-
-        source = $$"""
-            // --- <auto generated> ---
+            string source = $$"""
+                // --- <auto generated> ---
         
         
-            using TSRuntime.Core.Configs;
-            using TSRuntime.Core.Parsing;
+                using TSRuntime.Core.Configs;
+                using TSRuntime.Core.Parsing;
         
-            namespace TSRuntime.Core.Generation;
+                namespace TSRuntime.Core.Generation;
         
-            public static partial class Generator {
-                public static partial IEnumerable<string> GetITSRuntimeContent(TSSyntaxTree syntaxTree, Config config) {
-            {{parser.GetContent()}}    }
-            }
+                public static partial class Generator {
+                    public static partial IEnumerable<string> GetITSRuntimeContent(TSSyntaxTree syntaxTree, Config config) {
+                {{parser.GetContent()}}    }
+                }
 
-            """;
+                """;
+
+            context.AddSource("Generator.g.cs", source);
+        });
     }
-
-    public void Execute(GeneratorExecutionContext context) => context.AddSource("Generator.g.cs", source);
 
 
     #region Content
