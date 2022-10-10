@@ -21,7 +21,7 @@ public sealed class TSSyntaxTree {
     /// <para>Before adding items, the <see cref="ModuleList"/> is cleared.</para>
     /// </summary>
     /// <param name="folder">root dictionary where the search begins.</param>
-    public void ParseModules(string folder) {
+    public async Task ParseModules(string folder) {
         string[] filePathes = Directory.GetFiles(folder, "*.d.ts", SearchOption.AllDirectories).Select((string filePath) => filePath.Replace('\\', '/')).ToArray();
         
         ModuleList.Clear();
@@ -29,7 +29,7 @@ public sealed class TSSyntaxTree {
             ModuleList.Capacity = filePathes.Length;
 
         foreach (string filePath in filePathes)
-            ModuleList.Add(TSModule.Parse(filePath, folder));
+            ModuleList.Add(await TSModule.Parse(filePath, folder));
     }
 
     /// <summary>

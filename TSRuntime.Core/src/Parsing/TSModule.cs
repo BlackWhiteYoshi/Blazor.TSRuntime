@@ -92,10 +92,15 @@ public sealed class TSModule {
     /// <para>Parses the file given in <see cref="FilePath"/> and adds the found functions in <see cref="FunctionList"/></para>
     /// <para><see cref="FunctionList"/> is cleared before adding some functions.</para>
     /// </summary>
-    public void ParseFunctions() {
+    public async Task ParseFunctions() {
         FunctionList.Clear();
 
-        foreach (string line in File.ReadLines(FilePath)) {
+        StreamReader streamReader = new(FilePath);
+        while (true) {
+            string? line = await streamReader.ReadLineAsync();
+            if (line == null)
+                break;
+
             TSFunction? tsFunction = TSFunction.Parse(line.AsSpan());
             if (tsFunction != null)
                 FunctionList.Add(tsFunction);
@@ -109,11 +114,11 @@ public sealed class TSModule {
     /// <param name="filePath"></param>
     /// /// <param name="rootFolder"></param>
     /// <returns></returns>
-    public static TSModule Parse(string filePath, string rootFolder) {
+    public static async Task<TSModule> Parse(string filePath, string rootFolder) {
         TSModule module = new();
 
         module.ParseMetaData(filePath, rootFolder);
-        module.ParseFunctions();
+        await module.ParseFunctions();
 
         return module;
     }

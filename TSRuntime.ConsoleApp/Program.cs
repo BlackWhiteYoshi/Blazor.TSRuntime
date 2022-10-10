@@ -11,7 +11,7 @@ public sealed class Program {
         Config config = Config.FromJson(json);
 
         TSSyntaxTree syntaxTree = new();
-        syntaxTree.ParseModules(config.DeclarationPath);
+        await syntaxTree.ParseModules(config.DeclarationPath);
 
         byte[] buffer = new byte[65536];
 

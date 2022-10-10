@@ -68,8 +68,8 @@ public sealed class CoreParserTest {
 
     [Fact]
     public void ParsingModule_WrongFilePathThrows() {
-        Assert.Throws<ArgumentException>(() => TSModule.Parse("", string.Empty));
-        Assert.Throws<FileNotFoundException>(() => TSModule.Parse("#", string.Empty));
+        Assert.ThrowsAsync<ArgumentException>(() => TSModule.Parse("", string.Empty));
+        Assert.ThrowsAsync<FileNotFoundException>(() => TSModule.Parse("#", string.Empty));
     }
 
     [Fact]
@@ -85,10 +85,10 @@ public sealed class CoreParserTest {
     }
 
     [Fact]
-    public void ParsingModule_FunctionsOnlyHasEmptyMetaData() {
+    public async Task ParsingModule_FunctionsOnlyHasEmptyMetaData() {
         TSModule module = new();
         module.FilePath = MODULE_FILE;
-        module.ParseFunctions();
+        await module.ParseFunctions();
 
         Assert.Equal(MODULE_FILE, module.FilePath);
         Assert.Equal(string.Empty, module.RelativePath);
@@ -98,8 +98,8 @@ public sealed class CoreParserTest {
     }
 
     [Fact]
-    public void ParsingModule_Example() {
-        TSModule module = TSModule.Parse(MODULE_FILE, string.Empty);
+    public async Task ParsingModule_Example() {
+        TSModule module = await TSModule.Parse(MODULE_FILE, string.Empty);
 
         Assert.Equal(MODULE_FILE, module.FilePath);
         Assert.Equal(MODULE_FILE, module.RelativePath);
@@ -114,9 +114,9 @@ public sealed class CoreParserTest {
     #region TSSyntaxTree
 
     [Fact]
-    public void SyntaxTree_ParseModulesParsesEvery_d_ts_File() {
+    public async Task SyntaxTree_ParseModulesParsesEvery_d_ts_File() {
         TSSyntaxTree syntaxTree = new();
-        syntaxTree.ParseModules("./");
+        await syntaxTree.ParseModules("./");
 
         Assert.Single(syntaxTree.ModuleList);
         Assert.Empty(syntaxTree.FunctionList);
