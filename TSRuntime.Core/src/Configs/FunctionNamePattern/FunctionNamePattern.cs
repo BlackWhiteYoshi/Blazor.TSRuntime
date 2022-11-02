@@ -1,6 +1,6 @@
 ﻿namespace TSRuntime.Core.Configs;
 
-public struct FunctionNamePattern
+public struct FunctionNamePattern : IEquatable<FunctionNamePattern>
 {
     private const string FUNCTION = "$function$";
     private const string MODULE = "$module$";
@@ -120,4 +120,50 @@ public struct FunctionNamePattern
                 _ => throw new Exception("not reachable")
             };
     }
+
+
+    #region IEquatable
+
+    public bool Equals(FunctionNamePattern other) {
+        if (NamePattern != other.NamePattern)
+            return false;
+
+        if (FunctionTransform != other.FunctionTransform)
+            return false;
+
+        if (ModuleTransform != other.ModuleTransform)
+            return false;
+
+        if (ActionTransform != other.ActionTransform)
+            return false;
+
+        return true;
+    }
+
+    public override bool Equals(object obj) {
+        if (obj is not FunctionNamePattern other)
+            return false;
+
+        return Equals(other);
+    }
+
+    public static bool operator ==(FunctionNamePattern left, FunctionNamePattern right) {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(FunctionNamePattern left, FunctionNamePattern right) {
+        return !left.Equals(right);
+    }
+
+    public override int GetHashCode() {
+        int hash = NamePattern.GetHashCode();
+
+        hash = (hash << 5) - hash + FunctionTransform.GetHashCode();
+        hash = (hash << 5) - hash + ModuleTransform.GetHashCode();
+        hash = (hash << 5) - hash + ActionTransform.GetHashCode();
+
+        return hash;
+    }
+
+    #endregion
 }

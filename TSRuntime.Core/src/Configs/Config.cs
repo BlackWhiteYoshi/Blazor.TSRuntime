@@ -3,44 +3,28 @@ using System.Text.Json.Nodes;
 
 namespace TSRuntime.Core.Configs;
 
-internal static class JsonNodeExtension {
-    internal static string[] ToStringArray(this JsonNode node) => node.AsArray().Select((JsonNode? node) => (string?)node ?? throw NullNotAllowed).ToArray();
-
-    internal static Dictionary<string, string> ToStringDictionary(this JsonNode node) {
-        JsonObject jsonObject = node.AsObject();
-        Dictionary<string, string> result = new(jsonObject.Count);
-
-        foreach (KeyValuePair<string, JsonNode?> item in jsonObject)
-            result.Add(item.Key, (string?)item.Value ?? throw NullNotAllowed);
-
-        return result;
-    }
-
-    private static ArgumentException NullNotAllowed => new("null is not allowed - use string literal \"null\" instead");
-}
-
-public sealed class Config {
+public sealed record class Config {
     public string DeclarationPath { get; init; } = DECLARATION_PATH;
-    private const string DECLARATION_PATH = @"../../../.typescript-declarations/";
+    private const string DECLARATION_PATH = @".typescript-declarations/";
 
     public string FileOutputClass { get; init; } = FILE_OUTPUT_CLASS;
-    private const string FILE_OUTPUT_CLASS = "TSRuntime.cs";
+    private const string FILE_OUTPUT_CLASS = "TSRuntime/TSRuntime.cs";
     public string FileOutputinterface { get; init; } = FILE_OUTPUT_INTERFACE;
-    private const string FILE_OUTPUT_INTERFACE = "ITSRuntime.cs";
+    private const string FILE_OUTPUT_INTERFACE = "TSRuntime/ITSRuntime.cs";
 
     public bool ModuleInvokeEnabled { get; init; } = MODULE_INVOKE_ENABLED;
-    private const bool MODULE_INVOKE_ENABLED = true;
+    private const bool MODULE_INVOKE_ENABLED = false;
     public bool ModuleTrySyncEnabled { get; init; } = MODULE_TRYSYNC_ENABLED;
     private const bool MODULE_TRYSYNC_ENABLED = true;
     public bool ModuleAsyncEnabled { get; init; } = MODULE_ASYNC_ENABLED;
-    private const bool MODULE_ASYNC_ENABLED = true;
+    private const bool MODULE_ASYNC_ENABLED = false;
 
     public bool JSRuntimeInvokeEnabled { get; init; } = JSRUNTIME_INVOKE_ENABLED;
-    private const bool JSRUNTIME_INVOKE_ENABLED = true;
+    private const bool JSRUNTIME_INVOKE_ENABLED = false;
     public bool JSRuntimeTrySyncEnabled { get; init; } = JSRUNTIME_TRYSYNC_ENABLED;
-    private const bool JSRUNTIME_TRYSYNC_ENABLED = true;
+    private const bool JSRUNTIME_TRYSYNC_ENABLED = false;
     public bool JSRuntimeAsyncEnabled { get; init; } = JSRUNTIME_ASYNC_ENABLED;
-    private const bool JSRUNTIME_ASYNC_ENABLED = true;
+    private const bool JSRUNTIME_ASYNC_ENABLED = false;
 
 
     public FunctionNamePattern FunctionNamePattern { get; init; } = new(FUNCTION_NAME_PATTERN, FUNCTION_TRANSFORM, MODULE_TRANSFORM, ACTION_TRANSFORM);
@@ -60,6 +44,10 @@ public sealed class Config {
         ["HTMLObjectElement"] = "ElementReference"
     };
 
+
+    #region json
+
+    public const string JSON_FILE_NAME = "tsconfig.tsruntime.json";
 
     public string ToJson() {
         string usingStatements = UsingStatements.Length switch {
@@ -161,4 +149,6 @@ public sealed class Config {
             TypeMap = root["type map"]?.ToStringDictionary() ?? TypeMapDefault
         };
     }
+
+    #endregion
 }

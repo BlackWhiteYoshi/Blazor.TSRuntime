@@ -1,19 +1,56 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
+using System.Text;
+using TSRuntime.Core.Configs;
 using TSRuntime.Core.Generation;
+using TSRuntime.Core.Parsing;
 using TSRuntime.FileWatching;
 
 namespace TSRuntime.SourceGenerator;
 
 [Generator]
 public sealed class SourceGenerator : ISourceGenerator, IDisposable {
-    private readonly FileWatcher fileWatcher = new("path/to/.csproj-folder/tsconfig.tsruntime.json");
+    private TSFileWatcher? fileWatcher;
 
-    public void Dispose() => fileWatcher.Dispose();
+    private string source = string.Empty;
+    private readonly StringBuilder sourceBuilder = new(10000);
+
+    private void CreateITSRuntimeContentString(TSSyntaxTree syntaxTree) {
+        if (fileWatcher == null)
+            return;
+
+        sourceBuilder.Clear();
+        foreach (string str in Generator.GetITSRuntimeContent(syntaxTree, fileWatcher.Config))
+            sourceBuilder.Append(str);
+        source = sourceBuilder.ToString();
+    }
+
+
+    public void Dispose() => fileWatcher?.Dispose();
+
 
     public void Initialize(GeneratorInitializationContext context) { }
 
     public void Execute(GeneratorExecutionContext context) {
+        if (fileWatcher == null) {
+            AdditionalText? file = context.AdditionalFiles.FirstOrDefault((AdditionalText file) => Path.GetFileName(file.Path) == Config.JSON_FILE_NAME);
+            if (file == null)
+                return;
+
+            SourceText? jsonSourceText = file.GetText(context.CancellationToken);
+            if (jsonSourceText == null)
+                return;
+
+            Config config = Config.FromJson(jsonSourceText.ToString());
+
+            fileWatcher = new(config, Path.GetDirectoryName(file.Path));
+            fileWatcher.ITSRuntimeChanged += CreateITSRuntimeContentString;
+        }
+        
+        if (source == string.Empty)
+            return;
+
         context.AddSource(fileWatcher.Config.FileOutputClass, Generator.TSRuntimeContent);
-        context.AddSource(fileWatcher.Config.FileOutputinterface, fileWatcher.Source);
+        context.AddSource(fileWatcher.Config.FileOutputinterface, source);
     }
 }

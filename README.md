@@ -6,23 +6,19 @@ still in development. At the moment there is only a ConsoleApp entryPoint.
 
 # Structure
 The Solution contains a core library and 3 entryPoints (ConsoleApp, SourceGenerator, VS-extension).  
-The Core itself uses a SourceGenerator ("TSRuntime.Generation") to produce the code for the function "GetITSRuntimeContent".
+The Core itself uses a SourceGenerator ("TSRuntime.Generation") to produce the code for the function "GetITSRuntimeContent".  
+The library "TSRuntime.FileWatcher" contains shared code from the entrypoints SourceGenerator and VS-extension.
 
 # TODO
  * Config
-   - function-naming (PascalCase, CamelCase)
-   - include/exclude folder, include-file
-   - function list (module, non-module)
+   - generate on save
+   - include/exclude folder, include-file <- list of folder pathes (each has a list of exclude pathes), list of file pathes
+   - function list (module, non-module) <- manual declaring functions directliy in the config
    - Function (non-module) parsing
-   - include/exclude folder, include-file for non-module
- * EntryPoints (Dictionary for ModuleList (key is filePath, value is index of ModuleList))
-   - ConsoleApp
+   - (non-module) include/exclude folder, include-file <- list of folder pathes (each has a list of exclude pathes), list of file pathes
+ * EntryPoints
    - SourceGenerator
    - Extension
- * Config json-file (tsconfig.tsruntime.json)
  * Documentation (readme.md -> hero section, getting started (setup typescript -> entrypoints), explaining configs)
  * GenericSupport (INumber<T>)
  * Function (non-module) parsing
-
-# Contribute
-See TODO
