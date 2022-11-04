@@ -4,7 +4,7 @@ using TSRuntime.Core.Parsing;
 namespace TSRuntime.FileWatching;
 
 public sealed class TSFileWatcher : IDisposable {
-    private readonly FileSystemWatcher condigWatcher;
+    private readonly FileSystemWatcher configWatcher;
     private readonly FileSystemWatcher moduleWatcher;
 
     private readonly TSSyntaxTree syntaxTree = new();
@@ -13,6 +13,8 @@ public sealed class TSFileWatcher : IDisposable {
     private readonly object _lock = new();
 
 
+    private readonly string basePath;
+    private string declarationPath;
     public Config Config { get; private set; }
 
     public event Action? TSRuntimeLocationChanged;
@@ -27,34 +29,39 @@ public sealed class TSFileWatcher : IDisposable {
     /// <param name="config">If null, default config is supplied.</param>
     /// <param name="basePath">Directory where tsconfig.tsruntime.json file is located.<br />It's also the starting point for relative pathes.</param>
     public TSFileWatcher(Config? config, string basePath) {
+        this.basePath = basePath;
         if (config != null)
             Config = config;
         else
             Config = new();
 
-        condigWatcher = CreateConfigWatcher(basePath);
-        moduleWatcher = CreateModuleWatcher(Path.Combine(basePath, Config.DeclarationPath));
-
-
-        _ = ParseSyntaxTreeAsync(this);
+        declarationPath = Path.Combine(basePath, Config.DeclarationPath);
+        configWatcher = CreateConfigWatcher(basePath);
+        moduleWatcher = CreateModuleWatcher(declarationPath);
     }
 
     public void Dispose() {
-        condigWatcher.Dispose();
+        configWatcher.Dispose();
         moduleWatcher.Dispose();
     }
 
 
-    private static async Task ParseSyntaxTreeAsync(TSFileWatcher me) {
+    /// <summary>
+    /// Parses all files and recreate the SyntaxTree.
+    /// </summary>
+    /// <returns></returns>
+    public async Task CreateSyntaxTreeAsync() {
         TSSyntaxTree localSyntaxTree = new();
-        await localSyntaxTree.ParseModules(me.Config.DeclarationPath);
+        await localSyntaxTree.ParseModules(declarationPath);
 
-        lock (me._lock) {
-            me.syntaxTree.ModuleList.AddRange(localSyntaxTree.ModuleList);
-            for (int i = 0; i < me.syntaxTree.ModuleList.Count; i++)
-                me.moduleMap.Add(localSyntaxTree.ModuleList[i].FilePath, i);
+        lock (_lock) {
+            syntaxTree.ModuleList.Clear();
+            moduleMap.Clear();
+            syntaxTree.ModuleList.AddRange(localSyntaxTree.ModuleList);
+            for (int i = 0; i < syntaxTree.ModuleList.Count; i++)
+                moduleMap.Add(localSyntaxTree.ModuleList[i].FilePath, i);
 
-            me.ITSRuntimeChanged?.Invoke(me.syntaxTree);
+            ITSRuntimeChanged?.Invoke(syntaxTree);
         }
     }
 
@@ -112,9 +119,8 @@ public sealed class TSFileWatcher : IDisposable {
             ITSRuntimeLocationChanged?.Invoke();
 
         if (Config.DeclarationPath != oldConfig.DeclarationPath) {
-            syntaxTree.ModuleList.Clear();
-            moduleMap.Clear();
-            _ = ParseSyntaxTreeAsync(this);
+            declarationPath = Path.Combine(basePath, Config.DeclarationPath);
+            _ = CreateSyntaxTreeAsync();
             return;
         }
         
@@ -207,7 +213,7 @@ public sealed class TSFileWatcher : IDisposable {
 
         static async Task DoAsync(TSFileWatcher me, string path) {
             try {
-                TSModule module = await TSModule.Parse(path, me.Config.DeclarationPath);
+                TSModule module = await TSModule.Parse(path, me.declarationPath);
             
                 lock (me._lock) {
                     me.moduleMap.Add(module.FilePath, me.syntaxTree.ModuleList.Count);
@@ -235,7 +241,7 @@ public sealed class TSFileWatcher : IDisposable {
             lock (_lock) {
                 moduleMap.Remove(e.OldFullPath);
                 moduleMap.Add(e.FullPath, index);
-                syntaxTree.ModuleList[index].ParseMetaData(e.FullPath, Config.DeclarationPath);
+                syntaxTree.ModuleList[index].ParseMetaData(e.FullPath, declarationPath);
 
                 ITSRuntimeChanged?.Invoke(syntaxTree);
             }

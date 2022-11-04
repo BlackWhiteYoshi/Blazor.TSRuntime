@@ -43,12 +43,10 @@ public sealed class SourceGenerator : ISourceGenerator, IDisposable {
 
             Config config = Config.FromJson(jsonSourceText.ToString());
 
-            fileWatcher = new(config, Path.GetDirectoryName(file.Path));
+            fileWatcher = new TSFileWatcher(config, Path.GetDirectoryName(file.Path));
             fileWatcher.ITSRuntimeChanged += CreateITSRuntimeContentString;
+            fileWatcher.CreateSyntaxTreeAsync().GetAwaiter().GetResult();
         }
-        
-        if (source == string.Empty)
-            return;
 
         context.AddSource(fileWatcher.Config.FileOutputClass, Generator.TSRuntimeContent);
         context.AddSource(fileWatcher.Config.FileOutputinterface, source);
