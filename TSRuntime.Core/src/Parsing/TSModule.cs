@@ -95,7 +95,7 @@ public sealed class TSModule {
     public async Task ParseFunctions() {
         FunctionList.Clear();
 
-        StreamReader streamReader = new(FilePath);
+        using StreamReader streamReader = new(FilePath);
         while (true) {
             string? line = await streamReader.ReadLineAsync();
             if (line == null)
