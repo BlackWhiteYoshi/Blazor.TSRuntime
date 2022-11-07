@@ -63,19 +63,20 @@ public sealed class CoreParserTest {
 
     #region TSModule
 
+    private const string FOLDER = "TestFolder/";
     private const string MODULE = "CoreParserTest";
     private const string MODULE_FILE = $"{MODULE}.d.ts";
 
     [Fact]
-    public void ParsingModule_WrongFilePathThrows() {
-        Assert.ThrowsAsync<ArgumentException>(() => TSModule.Parse("", string.Empty));
-        Assert.ThrowsAsync<FileNotFoundException>(() => TSModule.Parse("#", string.Empty));
+    public async Task ParsingModule_WrongFilePathThrows() {
+        await Assert.ThrowsAsync<ArgumentException>(() => TSModule.Parse("", string.Empty));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => TSModule.Parse($"{FOLDER}#", FOLDER));
     }
 
     [Fact]
     public void ParsingModule_MetadataOnlyHasEmptyFunctionList() {
         TSModule module = new();
-        module.ParseMetaData(MODULE_FILE, string.Empty);
+        module.ParseMetaData(MODULE_FILE, FOLDER);
 
         Assert.NotEqual(string.Empty, module.FilePath);
         Assert.NotEqual(string.Empty, module.RelativePath);
@@ -86,8 +87,9 @@ public sealed class CoreParserTest {
 
     [Fact]
     public async Task ParsingModule_FunctionsOnlyHasEmptyMetaData() {
-        TSModule module = new();
-        module.FilePath = MODULE_FILE;
+        TSModule module = new() {
+            FilePath = MODULE_FILE
+        };
         await module.ParseFunctions();
 
         Assert.Equal(MODULE_FILE, module.FilePath);
@@ -118,7 +120,7 @@ public sealed class CoreParserTest {
         TSSyntaxTree syntaxTree = new();
         await syntaxTree.ParseModules("./");
 
-        Assert.Single(syntaxTree.ModuleList);
+        Assert.Equal(2, syntaxTree.ModuleList.Count);
         Assert.Empty(syntaxTree.FunctionList);
     }
 
