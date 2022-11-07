@@ -5,7 +5,7 @@ namespace TSRuntime.Core.Configs;
 
 public sealed record class Config {
     public string DeclarationPath { get; init; } = DECLARATION_PATH;
-    private const string DECLARATION_PATH = @".typescript-declarations/";
+    private const string DECLARATION_PATH = @".typescript-declarations";
 
     public string FileOutputClass { get; init; } = FILE_OUTPUT_CLASS;
     private const string FILE_OUTPUT_CLASS = "TSRuntime/TSRuntime.cs";
@@ -124,8 +124,17 @@ public sealed record class Config {
     public static Config FromJson(string json) {
         JsonNode root = JsonNode.Parse(json) ?? throw new ArgumentException($"json is not in a valid format:\n{json}");
 
+        string? declarationPath = (string?)root["declaration path"];
+        if (declarationPath != null) {
+            declarationPath = declarationPath.Replace('\\', '/');
+            if (declarationPath[^1] == '/')
+                declarationPath = declarationPath[..^1];
+        }
+        else
+            declarationPath = DECLARATION_PATH;
+
         return new Config() {
-            DeclarationPath = (string?)root["declaration path"] ?? DECLARATION_PATH,
+            DeclarationPath = declarationPath,
 
             FileOutputClass = (string?)root["file output"]?["class"] ?? FILE_OUTPUT_CLASS,
             FileOutputinterface = (string?)root["file output"]?["interface"] ?? FILE_OUTPUT_INTERFACE,

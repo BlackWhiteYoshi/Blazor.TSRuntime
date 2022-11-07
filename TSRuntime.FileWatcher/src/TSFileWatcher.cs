@@ -183,7 +183,7 @@ public sealed class TSFileWatcher : IDisposable {
     }
 
     private void OnModuleChanged(object sender, FileSystemEventArgs e) {
-        if (moduleMap.TryGetValue(e.FullPath, out int index)) {
+        if (moduleMap.TryGetValue(e.FullPath.Replace('\\', '/'), out int index)) {
             _ = DoAsync(this, index);
 
             static async Task DoAsync(TSFileWatcher me, int index) {
@@ -209,7 +209,7 @@ public sealed class TSFileWatcher : IDisposable {
     }
 
     private void OnModuleCreated(object sender, FileSystemEventArgs e) {
-        _ = DoAsync(this, e.FullPath);
+        _ = DoAsync(this, e.FullPath.Replace('\\', '/'));
 
         static async Task DoAsync(TSFileWatcher me, string path) {
             try {
@@ -227,9 +227,10 @@ public sealed class TSFileWatcher : IDisposable {
     }
 
     private void OnModuleDeleted(object sender, FileSystemEventArgs e) {
-        if (moduleMap.TryGetValue(e.FullPath, out int index))
+        string path = e.FullPath.Replace('\\', '/');
+        if (moduleMap.TryGetValue(path, out int index))
             lock (_lock) {
-                moduleMap.Remove(e.FullPath);
+                moduleMap.Remove(path);
                 syntaxTree.ModuleList.RemoveAt(index);
 
                 ITSRuntimeChanged?.Invoke(syntaxTree);
@@ -237,11 +238,13 @@ public sealed class TSFileWatcher : IDisposable {
     }
 
     private void OnModuleRenamed(object sender, RenamedEventArgs e) {
-        if (moduleMap.TryGetValue(e.OldFullPath, out int index)) 
+        string oldPath = e.OldFullPath.Replace('\\', '/');
+        string newPath = e.FullPath.Replace('\\', '/');
+        if (moduleMap.TryGetValue(oldPath, out int index)) 
             lock (_lock) {
-                moduleMap.Remove(e.OldFullPath);
-                moduleMap.Add(e.FullPath, index);
-                syntaxTree.ModuleList[index].ParseMetaData(e.FullPath, declarationPath);
+                moduleMap.Remove(oldPath);
+                moduleMap.Add(newPath, index);
+                syntaxTree.ModuleList[index].ParseMetaData(newPath, declarationPath);
 
                 ITSRuntimeChanged?.Invoke(syntaxTree);
             }
