@@ -10,8 +10,6 @@ public sealed class TSFileWatcher : IDisposable {
     private readonly TSSyntaxTree syntaxTree = new();
     private readonly Dictionary<string, int> moduleMap = new();
 
-    private readonly object _lock = new();
-
 
     private readonly string basePath;
     private string declarationPath;
@@ -54,7 +52,7 @@ public sealed class TSFileWatcher : IDisposable {
         TSSyntaxTree localSyntaxTree = new();
         await localSyntaxTree.ParseModules(declarationPath);
 
-        lock (_lock) {
+        lock (syntaxTree) {
             syntaxTree.ModuleList.Clear();
             moduleMap.Clear();
             syntaxTree.ModuleList.AddRange(localSyntaxTree.ModuleList);
@@ -84,27 +82,49 @@ public sealed class TSFileWatcher : IDisposable {
         return watcher;
     }
 
-    private void OnConfigChanged(object sender, FileSystemEventArgs e) => _ = UpdateConfig(e.FullPath);
 
-    private void OnConfigCreated(object sender, FileSystemEventArgs e) => _ = UpdateConfig(e.FullPath);
+    private void OnConfigChanged(object sender, FileSystemEventArgs e) => UpdateConfig(e.FullPath.Replace('\\', '/'));
+
+    private void OnConfigCreated(object sender, FileSystemEventArgs e) => UpdateConfig(e.FullPath.Replace('\\', '/'));
 
     private void OnConfigDeleted(object sender, FileSystemEventArgs e) => UpdateConfig(new Config());
 
     private void OnConfigRenamed(object sender, RenamedEventArgs e) {
         if (e.Name == Config.JSON_FILE_NAME)
-            _ = UpdateConfig(e.FullPath);
+            UpdateConfig(e.FullPath.Replace('\\', '/'));
         else
             UpdateConfig(new Config());
     }
 
 
-    private async Task UpdateConfig(string jsonPath) {
-        try {
-            using StreamReader streamReader = new(jsonPath);
-            string json = await streamReader.ReadToEndAsync();
-            UpdateConfig(Config.FromJson(json));
+    #region UpdateConfig
+
+    private Task configUpdater = Task.CompletedTask;
+
+    private void UpdateConfig(string jsonPath) {
+        if (configUpdater.IsCompleted)
+            configUpdater = UpdateConfig(this, jsonPath);
+        else if (configUpdater.IsFaulted)
+            throw configUpdater.Exception;
+
+        static async Task UpdateConfig(TSFileWatcher me, string jsonPath) {
+            await Task.Delay(500);
+
+            string json;
+            while (true) {
+                try {
+                    using StreamReader streamReader = new(jsonPath);
+                    json = await streamReader.ReadToEndAsync();
+                    break;
+                }
+                catch (IOException) {
+                    await Task.Delay(1000);
+                    continue;
+                }
+            }
+
+            me.UpdateConfig(Config.FromJson(json));
         }
-        catch (IOException) { }
     }
     
     private void UpdateConfig(Config config) {
@@ -163,6 +183,8 @@ public sealed class TSFileWatcher : IDisposable {
 
     #endregion
 
+    #endregion
+
 
     #region module watcher
 
@@ -182,54 +204,32 @@ public sealed class TSFileWatcher : IDisposable {
         return watcher;
     }
 
+
     private void OnModuleChanged(object sender, FileSystemEventArgs e) {
         if (moduleMap.TryGetValue(e.FullPath.Replace('\\', '/'), out int index)) {
-            _ = DoAsync(this, index);
+            TSModule module = syntaxTree.ModuleList[index];
+            TSModule localModule = new() {
+                FilePath = module.FilePath,
+                RelativePath = module.RelativePath,
+                ModulePath = module.FilePath,
+                ModuleName = module.ModuleName
+            };
 
-            static async Task DoAsync(TSFileWatcher me, int index) {
-                TSModule module = me.syntaxTree.ModuleList[index];
-                TSModule localModule = new() {
-                    FilePath = module.FilePath,
-                    RelativePath = module.RelativePath,
-                    ModulePath = module.FilePath,
-                    ModuleName = module.ModuleName
-                };
-
-                try {
-                    await localModule.ParseFunctions();
-
-                    lock (me._lock) {
-                        module.FunctionList = localModule.FunctionList;
-                        me.ITSRuntimeChanged?.Invoke(me.syntaxTree);
-                    }
-                }
-                catch (IOException) { }
-            }
+            AddToDirtyList(localModule);
         }
     }
 
     private void OnModuleCreated(object sender, FileSystemEventArgs e) {
-        _ = DoAsync(this, e.FullPath.Replace('\\', '/'));
-
-        static async Task DoAsync(TSFileWatcher me, string path) {
-            try {
-                TSModule module = await TSModule.Parse(path, me.declarationPath);
-            
-                lock (me._lock) {
-                    me.moduleMap.Add(module.FilePath, me.syntaxTree.ModuleList.Count);
-                    me.syntaxTree.ModuleList.Add(module);
-
-                    me.ITSRuntimeChanged?.Invoke(me.syntaxTree);
-                }
-            }
-            catch (IOException) { }
-        }
+        TSModule module = new();
+        module.ParseMetaData(e.FullPath.Replace('\\', '/'), declarationPath);
+        
+        AddToDirtyList(module);
     }
 
     private void OnModuleDeleted(object sender, FileSystemEventArgs e) {
         string path = e.FullPath.Replace('\\', '/');
         if (moduleMap.TryGetValue(path, out int index))
-            lock (_lock) {
+            lock (syntaxTree) {
                 moduleMap.Remove(path);
                 syntaxTree.ModuleList.RemoveAt(index);
 
@@ -241,7 +241,7 @@ public sealed class TSFileWatcher : IDisposable {
         string oldPath = e.OldFullPath.Replace('\\', '/');
         string newPath = e.FullPath.Replace('\\', '/');
         if (moduleMap.TryGetValue(oldPath, out int index)) 
-            lock (_lock) {
+            lock (syntaxTree) {
                 moduleMap.Remove(oldPath);
                 moduleMap.Add(newPath, index);
                 syntaxTree.ModuleList[index].ParseMetaData(newPath, declarationPath);
@@ -249,6 +249,67 @@ public sealed class TSFileWatcher : IDisposable {
                 ITSRuntimeChanged?.Invoke(syntaxTree);
             }
     }
+
+
+    #region Module Updater
+
+    private void AddToDirtyList(TSModule module) {
+        lock (dirtyModules) {
+            if (dirtyModules.Add(module))
+                if (moduleUpdater.IsCompleted)
+                    moduleUpdater = UpdateModules();
+                else if (moduleUpdater.IsFaulted)
+                    throw moduleUpdater.Exception;
+        }
+    }
+
+    /// <summary>
+    /// contains new and local modules, so only modules that are not in syntaxTree
+    /// </summary>
+    private readonly HashSet<TSModule> dirtyModules = new();
+    private Task moduleUpdater = Task.CompletedTask;
+    
+    private async Task UpdateModules() {
+        await Task.Delay(500);
+
+        while (true) {
+            foreach (TSModule module in dirtyModules) {
+                try {
+                    await module.ParseFunctions();
+                    lock (dirtyModules)
+                        dirtyModules.Remove(module);
+                }
+                catch (IOException) {
+                    continue;
+                }
+
+                if (moduleMap.TryGetValue(module.FilePath, out int index)) {
+                    // changed module, update the corresponding one in syntaxTree
+                    TSModule dirtyModule = syntaxTree.ModuleList[index];
+                    lock (syntaxTree) {
+                        dirtyModule.FunctionList = module.FunctionList;
+                        ITSRuntimeChanged?.Invoke(syntaxTree);
+                    }
+                }
+                else {
+                    // new module, add to syntaxTree
+                    lock (syntaxTree) {
+                        moduleMap.Add(module.FilePath, syntaxTree.ModuleList.Count);
+                        syntaxTree.ModuleList.Add(module);
+
+                        ITSRuntimeChanged?.Invoke(syntaxTree);
+                    }
+                }
+            }
+
+            if (dirtyModules.Count > 0)
+                break;
+
+            await Task.Delay(1000);
+        }
+    }
+
+    #endregion
 
     #endregion
 }
