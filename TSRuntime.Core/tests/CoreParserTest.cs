@@ -70,13 +70,13 @@ public sealed class CoreParserTest {
     [Fact]
     public async Task ParsingModule_WrongFilePathThrows() {
         await Assert.ThrowsAsync<ArgumentException>(() => TSModule.Parse("", string.Empty));
-        await Assert.ThrowsAsync<FileNotFoundException>(() => TSModule.Parse($"{FOLDER}#", FOLDER));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => TSModule.Parse($"#", string.Empty));
     }
 
     [Fact]
     public void ParsingModule_MetadataOnlyHasEmptyFunctionList() {
         TSModule module = new();
-        module.ParseMetaData(MODULE_FILE, FOLDER);
+        module.ParseMetaData(MODULE_FILE, string.Empty);
 
         Assert.NotEqual(string.Empty, module.FilePath);
         Assert.NotEqual(string.Empty, module.RelativePath);
@@ -101,9 +101,9 @@ public sealed class CoreParserTest {
 
     [Fact]
     public async Task ParsingModule_Example() {
-        TSModule module = await TSModule.Parse(MODULE_FILE, string.Empty);
+        TSModule module = await TSModule.Parse($"{FOLDER}{MODULE_FILE}", FOLDER);
 
-        Assert.Equal(MODULE_FILE, module.FilePath);
+        Assert.Equal($"{FOLDER}{MODULE_FILE}", module.FilePath);
         Assert.Equal(MODULE_FILE, module.RelativePath);
         Assert.Equal($"/{MODULE}.js", module.ModulePath);
         Assert.Equal(MODULE, module.ModuleName);
