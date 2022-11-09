@@ -2,7 +2,7 @@ using Xunit;
 
 namespace TSRuntime.Generation.Tests;
 
-internal static class ParserExtension {
+file static class ParserExtension {
     internal static string ParseAndGetContent(this Parser parser, string argument) {
         parser.Parse(argument);
         return parser.GetContent();

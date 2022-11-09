@@ -2,7 +2,7 @@
 
 namespace TSRuntime.Generation;
 
-internal static class BuilderExtension {
+file static class BuilderExtension {
     internal static void Append(this StringBuilder builder, ReadOnlySpan<char> str) {
         foreach (char c in str)
             builder.Append(c);
