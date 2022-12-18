@@ -45,12 +45,7 @@ public sealed class TSParameter {
     /// </summary>
     /// <param name="subStr">Only the part of the string that represents the type of a parameter (starting after ": " and ending before ',' or ')'.</param>
     public void ParseType(ReadOnlySpan<char> subStr) {
-        bool nullable;
-        Range newRange;
-
-        (nullable, newRange) = ParseNullable(subStr);
-        if (nullable)
-            subStr = subStr[newRange];
+        bool nullable = ParseNullable(ref subStr);
 
         if (subStr.EndsWith("[]".AsSpan())) {
             Array = true;
@@ -58,9 +53,7 @@ public sealed class TSParameter {
             subStr = subStr[..^2];   // cut "..[]"
             if (subStr[0] == '(') {
                 subStr = subStr[1..^1]; // cut "(..)"
-                (nullable, newRange) = ParseNullable(subStr);
-                if (nullable)
-                    subStr = subStr[newRange];
+                nullable = ParseNullable(ref subStr);
             }
             else
                 nullable = false;
@@ -69,9 +62,7 @@ public sealed class TSParameter {
             Array = true;
             ArrayNullable = nullable;
             subStr = subStr[6..^1];   // cut "Array<..>"
-            (nullable, newRange) = ParseNullable(subStr);
-            if (nullable)
-                subStr = subStr[newRange];
+            nullable = ParseNullable(ref subStr);
         }
 
         TypeNullable = nullable;
@@ -79,20 +70,28 @@ public sealed class TSParameter {
         return;
 
 
-        static (bool nullable, Range newRange) ParseNullable(ReadOnlySpan<char> subStr) {
-            if (subStr.StartsWith("null |".AsSpan()))
-                return (true, new Range(Index.FromStart(7), 0));    // cut "null | .."
+        static bool ParseNullable(ref ReadOnlySpan<char> subStr) {
+            if (subStr.StartsWith("null |".AsSpan())) {
+                subStr = subStr[7..]; // cut "null | .."
+                return true;    
+            }
             
-            if (subStr.StartsWith("undefined |".AsSpan()))
-                return (true, new Range(Index.FromStart(12), 0));   // cut "undefined | .."
+            if (subStr.StartsWith("undefined |".AsSpan())) {
+                subStr = subStr[12..]; // cut "undefined | .."
+                return true;   
+            }
 
-            if (subStr.EndsWith("| null".AsSpan()))
-                return (true, new Range(0, Index.FromEnd(7)));    // cut "..| null"
+            if (subStr.EndsWith("| null".AsSpan())) {
+                subStr= subStr[..^7]; // cut "..| null"
+                return true;
+            }
             
-            if (subStr.EndsWith("| undefined".AsSpan()))
-                return (true, new Range(0, Index.FromEnd(12)));   // cut "..| undefined"
+            if (subStr.EndsWith("| undefined".AsSpan())) {
+                subStr = subStr[..^12]; // cut "..| undefined"
+                return true;   
+            }
 
-            return (false, default);
+            return false;
         }
     }
 }

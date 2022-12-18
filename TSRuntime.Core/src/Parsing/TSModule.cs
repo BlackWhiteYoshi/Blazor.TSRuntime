@@ -42,7 +42,7 @@ public sealed class TSModule {
 
         // RelativePath
         if (rootFolder != string.Empty)
-            if (rootFolder.EndsWith("/"))
+            if (rootFolder is [.., '/'])
                 path = path[rootFolder.Length..];
             else
                 path = path[(rootFolder.Length + 1)..];
