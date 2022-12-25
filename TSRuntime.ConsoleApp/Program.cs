@@ -5,7 +5,7 @@ using System.Text;
 
 namespace TSRuntime.ConsoleApp;
 
-public sealed class Program {
+public static class Program {
     public static async Task Main() {
         string json = File.ReadAllText("tsconfig.tsruntime.json");
         Config config = Config.FromJson(json);

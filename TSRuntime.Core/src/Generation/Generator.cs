@@ -88,6 +88,7 @@ public static partial class Generator {
             #region moduleList
 
             private readonly Task<IJSObjectReference>?[] modules = new Task<IJSObjectReference>?[ITSRuntime.MODULE_COUNT];
+            Task<IJSObjectReference>?[] ITSRuntime.Modules => modules;
 
             Task<IJSObjectReference> ITSRuntime.GetOrLoadModule(int index, string url) {
                 if (modules[index]?.IsCompletedSuccessfully == true)
