@@ -28,7 +28,7 @@ public sealed record class Config {
 
 
     public FunctionNamePattern FunctionNamePattern { get; init; } = new(FUNCTION_NAME_PATTERN, FUNCTION_TRANSFORM, MODULE_TRANSFORM, ACTION_TRANSFORM);
-    private const string FUNCTION_NAME_PATTERN = "$function$_$module$_$action$";
+    private const string FUNCTION_NAME_PATTERN = "#function#";
     private const NameTransform FUNCTION_TRANSFORM = NameTransform.FirstUpperCase;
     private const NameTransform MODULE_TRANSFORM = NameTransform.None;
     private const NameTransform ACTION_TRANSFORM = NameTransform.None;

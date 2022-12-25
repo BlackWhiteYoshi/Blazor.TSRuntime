@@ -81,13 +81,27 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             /// <para>Preloads `module.ModuleName` (`module.ModulePath`) as javascript-module.</para>
             /// <para>If already loading, it doesn't trigger a second loading and if already loaded, it returns a completed task.</para>
             /// </summary>
-            public async ValueTask PreLoad_`module.ModuleName`()
+            public async ValueTask PreLoad`module.ModuleName`()
                 => await GetOrLoadModule(`index`, "`module.ModulePath`");
         
         ``
         }
         `-
-        
+            /// <summary>
+            /// <para>Preloads all modules as javascript-modules.</para>
+            /// <para>If already loading, it doesn't trigger a second loading and if any already loaded, these are not loaded again, so if all already loaded, it returns a completed task.</para>
+            /// </summary>
+            public async ValueTask PreLoadAllModules() {
+        ``
+        for (int i = 0; i < syntaxTree.ModuleList.Count; i++) {
+        `+
+                await PreLoad`syntaxTree.ModuleList[i].ModuleName`();
+        ``
+        }
+        `-
+            }
+
+
             protected Task<IJSObjectReference> GetOrLoadModule(int index, string url);
 
         """;
@@ -201,11 +215,11 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             string methodName;
             if (trySync) {
                 summaryDescription = "synchronously when supported, otherwise asynchronously";
-                methodName = "TrySync";
+                methodName = "InvokeTrySync";
             }
             else {
                 summaryDescription = "asynchronously";
-                methodName = "Async";
+                methodName = "InvokeAsync";
             }
 
             return $"""

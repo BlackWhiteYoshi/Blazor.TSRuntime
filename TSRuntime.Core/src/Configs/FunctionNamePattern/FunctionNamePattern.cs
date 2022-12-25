@@ -2,9 +2,9 @@
 
 public struct FunctionNamePattern : IEquatable<FunctionNamePattern>
 {
-    private const string FUNCTION = "$function$";
-    private const string MODULE = "$module$";
-    private const string ACTION = "$action$";
+    private const string FUNCTION = "#function#";
+    private const string MODULE = "#module#";
+    private const string ACTION = "#action#";
 
     private enum Output
     {
@@ -33,7 +33,7 @@ public struct FunctionNamePattern : IEquatable<FunctionNamePattern>
     }
 
 
-    private readonly List<OutputBlock> outputList = new(5); // default "$function$_$module$_$action$" are 5 entries
+    private readonly List<OutputBlock> outputList = new(1); // default "#function#" is 1 entry
     public string NamePattern { get; }
     public NameTransform FunctionTransform { get; }
     public NameTransform ModuleTransform { get; }
@@ -52,23 +52,23 @@ public struct FunctionNamePattern : IEquatable<FunctionNamePattern>
 
         while (str.Length > 0)
         {
-            int index = str.IndexOf('$');
+            int index = str.IndexOf('#');
 
-            // has no "$"
+            // has no "#"
             if (index == -1)
             {
                 outputList.Add(str.ToString());
                 return;
             }
 
-            // read in ..$
+            // read in ..#
             if (index > 0)
             {
                 outputList.Add(str[..index].ToString());
                 str = str[index..];
             }
 
-            // read in $..$
+            // read in #..#
             switch (str)
             {
                 case { } when str.StartsWith(FUNCTION.AsSpan()):

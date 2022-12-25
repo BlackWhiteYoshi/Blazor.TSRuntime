@@ -15,7 +15,7 @@
     "async enabled": true
   },
   "function name pattern": {
-    "pattern": "$function$_$module$_$action$",
+    "pattern": "#function#_#module#_#action#",
     "function transform": "first upper case",
     "module transform": "none",
     "action transform": "none"
