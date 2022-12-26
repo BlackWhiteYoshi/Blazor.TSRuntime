@@ -25,4 +25,3 @@ The library "TSRuntime.FileWatcher" contains shared code from the entrypoints So
    - Uint8Array -> byte[]
    - DotNetStreamReference -> DotNetStreamReference
  * add config option "append async at promise"
- * PreLoad NamingPattern

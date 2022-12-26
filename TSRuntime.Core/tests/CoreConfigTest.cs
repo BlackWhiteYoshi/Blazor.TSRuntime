@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text;
 using TSRuntime.Core.Configs;
+using TSRuntime.Core.Configs.NamePattern;
 using Xunit;
 
 namespace TSRuntime.Core.Tests;
@@ -79,11 +80,12 @@ public sealed class CoreConfigTest {
     }
 
 
-    #region FunctionNaming
+    #region NamePattern
 
     private const string FUNCTION = "function";
     private const string MODULE = "Module";
     private const string ACTION = "Action";
+
 
     [Theory]
     [InlineData("#function#_#module#_#action#", $"{FUNCTION}_{MODULE}_{ACTION}")]
@@ -92,7 +94,7 @@ public sealed class CoreConfigTest {
     [InlineData("test2", $"test2")]
     [InlineData("#action#", $"{ACTION}")]
     [InlineData("", "")]
-    public void FunctionNaming_ParsingWorks(string naming, string expected) {
+    public void FunctionNamePattern_ParsingWorks(string naming, string expected) {
         FunctionNamePattern functionNaming = new(naming, NameTransform.None, NameTransform.None, NameTransform.None);
 
         StringBuilder builder = new();
@@ -109,7 +111,7 @@ public sealed class CoreConfigTest {
     [InlineData(NameTransform.None, NameTransform.LowerCase, NameTransform.None, "#module#", "module")]
     [InlineData(NameTransform.FirstUpperCase, NameTransform.None, NameTransform.None, "#function#", "Function")]
     [InlineData(NameTransform.None, NameTransform.FirstLowerCase, NameTransform.None, "#module#", "module")]
-    public void FunctionNaming_TransformWorks(NameTransform function, NameTransform module, NameTransform action, string naming, string expected) {
+    public void FunctionNamePattern_TransformWorks(NameTransform function, NameTransform module, NameTransform action, string naming, string expected) {
         FunctionNamePattern functionNaming = new(naming, function, module, action);
 
         StringBuilder builder = new();
@@ -119,6 +121,72 @@ public sealed class CoreConfigTest {
 
         Assert.Equal(expected, result);
     }
-    
+
+    [Theory]
+    [InlineData("#wrong#")]
+    [InlineData("test#")]
+    [InlineData("#test")]
+    [InlineData("##")]
+    [InlineData("#modole#")]
+    [InlineData("test#fonction#")]
+    public void FunctionNamePattern_ThrowsException_WhenWrongNamingPattern(string naming) {
+        try {
+            FunctionNamePattern functionNaming = new(naming, NameTransform.None, NameTransform.None, NameTransform.None);
+            Assert.Fail("No Exception happened");
+        }
+        catch (ArgumentException) { }
+    }
+
+
+    [Theory]
+    [InlineData("PreLoad#module#", $"PreLoad{MODULE}")]
+    [InlineData("#module#", $"{MODULE}")]
+    [InlineData("#module##module##module#", $"{MODULE}{MODULE}{MODULE}")]
+    [InlineData("test2", $"test2")]
+    [InlineData("", "")]
+    public void PreLoadNamePattern_ParsingWorks(string naming, string expected) {
+        PreLoadNamePattern preLoadNaming = new(naming, NameTransform.None);
+
+        StringBuilder builder = new();
+        foreach (string str in preLoadNaming.GetNaming(MODULE))
+            builder.Append(str);
+        string result = builder.ToString();
+
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData(NameTransform.None, "#module##module##module#", $"{MODULE}{MODULE}{MODULE}")]
+    [InlineData(NameTransform.UpperCase, "#module#", "MODULE")]
+    [InlineData(NameTransform.LowerCase, "#module#", "module")]
+    [InlineData(NameTransform.FirstLowerCase, "#module#", "module")]
+    public void PreLoadNamePattern_TransformWorks(NameTransform module, string naming, string expected) {
+        PreLoadNamePattern preLoadNaming = new(naming, module);
+
+        StringBuilder builder = new();
+        foreach (string str in preLoadNaming.GetNaming(MODULE))
+            builder.Append(str);
+        string result = builder.ToString();
+
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("#wrong#")]
+    [InlineData("#function#")]
+    [InlineData("#action#")]
+    [InlineData("test#")]
+    [InlineData("#test")]
+    [InlineData("##")]
+    [InlineData("#modole#")]
+    [InlineData("test#function#")]
+    public void PreLoadNamePattern_ThrowsException_WhenWrongNamingPattern(string naming) {
+        try {
+            PreLoadNamePattern preLoadNaming = new(naming, NameTransform.None);
+            Assert.Fail("No Exception happened");
+        }
+        catch (ArgumentException) { }
+    }
+
     #endregion
 }

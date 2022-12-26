@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json.Nodes;
+using TSRuntime.Core.Configs.NamePattern;
 
 namespace TSRuntime.Core.Configs;
 
@@ -33,8 +34,17 @@ public sealed record class Config {
     private const NameTransform MODULE_TRANSFORM = NameTransform.None;
     private const NameTransform ACTION_TRANSFORM = NameTransform.None;
 
+    public PreLoadNamePattern PreLoadNamePattern { get; init; } = new(PRE_LOAD_NAME_PATTERN, PRE_LOAD_MODULE_TRANSFORM);
+    private const string PRE_LOAD_NAME_PATTERN = "PreLoad#module#";
+    private const NameTransform PRE_LOAD_MODULE_TRANSFORM = NameTransform.None;
+
+    public string PreLoadAllModulesName = PRE_LOAD_ALL_MODULES_NAME;
+    private const string PRE_LOAD_ALL_MODULES_NAME = "AllModules";
+
+
     public string[] UsingStatements { get; init; } = new string[1] { USING_STATEMENT };
     private const string USING_STATEMENT = "Microsoft.AspNetCore.Components";
+
 
     public Dictionary<string, string> TypeMap { get; init; } = TypeMapDefault;
     private static Dictionary<string, string> TypeMapDefault => new() {
@@ -114,13 +124,18 @@ public sealed record class Config {
                 "module transform": "{{FunctionNamePattern.ModuleTransform}}",
                 "action transform": "{{FunctionNamePattern.ActionTransform}}"
               },
+              "preload name pattern": {
+                "pattern": "{{PreLoadNamePattern.NamePattern}}",
+                "module transform": "{{PreLoadNamePattern.ModuleTransform}}",
+                "all modules name": "{{PRE_LOAD_ALL_MODULES_NAME}}"
+              },
               "using statements": [{{usingStatements}}],
               "type map": {{{typeMap}}}
             }
 
             """;
     }
-    
+
     public static Config FromJson(string json) {
         JsonNode root = JsonNode.Parse(json) ?? throw new ArgumentException($"json is not in a valid format:\n{json}");
 
@@ -152,7 +167,13 @@ public sealed record class Config {
                 Enum.TryParse(((string?)root["function name pattern"]?["function transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform functionTransform) ? functionTransform : FUNCTION_TRANSFORM,
                 Enum.TryParse(((string?)root["function name pattern"]?["module transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform moduleTransform) ? moduleTransform : MODULE_TRANSFORM,
                 Enum.TryParse(((string?)root["function name pattern"]?["action transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform actionTransform) ? actionTransform : ACTION_TRANSFORM),
+            
+            PreLoadNamePattern = new PreLoadNamePattern(
+                (string?)root["preload name pattern"]?["pattern"] ?? PRE_LOAD_NAME_PATTERN,
+                Enum.TryParse(((string?)root["preload name pattern"]?["module transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform preLoadModuleTransform) ? preLoadModuleTransform : PRE_LOAD_MODULE_TRANSFORM),
 
+            PreLoadAllModulesName = (string?)root["preload name pattern"]?["all modules name"] ?? PRE_LOAD_ALL_MODULES_NAME,
+            
             UsingStatements = root["using statements"]?.ToStringArray() ?? new string[1] { USING_STATEMENT },
 
             TypeMap = root["type map"]?.ToStringDictionary() ?? TypeMapDefault
@@ -160,4 +181,20 @@ public sealed record class Config {
     }
 
     #endregion
+}
+
+file static class JsonNodeExtension {
+    internal static string[] ToStringArray(this JsonNode node) => node.AsArray().Select((JsonNode? node) => (string?)node ?? throw NullNotAllowed).ToArray();
+
+    internal static Dictionary<string, string> ToStringDictionary(this JsonNode node) {
+        JsonObject jsonObject = node.AsObject();
+        Dictionary<string, string> result = new(jsonObject.Count);
+
+        foreach (KeyValuePair<string, JsonNode?> item in jsonObject)
+            result.Add(item.Key, (string?)item.Value ?? throw NullNotAllowed);
+
+        return result;
+    }
+
+    private static ArgumentException NullNotAllowed => new("null is not allowed - use string literal \"null\" instead");
 }

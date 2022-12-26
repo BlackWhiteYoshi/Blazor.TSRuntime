@@ -20,6 +20,11 @@
     "module transform": "none",
     "action transform": "none"
   },
+  "preload name pattern": {
+    "pattern": "PreLoad#module#",
+    "module transform": "none",
+    "all modules name": "AllModules"
+  },
   "using statements": [ "Microsoft.AspNetCore.Components" ],
   "type map": {
     "number": "double",
