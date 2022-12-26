@@ -226,15 +226,31 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 methodName = "InvokeAsync";
             }
 
-            return $"""
+            return $$"""
                     /// <summary>
-                    /// Invokes in module `module.ModuleName` the js-function `function.Name` {summaryDescription}.
+                    /// Invokes in module `module.ModuleName` the js-function `function.Name` {{summaryDescription}}.
                     /// </summary>
-                {SUMMARY_PARAMETERS}
+                {{SUMMARY_PARAMETERS}}
                     /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
                     /// <returns></returns>
-                    public {MAPPED_ASYNC} {GetFunctionNamePattern(methodName)}({PARAMETERS}CancellationToken cancellationToken = default)
-                        =>{MAPPED_AWAIT} Invoke{methodName}<{MAPPED_IJS_VOID_RESULT}>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{ARGUMENTS});
+                ``
+                if (returnTypeMapped == "void") {
+                `+
+                    public Task {{GetFunctionNamePattern(methodName)}}({{PARAMETERS}}CancellationToken cancellationToken = default) {
+                        ValueTask<IJSVoidResult> task = {{methodName}}<IJSVoidResult>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
+                        return task.IsCompleted ? Task.CompletedTask : task.AsTask();
+                    }
+                ``
+                }
+                `-
+                ``
+                else {
+                `+
+                    public ValueTask<`returnTypeMapped`> {{GetFunctionNamePattern(methodName)}}({{PARAMETERS}}CancellationToken cancellationToken = default)
+                        => {{methodName}}<`returnTypeMapped`>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
+                ``
+                }
+                `-
                 """;
         }
 
@@ -495,25 +511,6 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             yield return "IJSVoidResult";
         else
             yield return returnTypeMapped;
-        ``
-        """;
-
-    private const string MAPPED_ASYNC = """
-        ``
-        if (returnTypeMapped == "void")
-            yield return "async ValueTask";
-        else {
-            yield return "ValueTask<";
-            yield return returnTypeMapped;
-            yield return ">";
-        }
-        ``
-        """;
-
-    private const string MAPPED_AWAIT = """
-        ``
-        if (returnTypeMapped == "void")
-            yield return " await";
         ``
         """;
 
