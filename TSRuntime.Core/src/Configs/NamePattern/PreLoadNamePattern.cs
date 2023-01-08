@@ -1,15 +1,35 @@
 ﻿namespace TSRuntime.Core.Configs.NamePattern;
 
+/// <summary>
+/// Naming of the generated methods that pre loads js-modules.
+/// </summary>
 public struct PreLoadNamePattern : IEquatable<PreLoadNamePattern>
 {
     private const string MODULE = "#module#";
 
     
     private readonly List<OutputBlock> outputList = new(2); // default "PreLoad#module#" are 2 entries
+    /// <summary>
+    /// <para>The name pattern for creating the method name.</para>
+    /// <para>placeholder:<br />
+    /// #module#</para>
+    /// </summary>
     public string NamePattern { get; }
+    /// <summary>
+    /// Upper/Lower case transform for the #module# placeholder.
+    /// </summary>
     public NameTransform ModuleTransform { get; }
-    
 
+
+    /// <summary>
+    /// Parses the given namePattern to construct an <see cref="outputList">outputList</see>.
+    /// </summary>
+    /// <param name="namePattern">
+    /// <para>The name pattern for creating the method name.</para>
+    /// <para>placeholder:<br />
+    /// #module#</para></param>
+    /// <param name="moduleTransform">Upper/Lower case transform for the #module# placeholder.</param>
+    /// <exception cref="ArgumentException">Throws when an invalid placeholder in namePattern is used e.g. #invalid#</exception>
     public PreLoadNamePattern(string namePattern, NameTransform moduleTransform)
     {
         NamePattern = namePattern;
@@ -46,6 +66,12 @@ public struct PreLoadNamePattern : IEquatable<PreLoadNamePattern>
         }
     }
 
+    /// <summary>
+    /// Returns the name of the method based on the values of this object and the given parameters.
+    /// </summary>
+    /// <param name="module">Name of the module.</param>
+    /// <returns></returns>
+    /// <exception cref="Exception">Throws when this object is created with an invalid enum value.</exception>
     public IEnumerable<string> GetNaming(string module)
     {
         string moduleName = ModuleTransform.Transform(module);

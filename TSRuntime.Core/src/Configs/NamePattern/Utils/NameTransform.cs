@@ -1,11 +1,33 @@
 ﻿namespace TSRuntime.Core.Configs.NamePattern;
 
+/// <summary>
+/// Transforms a placeholder in the name pattern.
+/// </summary>
 public enum NameTransform
 {
+    /// <summary>
+    /// No Transform.
+    /// </summary>
     None,
+
+    /// <summary>
+    /// Changes the first letter to uppercase.
+    /// </summary>
     FirstUpperCase,
+
+    /// <summary>
+    /// Changes the first letter to lowercase.
+    /// </summary>
     FirstLowerCase,
+
+    /// <summary>
+    /// Changes all letters to uppercase.
+    /// </summary>
     UpperCase,
+
+    /// <summary>
+    /// Changes all letters to lowercase.
+    /// </summary>
     LowerCase
 }
 

@@ -1,5 +1,8 @@
 ﻿namespace TSRuntime.Core.Configs.NamePattern;
 
+/// <summary>
+/// Naming of the generated methods that invoke js-functions.
+/// </summary>
 public struct FunctionNamePattern : IEquatable<FunctionNamePattern>
 {
     private const string FUNCTION = "#function#";
@@ -8,12 +11,42 @@ public struct FunctionNamePattern : IEquatable<FunctionNamePattern>
 
     
     private readonly List<OutputBlock> outputList = new(1); // default "#function#" is 1 entry
+    /// <summary>
+    /// <para>The name pattern for creating the method name.</para>
+    /// <para>placeholder:<br />
+    /// #function#<br />
+    /// #module#<br />
+    /// #action#</para>
+    /// </summary>
     public string NamePattern { get; }
+    /// <summary>
+    /// Upper/Lower case transform for the #function# placeholder.
+    /// </summary>
     public NameTransform FunctionTransform { get; }
+    /// <summary>
+    /// Upper/Lower case transform for the #module# placeholder.
+    /// </summary>
     public NameTransform ModuleTransform { get; }
+    /// <summary>
+    /// Upper/Lower case transform for the #action# placeholder.
+    /// </summary>
     public NameTransform ActionTransform { get; }
 
 
+    /// <summary>
+    /// Parses the given namePattern to construct an <see cref="outputList">outputList</see>.
+    /// </summary>
+    /// <param name="namePattern">
+    /// <para>The name pattern for creating the method name.</para>
+    /// <para>placeholder:<br />
+    /// #function#<br />
+    /// #module#<br />
+    /// #action#</para>
+    /// </param>
+    /// <param name="functionTransform">Upper/Lower case transform for the #function# placeholder.</param>
+    /// <param name="moduleTransform">Upper/Lower case transform for the #module# placeholder.</param>
+    /// <param name="actionTransform">Upper/Lower case transform for the #action# placeholder.</param>
+    /// <exception cref="ArgumentException">Throws when an invalid placeholder in namePattern is used e.g. #invalid#</exception>
     public FunctionNamePattern(string namePattern, NameTransform functionTransform, NameTransform moduleTransform, NameTransform actionTransform)
     {
         NamePattern = namePattern;
@@ -63,6 +96,14 @@ public struct FunctionNamePattern : IEquatable<FunctionNamePattern>
         }
     }
 
+    /// <summary>
+    /// Returns the name of the method based on the values of this object and the given parameters.
+    /// </summary>
+    /// <param name="function">Name of the function.</param>
+    /// <param name="module">Name of the module.</param>
+    /// <param name="action">Name of the action.</param>
+    /// <returns></returns>
+    /// <exception cref="Exception">Throws when this object is created with one or more invalid enum values.</exception>
     public IEnumerable<string> GetNaming(string function, string module, string action)
     {
         string functionName = FunctionTransform.Transform(function);
