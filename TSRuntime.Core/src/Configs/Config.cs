@@ -82,7 +82,7 @@ public sealed record class Config {
     /// <summary>
     /// Naming of the generated method that pre loads all modules.
     /// </summary>
-    public string PreLoadAllModulesName = PRE_LOAD_ALL_MODULES_NAME;
+    public string PreLoadAllModulesName { get; init; } = PRE_LOAD_ALL_MODULES_NAME;
     private const string PRE_LOAD_ALL_MODULES_NAME = "AllModules";
 
 
