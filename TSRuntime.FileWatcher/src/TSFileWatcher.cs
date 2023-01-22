@@ -3,6 +3,10 @@ using TSRuntime.Core.Parsing;
 
 namespace TSRuntime.FileWatching;
 
+/// <summary>
+/// <para>Watches module folder specified in <see cref="Config.DeclarationPath"/> and the config file tsconfig.tsruntime.json.</para>
+/// <para>When a change is detected, <see cref="syntaxTree"/> / <see cref="Config"/> is updated accordingly.</para>
+/// </summary>
 public sealed class TSFileWatcher : IDisposable {
     private readonly FileSystemWatcher configWatcher;
     private readonly FileSystemWatcher moduleWatcher;
@@ -21,8 +25,8 @@ public sealed class TSFileWatcher : IDisposable {
 
 
     /// <summary>
-    /// <para>Watches module folder specified in <see cref="Config.DeclarationPath"/> and the config file tsconfig.tsruntime.json.</para>
-    /// <para>When a change is detected, <see cref="syntaxTree"/> / <see cref="Config"/> is updated accordingly.</para>
+    /// <para>Creates an instance of <see cref="TSFileWatcher"/> without proactive initializing the syntaxTree.</para>
+    /// <para>To initialize the syntaxTree, call <see cref="CreateSyntaxTreeAsync"/>.</para>
     /// </summary>
     /// <param name="config">If null, default config is supplied.</param>
     /// <param name="basePath">Directory where tsconfig.tsruntime.json file is located.<br />It's also the starting point for relative pathes.</param>
@@ -45,7 +49,7 @@ public sealed class TSFileWatcher : IDisposable {
 
 
     /// <summary>
-    /// Parses all files and recreate the SyntaxTree.
+    /// Parses all files and recreate the syntaxTree.
     /// </summary>
     /// <returns></returns>
     public async Task CreateSyntaxTreeAsync() {
@@ -76,7 +80,7 @@ public sealed class TSFileWatcher : IDisposable {
 
         watcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite;
 
-        watcher.IncludeSubdirectories = true;
+        watcher.IncludeSubdirectories = false;
         watcher.EnableRaisingEvents = true;
 
         return watcher;
@@ -87,7 +91,7 @@ public sealed class TSFileWatcher : IDisposable {
 
     private void OnConfigCreated(object sender, FileSystemEventArgs e) => UpdateConfig(e.FullPath.Replace('\\', '/'));
 
-    private void OnConfigDeleted(object sender, FileSystemEventArgs e) => UpdateConfig(new Config());
+    private void OnConfigDeleted(object sender, FileSystemEventArgs e) => _ = UpdateConfig(new Config());
 
     private void OnConfigRenamed(object sender, RenamedEventArgs e) {
         if (e.Name == Config.JSON_FILE_NAME)
@@ -119,15 +123,14 @@ public sealed class TSFileWatcher : IDisposable {
                 }
                 catch (IOException) {
                     await Task.Delay(1000);
-                    continue;
                 }
             }
 
-            me.UpdateConfig(Config.FromJson(json));
+            await me.UpdateConfig(Config.FromJson(json));
         }
     }
     
-    private void UpdateConfig(Config config) {
+    private Task UpdateConfig(Config config) {
         Config oldConfig = Config;
         Config = config;
 
@@ -140,45 +143,47 @@ public sealed class TSFileWatcher : IDisposable {
 
         if (Config.DeclarationPath != oldConfig.DeclarationPath) {
             declarationPath = Path.Combine(basePath, Config.DeclarationPath);
-            _ = CreateSyntaxTreeAsync();
-            return;
+            return CreateSyntaxTreeAsync();
         }
         
         if (Config.ModuleInvokeEnabled != oldConfig.ModuleInvokeEnabled)
-            { ITSRuntimeChanged?.Invoke(syntaxTree); return; }
+            return CreateSyntaxTreeAsync();
 
         if (Config.ModuleTrySyncEnabled != oldConfig.ModuleTrySyncEnabled)
-            { ITSRuntimeChanged?.Invoke(syntaxTree); return; }
+            return CreateSyntaxTreeAsync();
 
         if (Config.ModuleAsyncEnabled != oldConfig.ModuleAsyncEnabled)
-            { ITSRuntimeChanged?.Invoke(syntaxTree); return; }
+            return CreateSyntaxTreeAsync();
 
         if (Config.JSRuntimeInvokeEnabled != oldConfig.JSRuntimeInvokeEnabled)
-            { ITSRuntimeChanged?.Invoke(syntaxTree); return; }
+            return CreateSyntaxTreeAsync();
 
         if (Config.JSRuntimeTrySyncEnabled != oldConfig.JSRuntimeTrySyncEnabled)
-            { ITSRuntimeChanged?.Invoke(syntaxTree); return; }
+            return CreateSyntaxTreeAsync();
 
         if (Config.JSRuntimeAsyncEnabled != oldConfig.JSRuntimeAsyncEnabled)
-            { ITSRuntimeChanged?.Invoke(syntaxTree); return; }
+            return CreateSyntaxTreeAsync();
 
         if (Config.FunctionNamePattern != oldConfig.FunctionNamePattern)
-            { ITSRuntimeChanged?.Invoke(syntaxTree); return; }
+            return CreateSyntaxTreeAsync();
 
         if (Config.UsingStatements.Length != oldConfig.UsingStatements.Length)
-            { ITSRuntimeChanged?.Invoke(syntaxTree); return; }
+            return CreateSyntaxTreeAsync();
         for (int i = 0; i < Config.UsingStatements.Length; i++)
             if (Config.UsingStatements[i] != oldConfig.UsingStatements[i])
-                { ITSRuntimeChanged?.Invoke(syntaxTree); return; }
+                return CreateSyntaxTreeAsync();
 
-        if (Config.TypeMap.Count != oldConfig.TypeMap.Count) { ITSRuntimeChanged?.Invoke(syntaxTree); return; }
+        if (Config.TypeMap.Count != oldConfig.TypeMap.Count)
+            return CreateSyntaxTreeAsync();
         foreach (KeyValuePair<string, string> pair in Config.TypeMap) {
             if (!oldConfig.TypeMap.TryGetValue(pair.Key, out string value))
-                { ITSRuntimeChanged?.Invoke(syntaxTree); return; }
+                return CreateSyntaxTreeAsync();
 
             if (pair.Value != value)
-                { ITSRuntimeChanged?.Invoke(syntaxTree); return; }
+                return CreateSyntaxTreeAsync();
         }
+
+        return Task.CompletedTask;
     }
 
     #endregion
@@ -228,26 +233,28 @@ public sealed class TSFileWatcher : IDisposable {
 
     private void OnModuleDeleted(object sender, FileSystemEventArgs e) {
         string path = e.FullPath.Replace('\\', '/');
-        if (moduleMap.TryGetValue(path, out int index))
+        if (moduleMap.TryGetValue(path, out int index)) {
             lock (syntaxTree) {
                 moduleMap.Remove(path);
                 syntaxTree.ModuleList.RemoveAt(index);
-
-                ITSRuntimeChanged?.Invoke(syntaxTree);
             }
+
+            _ = CreateSyntaxTreeAsync();
+        }
     }
 
     private void OnModuleRenamed(object sender, RenamedEventArgs e) {
         string oldPath = e.OldFullPath.Replace('\\', '/');
         string newPath = e.FullPath.Replace('\\', '/');
-        if (moduleMap.TryGetValue(oldPath, out int index)) 
+        if (moduleMap.TryGetValue(oldPath, out int index)) {
             lock (syntaxTree) {
                 moduleMap.Remove(oldPath);
                 moduleMap.Add(newPath, index);
                 syntaxTree.ModuleList[index].ParseMetaData(newPath, declarationPath);
-
-                ITSRuntimeChanged?.Invoke(syntaxTree);
             }
+
+            _ = CreateSyntaxTreeAsync();
+        }
     }
 
 
@@ -272,7 +279,7 @@ public sealed class TSFileWatcher : IDisposable {
     private async Task UpdateModules() {
         await Task.Delay(500);
 
-        while (true) {
+        while (dirtyModules.Count > 0) {
             foreach (TSModule module in dirtyModules) {
                 try {
                     await module.ParseFunctions();
@@ -288,22 +295,18 @@ public sealed class TSFileWatcher : IDisposable {
                     TSModule dirtyModule = syntaxTree.ModuleList[index];
                     lock (syntaxTree) {
                         dirtyModule.FunctionList = module.FunctionList;
-                        ITSRuntimeChanged?.Invoke(syntaxTree);
                     }
+                    await CreateSyntaxTreeAsync();
                 }
                 else {
                     // new module, add to syntaxTree
                     lock (syntaxTree) {
                         moduleMap.Add(module.FilePath, syntaxTree.ModuleList.Count);
                         syntaxTree.ModuleList.Add(module);
-
-                        ITSRuntimeChanged?.Invoke(syntaxTree);
                     }
+                    await CreateSyntaxTreeAsync();
                 }
             }
-
-            if (dirtyModules.Count > 0)
-                break;
 
             await Task.Delay(1000);
         }
