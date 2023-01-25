@@ -85,7 +85,7 @@ public sealed class GenratorParserTest {
     }
 
     [Fact]
-    public void Emptry_ConvertsTo_Empty() {
+    public void Empty_ConvertsTo_Empty() {
         string result = new Parser().ParseAndGetContent(string.Empty);
 
         Assert.Equal(string.Empty, result);

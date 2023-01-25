@@ -62,9 +62,8 @@ public sealed class Parser {
                 }
 
                 str = str[(index + 2)..];
-                if (str.Length >= Environment.NewLine.Length)
-                    if (str[..Environment.NewLine.Length].CompareTo(Environment.NewLine.AsSpan(), StringComparison.Ordinal) == 0)
-                        str = str[Environment.NewLine.Length..];
+                if (str is ['\n', .. ReadOnlySpan<char> remaining])
+                    str = remaining;
             }
             // single tick
             else {
@@ -84,15 +83,13 @@ public sealed class Parser {
 
     private void WriteString(ReadOnlySpan<char> str, int indentation) {
         Indent(indentation);
-        builder.Append("yield return \"\"\"");
-        builder.AppendLine();
+        builder.Append("yield return \"\"\"\n");
 
         IndentWriting(str, indentation + 1);
-        builder.AppendLine();
+        builder.Append('\n');
 
         Indent(indentation + 1);
-        builder.Append("\"\"\";");
-        builder.AppendLine();
+        builder.Append("\"\"\";\n");
     }
 
     private void WriteVar(ReadOnlySpan<char> var, int indentation) {
@@ -101,13 +98,12 @@ public sealed class Parser {
         builder.Append("yield return ");
         builder.Append(var);
         builder.Append(';');
-
-        builder.AppendLine();
+        builder.Append('\n');
     }
 
     private void WriteCode(ReadOnlySpan<char> code, int indentation) {
         IndentWriting(code.Trim(), indentation);
-        builder.AppendLine();
+        builder.Append('\n');
     }
 
 
@@ -115,15 +111,15 @@ public sealed class Parser {
         while (true) {
             Indent(indentation);
 
-            int nextPos = lines.IndexOf(Environment.NewLine.AsSpan());
+            int nextPos = lines.IndexOf('\n');
             if (nextPos == -1) {
                 builder.Append(lines);
                 break;
             }
             builder.Append(lines[..nextPos]);
-            lines = lines[(nextPos + Environment.NewLine.Length)..];
+            lines = lines[(nextPos + 1)..];
 
-            builder.AppendLine();
+            builder.Append('\n');
         }
     }
 
