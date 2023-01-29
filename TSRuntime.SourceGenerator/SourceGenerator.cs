@@ -26,7 +26,12 @@ public sealed class SourceGenerator : ISourceGenerator, IDisposable {
     }
 
 
-    public void Dispose() => fileWatcher?.Dispose();
+    public void Dispose() {
+        fileWatcher?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    ~SourceGenerator() => fileWatcher?.Dispose();
 
 
     public void Initialize(GeneratorInitializationContext context) { }
