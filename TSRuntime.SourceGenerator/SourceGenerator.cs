@@ -15,12 +15,12 @@ public sealed class SourceGenerator : ISourceGenerator, IDisposable {
     private string source = string.Empty;
     private readonly StringBuilder sourceBuilder = new(10000);
 
-    private void CreateITSRuntimeContentString(TSSyntaxTree syntaxTree) {
+    private void CreateITSRuntimeContentString(TSStructureTree structureTree) {
         if (fileWatcher == null)
             return;
 
         sourceBuilder.Clear();
-        foreach (string str in Generator.GetITSRuntimeContent(syntaxTree, fileWatcher.Config))
+        foreach (string str in Generator.GetITSRuntimeContent(structureTree, fileWatcher.Config))
             sourceBuilder.Append(str);
         source = sourceBuilder.ToString();
     }
@@ -50,7 +50,7 @@ public sealed class SourceGenerator : ISourceGenerator, IDisposable {
 
             fileWatcher = new TSFileWatcher(config, Path.GetDirectoryName(file.Path));
             fileWatcher.ITSRuntimeChanged += CreateITSRuntimeContentString;
-            fileWatcher.CreateSyntaxTreeAsync().GetAwaiter().GetResult();
+            fileWatcher.CreateStructureTree().GetAwaiter().GetResult();
         }
 
         context.AddSource(fileWatcher.Config.FileOutputClass, Generator.TSRuntimeContent);

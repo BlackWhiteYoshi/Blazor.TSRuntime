@@ -26,7 +26,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 namespace TSRuntime.Core.Generation;
         
                 public static partial class Generator {
-                    public static partial IEnumerable<string> GetITSRuntimeContent(TSSyntaxTree syntaxTree, Config config) {
+                    public static partial IEnumerable<string> GetITSRuntimeContent(TSStructureTree structureTree, Config config) {
                 {{parser.GetContent()}}    }
                 }
 
@@ -74,14 +74,14 @@ public sealed class SourceGenerator : IIncrementalGenerator {
     /// Includes the PreLoad_"moduleName" functions and the GetOrLoadModule declaration.
     /// </summary>
     private readonly string preLoad = $$"""
-            protected const int MODULE_COUNT = `syntaxTree.ModuleList.Count.ToString()`;
+            protected const int MODULE_COUNT = `structureTree.ModuleList.Count.ToString()`;
         
             protected IJSRuntime JsRuntime { get; }
         
         
         ``
-        for (int i = 0; i < syntaxTree.ModuleList.Count; i++) {
-            TSModule module = syntaxTree.ModuleList[i];
+        for (int i = 0; i < structureTree.ModuleList.Count; i++) {
+            TSModule module = structureTree.ModuleList[i];
             string index = i.ToString();
         `+
             /// <summary>
@@ -100,8 +100,8 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             /// </summary>
             public Task {{PreLoadNamePattern("config.PreLoadAllModulesName")}}() {
         ``
-        for (int i = 0; i < syntaxTree.ModuleList.Count; i++) {
-            TSModule module = syntaxTree.ModuleList[i];
+        for (int i = 0; i < structureTree.ModuleList.Count; i++) {
+            TSModule module = structureTree.ModuleList[i];
         `+
                 {{PreLoadNamePattern("module.ModuleName")}}();
         ``
@@ -137,8 +137,8 @@ public sealed class SourceGenerator : IIncrementalGenerator {
     /// </summary>
     private readonly string createModule = $$"""
             ``
-            for (int i = 0; i < syntaxTree.ModuleList.Count; i++) {
-                TSModule module = syntaxTree.ModuleList[i];
+            for (int i = 0; i < structureTree.ModuleList.Count; i++) {
+                TSModule module = structureTree.ModuleList[i];
                 string index = i.ToString();
             `+
         

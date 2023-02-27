@@ -2,9 +2,9 @@
 
 /// <summary>
 /// <para>Represents a parsing result.</para> 
-/// <para>It's not a typically syntax-tree, but you can see this as the root and the children are the items in <see cref="ModuleList"/> and <see cref="FunctionList"/>.</para>
+/// <para>The result is a tree like structure, where this is the root and the children are the items in <see cref="ModuleList"/> and <see cref="FunctionList"/>.</para>
 /// </summary>
-public sealed class TSSyntaxTree {
+public sealed class TSStructureTree {
     /// <summary>
     /// Contains a list of js-files that are typically imported as modules. 
     /// </summary>

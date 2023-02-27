@@ -18,7 +18,7 @@ public sealed class CoreGeneratorTest {
     [Fact]
     public void GetITSRuntimeContent_IsNotEmpty() {
         StringBuilder builder = new(10000);
-        foreach (string str in Generator.GetITSRuntimeContent(new TSSyntaxTree(), new Config()))
+        foreach (string str in Generator.GetITSRuntimeContent(new TSStructureTree(), new Config()))
             builder.Append(str);
         string result = builder.ToString();
 

@@ -113,20 +113,20 @@ public sealed class CoreParserTest {
     #endregion
 
 
-    #region TSSyntaxTree
+    #region TSStructureTree
 
     [Fact]
-    public async Task SyntaxTree_ParseModulesParsesEvery_d_ts_File() {
-        TSSyntaxTree syntaxTree = new();
-        await syntaxTree.ParseModules("./");
+    public async Task StructureTree_ParseModulesParsesEvery_d_ts_File() {
+        TSStructureTree structureTree = new();
+        await structureTree.ParseModules("./");
 
-        Assert.Equal(2, syntaxTree.ModuleList.Count);
-        Assert.Empty(syntaxTree.FunctionList);
+        Assert.Equal(2, structureTree.ModuleList.Count);
+        Assert.Empty(structureTree.FunctionList);
     }
 
     [Fact]
-    public void SyntaxTree_ParseFunctionsThrowsNotImplementedException() {
-        Assert.Throws<NotImplementedException>(() => new TSSyntaxTree().ParseFunctions(string.Empty));
+    public void StructureTree_ParseFunctionsThrowsNotImplementedException() {
+        Assert.Throws<NotImplementedException>(() => new TSStructureTree().ParseFunctions(string.Empty));
     }
 
     #endregion

@@ -5,13 +5,13 @@ namespace TSRuntime.FileWatching;
 
 /// <summary>
 /// <para>Watches module folder specified in <see cref="Config.DeclarationPath"/> and the config file tsconfig.tsruntime.json.</para>
-/// <para>When a change is detected, <see cref="syntaxTree"/> / <see cref="Config"/> is updated accordingly.</para>
+/// <para>When a change is detected, <see cref="structureTree"/> / <see cref="Config"/> is updated accordingly.</para>
 /// </summary>
 public sealed class TSFileWatcher : IDisposable {
     private readonly FileSystemWatcher configWatcher;
     private readonly FileSystemWatcher moduleWatcher;
 
-    private readonly TSSyntaxTree syntaxTree = new();
+    private readonly TSStructureTree structureTree = new();
     private readonly Dictionary<string, int> moduleMap = new();
 
 
@@ -21,12 +21,12 @@ public sealed class TSFileWatcher : IDisposable {
 
     public event Action? TSRuntimeLocationChanged;
     public event Action? ITSRuntimeLocationChanged;
-    public event Action<TSSyntaxTree>? ITSRuntimeChanged;
+    public event Action<TSStructureTree>? ITSRuntimeChanged;
 
 
     /// <summary>
-    /// <para>Creates an instance of <see cref="TSFileWatcher"/> without proactive initializing the syntaxTree.</para>
-    /// <para>To initialize the syntaxTree, call <see cref="CreateSyntaxTreeAsync"/>.</para>
+    /// <para>Creates an instance of <see cref="TSFileWatcher"/> without proactive initializing the structureTree.</para>
+    /// <para>To initialize the structureTree, call <see cref="CreateStructureTree"/>.</para>
     /// </summary>
     /// <param name="config">If null, default config is supplied.</param>
     /// <param name="basePath">Directory where tsconfig.tsruntime.json file is located.<br />It's also the starting point for relative pathes.</param>
@@ -49,21 +49,21 @@ public sealed class TSFileWatcher : IDisposable {
 
 
     /// <summary>
-    /// Parses all files and recreate the syntaxTree.
+    /// Parses all files and recreate the structureTree.
     /// </summary>
     /// <returns></returns>
-    public async Task CreateSyntaxTreeAsync() {
-        TSSyntaxTree localSyntaxTree = new();
-        await localSyntaxTree.ParseModules(declarationPath);
+    public async Task CreateStructureTree() {
+        TSStructureTree localStructureTree = new();
+        await localStructureTree.ParseModules(declarationPath);
 
-        lock (syntaxTree) {
-            syntaxTree.ModuleList.Clear();
+        lock (structureTree) {
+            structureTree.ModuleList.Clear();
             moduleMap.Clear();
-            syntaxTree.ModuleList.AddRange(localSyntaxTree.ModuleList);
-            for (int i = 0; i < syntaxTree.ModuleList.Count; i++)
-                moduleMap.Add(localSyntaxTree.ModuleList[i].FilePath, i);
+            structureTree.ModuleList.AddRange(localStructureTree.ModuleList);
+            for (int i = 0; i < structureTree.ModuleList.Count; i++)
+                moduleMap.Add(localStructureTree.ModuleList[i].FilePath, i);
 
-            ITSRuntimeChanged?.Invoke(syntaxTree);
+            ITSRuntimeChanged?.Invoke(structureTree);
         }
     }
 
@@ -143,44 +143,44 @@ public sealed class TSFileWatcher : IDisposable {
 
         if (Config.DeclarationPath != oldConfig.DeclarationPath) {
             declarationPath = Path.Combine(basePath, Config.DeclarationPath);
-            return CreateSyntaxTreeAsync();
+            return CreateStructureTree();
         }
         
         if (Config.ModuleInvokeEnabled != oldConfig.ModuleInvokeEnabled)
-            return CreateSyntaxTreeAsync();
+            return CreateStructureTree();
 
         if (Config.ModuleTrySyncEnabled != oldConfig.ModuleTrySyncEnabled)
-            return CreateSyntaxTreeAsync();
+            return CreateStructureTree();
 
         if (Config.ModuleAsyncEnabled != oldConfig.ModuleAsyncEnabled)
-            return CreateSyntaxTreeAsync();
+            return CreateStructureTree();
 
         if (Config.JSRuntimeInvokeEnabled != oldConfig.JSRuntimeInvokeEnabled)
-            return CreateSyntaxTreeAsync();
+            return CreateStructureTree();
 
         if (Config.JSRuntimeTrySyncEnabled != oldConfig.JSRuntimeTrySyncEnabled)
-            return CreateSyntaxTreeAsync();
+            return CreateStructureTree();
 
         if (Config.JSRuntimeAsyncEnabled != oldConfig.JSRuntimeAsyncEnabled)
-            return CreateSyntaxTreeAsync();
+            return CreateStructureTree();
 
         if (Config.FunctionNamePattern != oldConfig.FunctionNamePattern)
-            return CreateSyntaxTreeAsync();
+            return CreateStructureTree();
 
         if (Config.UsingStatements.Length != oldConfig.UsingStatements.Length)
-            return CreateSyntaxTreeAsync();
+            return CreateStructureTree();
         for (int i = 0; i < Config.UsingStatements.Length; i++)
             if (Config.UsingStatements[i] != oldConfig.UsingStatements[i])
-                return CreateSyntaxTreeAsync();
+                return CreateStructureTree();
 
         if (Config.TypeMap.Count != oldConfig.TypeMap.Count)
-            return CreateSyntaxTreeAsync();
+            return CreateStructureTree();
         foreach (KeyValuePair<string, string> pair in Config.TypeMap) {
             if (!oldConfig.TypeMap.TryGetValue(pair.Key, out string value))
-                return CreateSyntaxTreeAsync();
+                return CreateStructureTree();
 
             if (pair.Value != value)
-                return CreateSyntaxTreeAsync();
+                return CreateStructureTree();
         }
 
         return Task.CompletedTask;
@@ -212,7 +212,7 @@ public sealed class TSFileWatcher : IDisposable {
 
     private void OnModuleChanged(object sender, FileSystemEventArgs e) {
         if (moduleMap.TryGetValue(e.FullPath.Replace('\\', '/'), out int index)) {
-            TSModule module = syntaxTree.ModuleList[index];
+            TSModule module = structureTree.ModuleList[index];
             TSModule localModule = new() {
                 FilePath = module.FilePath,
                 RelativePath = module.RelativePath,
@@ -234,12 +234,12 @@ public sealed class TSFileWatcher : IDisposable {
     private void OnModuleDeleted(object sender, FileSystemEventArgs e) {
         string path = e.FullPath.Replace('\\', '/');
         if (moduleMap.TryGetValue(path, out int index)) {
-            lock (syntaxTree) {
+            lock (structureTree) {
                 moduleMap.Remove(path);
-                syntaxTree.ModuleList.RemoveAt(index);
+                structureTree.ModuleList.RemoveAt(index);
             }
 
-            _ = CreateSyntaxTreeAsync();
+            _ = CreateStructureTree();
         }
     }
 
@@ -247,13 +247,13 @@ public sealed class TSFileWatcher : IDisposable {
         string oldPath = e.OldFullPath.Replace('\\', '/');
         string newPath = e.FullPath.Replace('\\', '/');
         if (moduleMap.TryGetValue(oldPath, out int index)) {
-            lock (syntaxTree) {
+            lock (structureTree) {
                 moduleMap.Remove(oldPath);
                 moduleMap.Add(newPath, index);
-                syntaxTree.ModuleList[index].ParseMetaData(newPath, declarationPath);
+                structureTree.ModuleList[index].ParseMetaData(newPath, declarationPath);
             }
 
-            _ = CreateSyntaxTreeAsync();
+            _ = CreateStructureTree();
         }
     }
 
@@ -271,7 +271,7 @@ public sealed class TSFileWatcher : IDisposable {
     }
 
     /// <summary>
-    /// contains new and local modules, so only modules that are not in syntaxTree
+    /// contains new and local modules, so only modules that are not in structureTree
     /// </summary>
     private readonly HashSet<TSModule> dirtyModules = new();
     private Task moduleUpdater = Task.CompletedTask;
@@ -291,20 +291,20 @@ public sealed class TSFileWatcher : IDisposable {
                 }
 
                 if (moduleMap.TryGetValue(module.FilePath, out int index)) {
-                    // changed module, update the corresponding one in syntaxTree
-                    TSModule dirtyModule = syntaxTree.ModuleList[index];
-                    lock (syntaxTree) {
+                    // changed module, update the corresponding one in structureTree
+                    TSModule dirtyModule = structureTree.ModuleList[index];
+                    lock (structureTree) {
                         dirtyModule.FunctionList = module.FunctionList;
                     }
-                    await CreateSyntaxTreeAsync();
+                    await CreateStructureTree();
                 }
                 else {
-                    // new module, add to syntaxTree
-                    lock (syntaxTree) {
-                        moduleMap.Add(module.FilePath, syntaxTree.ModuleList.Count);
-                        syntaxTree.ModuleList.Add(module);
+                    // new module, add to structureTree
+                    lock (structureTree) {
+                        moduleMap.Add(module.FilePath, structureTree.ModuleList.Count);
+                        structureTree.ModuleList.Add(module);
                     }
-                    await CreateSyntaxTreeAsync();
+                    await CreateStructureTree();
                 }
             }
 

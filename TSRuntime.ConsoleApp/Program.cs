@@ -10,8 +10,8 @@ public static class Program {
         string json = File.ReadAllText("tsconfig.tsruntime.json");
         Config config = Config.FromJson(json);
 
-        TSSyntaxTree syntaxTree = new();
-        await syntaxTree.ParseModules(config.DeclarationPath);
+        TSStructureTree structureTree = new();
+        await structureTree.ParseModules(config.DeclarationPath);
 
         byte[] buffer = new byte[65536];
 
@@ -21,7 +21,7 @@ public static class Program {
         }
 
         using (FileStream fileStream = new(config.FileOutputinterface, FileMode.Create, FileAccess.Write)) {
-            foreach (string fragment in Generator.GetITSRuntimeContent(syntaxTree, config)) {
+            foreach (string fragment in Generator.GetITSRuntimeContent(structureTree, config)) {
                 int count = Encoding.UTF8.GetBytes(fragment, buffer);
                 await fileStream.WriteAsync(buffer.AsMemory(0, count));
             }

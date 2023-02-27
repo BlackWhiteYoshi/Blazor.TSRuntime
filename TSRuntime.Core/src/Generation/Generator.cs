@@ -105,14 +105,14 @@ public static partial class Generator {
         """;
 
     /// <summary>
-    /// <para>Creates the content of the interface "ITSRuntime" based on the given <see cref="TSSyntaxTree">syntaxTree</see> and <see cref="Config">config</see>.</para>
+    /// <para>Creates the content of the interface "ITSRuntime" based on the given <see cref="TSStructureTree">structureTree</see> and <see cref="Config">config</see>.</para>
     /// <para>To avoid string allocations/concationations, the content is delivered as a stream of strings.</para>
     /// <para>This method is source-generated.</para>
     /// </summary>
-    /// <param name="syntaxTree"></param>
+    /// <param name="structureTree"></param>
     /// <param name="config"></param>
     /// <returns></returns>
-    public static partial IEnumerable<string> GetITSRuntimeContent(TSSyntaxTree syntaxTree, Config config);
+    public static partial IEnumerable<string> GetITSRuntimeContent(TSStructureTree structureTree, Config config);
 
 
     /// <summary>
