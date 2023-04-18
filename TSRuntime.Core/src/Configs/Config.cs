@@ -80,10 +80,10 @@ public sealed record class Config {
     private const NameTransform PRE_LOAD_MODULE_TRANSFORM = NameTransform.None;
 
     /// <summary>
-    /// Naming of the generated method that pre loads all modules.
+    /// Naming of the method that pre loads all modules.
     /// </summary>
     public string PreLoadAllModulesName { get; init; } = PRE_LOAD_ALL_MODULES_NAME;
-    private const string PRE_LOAD_ALL_MODULES_NAME = "AllModules";
+    private const string PRE_LOAD_ALL_MODULES_NAME = "PreLoadAllModules";
 
 
     /// <summary>
@@ -231,8 +231,7 @@ public sealed record class Config {
             PreLoadNamePattern = new PreLoadNamePattern(
                 (string?)root["preload name pattern"]?["pattern"] ?? PRE_LOAD_NAME_PATTERN,
                 Enum.TryParse(((string?)root["preload name pattern"]?["module transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform preLoadModuleTransform) ? preLoadModuleTransform : PRE_LOAD_MODULE_TRANSFORM),
-
-            PreLoadAllModulesName = (string?)root["preload name pattern"]?["all modules name"] ?? PRE_LOAD_ALL_MODULES_NAME,
+            PreLoadAllModulesName = (string?)root["preload all modules name"] ?? PRE_LOAD_ALL_MODULES_NAME,
             
             UsingStatements = root["using statements"]?.ToStringArray() ?? new string[1] { USING_STATEMENT },
 

@@ -98,7 +98,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             /// <para>Preloads all modules as javascript-modules.</para>
             /// <para>If already loading, it doesn't trigger a second loading and if any already loaded, these are not loaded again, so if all already loaded, it returns a completed task.</para>
             /// </summary>
-            public Task {{PreLoadNamePattern("config.PreLoadAllModulesName")}}() {
+            public Task `config.PreLoadAllModulesName`() {
         ``
         for (int i = 0; i < structureTree.ModuleList.Count; i++) {
             TSModule module = structureTree.ModuleList[i];

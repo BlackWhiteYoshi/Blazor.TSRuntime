@@ -22,9 +22,9 @@
   },
   "preload name pattern": {
     "pattern": "PreLoad#module#",
-    "module transform": "none",
-    "all modules name": "AllModules"
+    "module transform": "none"
   },
+  "preload all modules name": "PreLoadAllModules",
   "using statements": [ "Microsoft.AspNetCore.Components" ],
   "type map": {
     "number": "double",
