@@ -10,22 +10,22 @@ namespace TSRuntime.Core.Configs;
 public sealed record class Config {
     /// <summary>
     /// <para>Folder where to locate the d.ts declaration files.</para>
-    /// <para>Path relative to this file and no starting or ending slash.</para>
+    /// <para>Path relative to json-file and no starting or ending slash.</para>
     /// </summary>
     public string DeclarationPath { get; init; } = DECLARATION_PATH;
     private const string DECLARATION_PATH = @".typescript-declarations";
 
     /// <summary>
     /// <para>File-path of TSRuntime.</para>
-    /// <para>Path relative to this file and no starting slash.</para>
-    /// <para>At the moment it is unused.</para>
+    /// <para>Path relative to json-file and no starting slash.</para>
+    /// <para>Not used in source generator.</para>
     /// </summary>
     public string FileOutputClass { get; init; } = FILE_OUTPUT_CLASS;
     private const string FILE_OUTPUT_CLASS = "TSRuntime/TSRuntime.cs";
     /// <summary>
     /// <para>File-path of ITSRuntime.</para>
-    /// <para>Path relative to this file and no starting slash.</para>
-    /// <para>At the moment it is unused.</para>
+    /// <para>Path relative to json-file and no starting slash.</para>
+    /// <para>Not used in source generator.</para>
     /// </summary>
     public string FileOutputinterface { get; init; } = FILE_OUTPUT_INTERFACE;
     private const string FILE_OUTPUT_INTERFACE = "TSRuntime/ITSRuntime.cs";
