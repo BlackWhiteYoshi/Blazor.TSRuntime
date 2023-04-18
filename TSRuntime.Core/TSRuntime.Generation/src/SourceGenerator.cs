@@ -156,9 +156,14 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             if (config.ModuleInvokeEnabled) {
             `+
 
-            {{GetInvokeMethod(outParameter: false)}}
-
-            {{GetInvokeMethod(outParameter: true)}}
+                /// <summary>
+                /// <para>Invokes in module `module.ModuleName` the JS-function `function.Name` synchronously.</para>
+                /// <para>If module is not loaded or synchronous is not supported, it fails with an exception.</para>
+                /// </summary>
+            {{SUMMARY_PARAMETERS}}
+                /// <returns>result of the JS-function</returns>
+                public `returnTypeMapped` {{GetFunctionNamePattern("Invoke")}}({{PARAMETERS_WITHOUT_ENDING_COMMA}})
+                    => Invoke<{{MAPPED_IJS_VOID_RESULT}}>(`index`, "`module.ModulePath`", "`function.Name`"{{ARGUMENTS}});
             ``
             }
             `-
@@ -199,41 +204,6 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             `-
             """;
 
-    private static string GetInvokeMethod(bool outParameter) {
-        string summaryOut;
-        string parameters;
-        string argumentOut;
-        if (outParameter) {
-            summaryOut = """
-            
-                /// <param name="success">false when the module is not loaded, otherwise true</param>
-            """;
-            parameters = $"{PARAMETERS}out bool success";
-            argumentOut = "success";
-        }
-        else {
-            summaryOut = string.Empty;
-            parameters = """
-                ``
-                for (int __i = 0; __i < parameters.Count - 1; __i++)
-                    yield return parameters[__i];
-                ``
-                """;
-            argumentOut = "_";
-        }
-
-        return $"""
-                /// <summary>
-                /// <para>Invokes in module `module.ModuleName` the js-function `function.Name` synchronously.</para>
-                /// <para>If module is not loaded, it returns without any invoking. If synchronous is not supported, it fails with an exception.</para>
-                /// </summary>
-            {SUMMARY_PARAMETERS}{summaryOut}
-                /// <returns>default when the module is not loaded, otherwise result of the js-function</returns>
-                public `returnTypeMapped` {GetFunctionNamePattern("Invoke")}({parameters})
-                    => Invoke<{MAPPED_IJS_VOID_RESULT}>(`index`, "`module.ModulePath`", "`function.Name`", out {argumentOut}{ARGUMENTS});
-            """;
-    }
-
     private static string Get_TrySync_Async(bool trySync) {
         string summaryDescription;
         string methodName;
@@ -248,11 +218,11 @@ public sealed class SourceGenerator : IIncrementalGenerator {
 
         return $$"""
                 /// <summary>
-                /// Invokes in module `module.ModuleName` the js-function `function.Name` {{summaryDescription}}.
+                /// Invokes in module `module.ModuleName` the JS-function `function.Name` {{summaryDescription}}.
                 /// </summary>
             {{SUMMARY_PARAMETERS}}
                 /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
-                /// <returns></returns>
+                /// <returns>result of the JS-function</returns>
             ``
             if (returnTypeMapped == "void") {
             `+
@@ -300,16 +270,13 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             /// <param name="moduleUrl">complete path of the module, e.g. "/Pages/Example.razor.js"</param>
             /// <param name="identifier">name of the javascript function</param>
             /// <param name="success">false when the module is not loaded, otherwise true</param>
-            /// <param name="args">parameter passing to the js-function</param>
-            /// <returns>default when the module is not loaded, otherwise result of the js-function</returns>
-            private TResult Invoke<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] TResult>(int moduleIndex, string moduleUrl, string identifier, out bool success, params object?[]? args) {
+            /// <param name="args">parameter passing to the JS-function</param>
+            /// <returns>default when the module is not loaded, otherwise result of the JS-function</returns>
+            private TResult Invoke<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] TResult>(int moduleIndex, string moduleUrl, string identifier, params object?[]? args) {
                 Task<IJSObjectReference> moduleTask = GetOrLoadModule(moduleIndex, moduleUrl);
-                if (!moduleTask.IsCompletedSuccessfully) {
-                    success = false;
-                    return default!;
-                }
-        
-                success = true;
+                if (!moduleTask.IsCompletedSuccessfully)
+                    throw new JSException("JS-module is not loaded. Use and await the Preload-method to ensure the module is loaded.");
+                
                 return ((IJSInProcessObjectReference)moduleTask.Result).Invoke<TResult>(identifier, args);
             }
         
@@ -320,7 +287,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             /// <param name="moduleUrl">complete path of the module, e.g. "/Pages/Example.razor.js"</param>
             /// <param name="identifier">name of the javascript function</param>
             /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
-            /// <param name="args">parameter passing to the js-function</param>
+            /// <param name="args">parameter passing to the JS-function</param>
             /// <returns></returns>
             private async ValueTask<TValue> InvokeTrySync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] TValue>(int moduleIndex, string moduleUrl, string identifier, CancellationToken cancellationToken, params object?[]? args) {
                 IJSObjectReference module = await GetOrLoadModule(moduleIndex, moduleUrl);
@@ -337,7 +304,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             /// <param name="moduleUrl">complete path of the module, e.g. "/Pages/Example.razor.js"</param>
             /// <param name="identifier">name of the javascript function</param>
             /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
-            /// <param name="args">parameter passing to the js-function</param>
+            /// <param name="args">parameter passing to the JS-function</param>
             /// <returns></returns>
             private async ValueTask<TValue> InvokeAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] TValue>(int moduleIndex, string moduleUrl, string identifier, CancellationToken cancellationToken, params object?[]? args) {
                 IJSObjectReference module = await GetOrLoadModule(moduleIndex, moduleUrl);
@@ -360,7 +327,6 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             /// <summary>
             /// Invokes the specified JavaScript function synchronously.
             /// </summary>
-            /// <param name="jsRuntime">The <see cref="IJSInProcessRuntime"/>.</param>
             /// <param name="identifier">An identifier for the function to invoke. For example, the value <c>"someScope.someFunction"</c> will invoke the function <c>window.someScope.someFunction</c>.</param>
             /// <param name="args">JSON-serializable arguments.</param>
             public void InvokeVoid(string identifier, params object?[]? args)
@@ -515,6 +481,13 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         ``
         foreach (string str in parameters)
             yield return str;
+        ``
+        """;
+
+    private const string PARAMETERS_WITHOUT_ENDING_COMMA = """
+        ``
+        for (int __i = 0; __i < parameters.Count - 1; __i++)
+            yield return parameters[__i];
         ``
         """;
 
