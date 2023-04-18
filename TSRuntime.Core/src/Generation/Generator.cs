@@ -126,24 +126,22 @@ public static partial class Generator {
         List<string> parameters = new(function.ParameterList.Count * 4);
         List<string> arguments = new(function.ParameterList.Count * 2);
 
-        if (function.ParameterList.Count > 0) {
-            foreach (TSParameter parameter in function.ParameterList) {
-                string mappedType = typeMap.ValueOrKey(parameter.Type);
+        foreach (TSParameter parameter in function.ParameterList) {
+            string mappedType = typeMap.ValueOrKey(parameter.Type);
 
-                parameters.Add(mappedType);
-                if (parameter.TypeNullable)
-                    parameters.Add("?");
-                if (parameter.Array)
-                    parameters.Add("[]");
-                if (parameter.ArrayNullable)
-                    parameters.Add("?");
-                parameters.Add(" ");
-                parameters.Add(parameter.Name);
-                parameters.Add(", ");
+            parameters.Add(mappedType);
+            if (parameter.TypeNullable)
+                parameters.Add("?");
+            if (parameter.Array)
+                parameters.Add("[]");
+            if (parameter.ArrayNullable)
+                parameters.Add("?");
+            parameters.Add(" ");
+            parameters.Add(parameter.Name);
+            parameters.Add(", ");
 
-                arguments.Add(", ");
-                arguments.Add(parameter.Name);
-            }
+            arguments.Add(", ");
+            arguments.Add(parameter.Name);
         }
 
         return (parameters, arguments);
