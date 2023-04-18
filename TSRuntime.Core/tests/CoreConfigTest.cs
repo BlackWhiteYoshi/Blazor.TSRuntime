@@ -139,13 +139,13 @@ public sealed class CoreConfigTest {
 
 
     [Theory]
-    [InlineData("PreLoad#module#", $"PreLoad{MODULE}")]
+    [InlineData("Preload#module#", $"Preload{MODULE}")]
     [InlineData("#module#", $"{MODULE}")]
     [InlineData("#module##module##module#", $"{MODULE}{MODULE}{MODULE}")]
     [InlineData("test2", $"test2")]
     [InlineData("", "")]
-    public void PreLoadNamePattern_ParsingWorks(string naming, string expected) {
-        PreLoadNamePattern preLoadNaming = new(naming, NameTransform.None);
+    public void PreloadNamePattern_ParsingWorks(string naming, string expected) {
+        PreloadNamePattern preLoadNaming = new(naming, NameTransform.None);
 
         StringBuilder builder = new();
         foreach (string str in preLoadNaming.GetNaming(MODULE))
@@ -160,8 +160,8 @@ public sealed class CoreConfigTest {
     [InlineData(NameTransform.UpperCase, "#module#", "MODULE")]
     [InlineData(NameTransform.LowerCase, "#module#", "module")]
     [InlineData(NameTransform.FirstLowerCase, "#module#", "module")]
-    public void PreLoadNamePattern_TransformWorks(NameTransform module, string naming, string expected) {
-        PreLoadNamePattern preLoadNaming = new(naming, module);
+    public void PreloadNamePattern_TransformWorks(NameTransform module, string naming, string expected) {
+        PreloadNamePattern preLoadNaming = new(naming, module);
 
         StringBuilder builder = new();
         foreach (string str in preLoadNaming.GetNaming(MODULE))
@@ -180,9 +180,9 @@ public sealed class CoreConfigTest {
     [InlineData("##")]
     [InlineData("#modole#")]
     [InlineData("test#function#")]
-    public void PreLoadNamePattern_ThrowsException_WhenWrongNamingPattern(string naming) {
+    public void PreloadNamePattern_ThrowsException_WhenWrongNamingPattern(string naming) {
         try {
-            PreLoadNamePattern preLoadNaming = new(naming, NameTransform.None);
+            PreloadNamePattern preLoadNaming = new(naming, NameTransform.None);
             Assert.Fail("No Exception happened");
         }
         catch (ArgumentException) { }

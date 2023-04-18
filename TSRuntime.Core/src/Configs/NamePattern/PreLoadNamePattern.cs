@@ -3,12 +3,12 @@
 /// <summary>
 /// Naming of the generated methods that pre loads js-modules.
 /// </summary>
-public struct PreLoadNamePattern : IEquatable<PreLoadNamePattern>
+public struct PreloadNamePattern : IEquatable<PreloadNamePattern>
 {
     private const string MODULE = "#module#";
 
     
-    private readonly List<OutputBlock> outputList = new(2); // default "PreLoad#module#" are 2 entries
+    private readonly List<OutputBlock> outputList = new(2); // default "Preload#module#" are 2 entries
     /// <summary>
     /// <para>The name pattern for creating the method name.</para>
     /// <para>placeholder:<br />
@@ -30,7 +30,7 @@ public struct PreLoadNamePattern : IEquatable<PreLoadNamePattern>
     /// #module#</para></param>
     /// <param name="moduleTransform">Upper/Lower case transform for the #module# placeholder.</param>
     /// <exception cref="ArgumentException">Throws when an invalid placeholder in namePattern is used e.g. #invalid#</exception>
-    public PreLoadNamePattern(string namePattern, NameTransform moduleTransform)
+    public PreloadNamePattern(string namePattern, NameTransform moduleTransform)
     {
         NamePattern = namePattern;
         ModuleTransform = moduleTransform;
@@ -89,7 +89,7 @@ public struct PreLoadNamePattern : IEquatable<PreLoadNamePattern>
 
     #region IEquatable
 
-    public bool Equals(PreLoadNamePattern other) {
+    public bool Equals(PreloadNamePattern other) {
         if (NamePattern != other.NamePattern)
             return false;
 
@@ -100,17 +100,17 @@ public struct PreLoadNamePattern : IEquatable<PreLoadNamePattern>
     }
 
     public override bool Equals(object obj) {
-        if (obj is not PreLoadNamePattern other)
+        if (obj is not PreloadNamePattern other)
             return false;
 
         return Equals(other);
     }
 
-    public static bool operator ==(PreLoadNamePattern left, PreLoadNamePattern right) {
+    public static bool operator ==(PreloadNamePattern left, PreloadNamePattern right) {
         return left.Equals(right);
     }
 
-    public static bool operator !=(PreLoadNamePattern left, PreLoadNamePattern right) {
+    public static bool operator !=(PreloadNamePattern left, PreloadNamePattern right) {
         return !left.Equals(right);
     }
 

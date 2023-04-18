@@ -13,7 +13,7 @@ public sealed record class Config {
     /// <para>Path relative to json-file and no starting or ending slash.</para>
     /// </summary>
     public string DeclarationPath { get; init; } = DECLARATION_PATH;
-    private const string DECLARATION_PATH = @".typescript-declarations";
+    private const string DECLARATION_PATH = ".typescript-declarations";
 
     /// <summary>
     /// <para>File-path of TSRuntime.</para>
@@ -73,17 +73,17 @@ public sealed record class Config {
     private const NameTransform ACTION_TRANSFORM = NameTransform.None;
 
     /// <summary>
-    /// Naming of the generated methods that pre loads a specific module.
+    /// Naming of the generated methods that preloads a specific module.
     /// </summary>
-    public PreLoadNamePattern PreLoadNamePattern { get; init; } = new(PRE_LOAD_NAME_PATTERN, PRE_LOAD_MODULE_TRANSFORM);
-    private const string PRE_LOAD_NAME_PATTERN = "PreLoad#module#";
-    private const NameTransform PRE_LOAD_MODULE_TRANSFORM = NameTransform.None;
+    public PreloadNamePattern PreloadNamePattern { get; init; } = new(PRELOAD_NAME_PATTERN, PRELOAD_MODULE_TRANSFORM);
+    private const string PRELOAD_NAME_PATTERN = "Preload#module#";
+    private const NameTransform PRELOAD_MODULE_TRANSFORM = NameTransform.None;
 
     /// <summary>
-    /// Naming of the method that pre loads all modules.
+    /// Naming of the method that preloads all modules.
     /// </summary>
-    public string PreLoadAllModulesName { get; init; } = PRE_LOAD_ALL_MODULES_NAME;
-    private const string PRE_LOAD_ALL_MODULES_NAME = "PreLoadAllModules";
+    public string PreloadAllModulesName { get; init; } = PRELOAD_ALL_MODULES_NAME;
+    private const string PRELOAD_ALL_MODULES_NAME = "PreloadAllModules";
 
 
     /// <summary>
@@ -182,10 +182,10 @@ public sealed record class Config {
                 "action transform": "{{FunctionNamePattern.ActionTransform}}"
               },
               "preload name pattern": {
-                "pattern": "{{PreLoadNamePattern.NamePattern}}",
-                "module transform": "{{PreLoadNamePattern.ModuleTransform}}",
-                "all modules name": "{{PRE_LOAD_ALL_MODULES_NAME}}"
+                "pattern": "{{PreloadNamePattern.NamePattern}}",
+                "module transform": "{{PreloadNamePattern.ModuleTransform}}",
               },
+              "preload all modules name": "{{PRELOAD_ALL_MODULES_NAME}}"
               "using statements": [{{usingStatements}}],
               "type map": {{{typeMap}}}
             }
@@ -228,10 +228,10 @@ public sealed record class Config {
                 Enum.TryParse(((string?)root["function name pattern"]?["module transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform moduleTransform) ? moduleTransform : MODULE_TRANSFORM,
                 Enum.TryParse(((string?)root["function name pattern"]?["action transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform actionTransform) ? actionTransform : ACTION_TRANSFORM),
             
-            PreLoadNamePattern = new PreLoadNamePattern(
-                (string?)root["preload name pattern"]?["pattern"] ?? PRE_LOAD_NAME_PATTERN,
-                Enum.TryParse(((string?)root["preload name pattern"]?["module transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform preLoadModuleTransform) ? preLoadModuleTransform : PRE_LOAD_MODULE_TRANSFORM),
-            PreLoadAllModulesName = (string?)root["preload all modules name"] ?? PRE_LOAD_ALL_MODULES_NAME,
+            PreloadNamePattern = new PreloadNamePattern(
+                (string?)root["preload name pattern"]?["pattern"] ?? PRELOAD_NAME_PATTERN,
+                Enum.TryParse(((string?)root["preload name pattern"]?["module transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform preLoadModuleTransform) ? preLoadModuleTransform : PRELOAD_MODULE_TRANSFORM),
+            PreloadAllModulesName = (string?)root["preload all modules name"] ?? PRELOAD_ALL_MODULES_NAME,
             
             UsingStatements = root["using statements"]?.ToStringArray() ?? new string[1] { USING_STATEMENT },
 

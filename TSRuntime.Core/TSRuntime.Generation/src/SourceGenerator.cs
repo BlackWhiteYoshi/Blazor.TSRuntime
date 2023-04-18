@@ -9,7 +9,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             Parser parser = new();
 
             parser.Parse(DECLARATIONS.AsSpan());
-            parser.Parse(preLoad.AsSpan());
+            parser.Parse(preload.AsSpan());
             parser.Parse(createModule.AsSpan());
             parser.Parse(PRIVATE_INVOKE_METHODS.AsSpan());
             parser.Parse(JSRUNTIME_METHODS.AsSpan());
@@ -67,13 +67,13 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         """;
 
 
-    #region PreLoad
+    #region Preload
 
     /// <summary>
     /// Includes the fields MODULE_COUNT and JsRuntime.<br />
-    /// Includes the PreLoad_"moduleName" functions and the GetOrLoadModule declaration.
+    /// Includes the Preload_"moduleName" functions and the GetOrLoadModule declaration.
     /// </summary>
-    private readonly string preLoad = $$"""
+    private readonly string preload = $$"""
             protected const int MODULE_COUNT = `structureTree.ModuleList.Count.ToString()`;
         
             protected IJSRuntime JsRuntime { get; }
@@ -88,7 +88,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             /// <para>Preloads `module.ModuleName` (`module.ModulePath`) as javascript-module.</para>
             /// <para>If already loading, it doesn't trigger a second loading and if already loaded, it returns a completed task.</para>
             /// </summary>
-            public Task {{PreLoadNamePattern("module.ModuleName")}}()
+            public Task {{PreloadNamePattern("module.ModuleName")}}()
                 => GetOrLoadModule(`index`, "`module.ModulePath`");
         
         ``
@@ -98,12 +98,12 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             /// <para>Preloads all modules as javascript-modules.</para>
             /// <para>If already loading, it doesn't trigger a second loading and if any already loaded, these are not loaded again, so if all already loaded, it returns a completed task.</para>
             /// </summary>
-            public Task `config.PreLoadAllModulesName`() {
+            public Task `config.PreloadAllModulesName`() {
         ``
         for (int i = 0; i < structureTree.ModuleList.Count; i++) {
             TSModule module = structureTree.ModuleList[i];
         `+
-                {{PreLoadNamePattern("module.ModuleName")}}();
+                {{PreloadNamePattern("module.ModuleName")}}();
         ``
         }
         `-
@@ -118,10 +118,10 @@ public sealed class SourceGenerator : IIncrementalGenerator {
 
         """;
 
-    private static string PreLoadNamePattern(string name) {
+    private static string PreloadNamePattern(string name) {
         return $"""
             ``
-            foreach (string str in config.PreLoadNamePattern.GetNaming({name}))
+            foreach (string str in config.PreloadNamePattern.GetNaming({name}))
                 yield return str;
             ``
             """;

@@ -25,10 +25,10 @@ public static class TestFileContent {
             "action transform": "none"
           },
           "preload name pattern": {
-            "pattern": "PreLoad#module#",
-            "module transform": "none",
-            "all modules name": "AllModules"
+            "pattern": "Preload#module#",
+            "module transform": "none"
           },
+          "preload all modules name": "PreloadAllModules",
           "using statements": [ "Microsoft.AspNetCore.Components" ],
           "type map": {
             "number": "double",
