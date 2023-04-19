@@ -53,7 +53,7 @@ public sealed class SourceGenerator : ISourceGenerator, IDisposable {
             fileWatcher.CreateStructureTree().GetAwaiter().GetResult();
         }
 
-        context.AddSource(fileWatcher.Config.FileOutputClass, Generator.TSRuntimeContent);
-        context.AddSource(fileWatcher.Config.FileOutputinterface, source);
+        context.AddSource("TSRuntime.g.cs", Generator.TSRuntimeContent);
+        context.AddSource("ITSRuntime.g.cs", source);
     }
 }
