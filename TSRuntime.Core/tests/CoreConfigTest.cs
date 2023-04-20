@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text;
+using System.Text.Json.Nodes;
 using TSRuntime.Core.Configs;
 using TSRuntime.Core.Configs.NamePattern;
 using Xunit;
@@ -32,7 +33,42 @@ public sealed class CoreConfigTest {
         }
     }
 
+    [Fact]
+    public void Config_ToJsonSavesAllProperties() {
+        string configAsJson = new Config().ToJson();
+        JsonNode root = JsonNode.Parse(configAsJson)!;
+        JsonObject jsonObject = root.AsObject();
 
+        // maps to one property but has leaf nodes
+        jsonObject.Remove("type map");
+        jsonObject.Remove("function name pattern");
+        jsonObject.Remove("preload name pattern");
+
+        int numberOfLeafNodes = 3;
+        foreach (KeyValuePair<string, JsonNode?> node in jsonObject)
+            numberOfLeafNodes += NumberOfLeafNodes(node.Value!);
+            
+        Assert.Equal(typeof(Config).GetProperties().Length, numberOfLeafNodes);
+        
+
+        static int NumberOfLeafNodes(JsonNode node) {
+            JsonObject jsonObject;
+            try {
+                jsonObject = node.AsObject();
+            }
+            catch (InvalidOperationException) {
+                return 1;
+            }
+
+            int numberOfLeafNodes = 0;
+            foreach (KeyValuePair<string, JsonNode?> child in jsonObject) {
+                numberOfLeafNodes += NumberOfLeafNodes(child.Value!);
+            }
+            return numberOfLeafNodes;
+        }
+    }
+    
+    
     [Theory]
     [InlineData(new string[] { }, """[]""")]
     [InlineData(new string[] { "Microsoft.AspNetCore.Components" }, """[ "Microsoft.AspNetCore.Components" ]""")]

@@ -183,9 +183,9 @@ public sealed record class Config {
               },
               "preload name pattern": {
                 "pattern": "{{PreloadNamePattern.NamePattern}}",
-                "module transform": "{{PreloadNamePattern.ModuleTransform}}",
+                "module transform": "{{PreloadNamePattern.ModuleTransform}}"
               },
-              "preload all modules name": "{{PRELOAD_ALL_MODULES_NAME}}"
+              "preload all modules name": "{{PRELOAD_ALL_MODULES_NAME}}",
               "using statements": [{{usingStatements}}],
               "type map": {{{typeMap}}}
             }
