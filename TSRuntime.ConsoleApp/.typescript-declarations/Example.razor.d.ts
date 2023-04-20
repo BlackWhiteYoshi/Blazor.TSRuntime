@@ -9,3 +9,5 @@ export declare function setCookie(key: string, value: string, days: number): voi
 export declare function scrollIntoView(elementId: string): void;
 
 export declare function mathJaxRender(): void;
+
+export declare function LongWait(): Promise<void>;

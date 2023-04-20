@@ -150,7 +150,15 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 (List<string> parameters, List<string> arguments) = ParamterArgumentList(function, config.TypeMap);
             `+
             ``
-            if (!function.ReturnPromise) {
+            if (config.PromiseFunctionOnlyAsync && function.ReturnPromise) {
+            `+
+
+            {{Get_TrySync_Async(trySync: false)}}
+            ``
+            }
+            `-
+            ``
+            else {
             `+
             ``
             if (config.ModuleInvokeEnabled) {
@@ -184,14 +192,6 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             }
             `-
             
-            ``
-            }
-            `-
-            ``
-            else {
-            `+
-
-            {{Get_TrySync_Async(trySync: false)}}
             ``
             }
             `-
@@ -249,6 +249,8 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             ``
             foreach (string str in config.FunctionNamePattern.GetNaming(function.Name, module.ModuleName, "{action}"))
                 yield return str;
+            if (config.PromiseFunctionAppendAsync && function.ReturnPromise)
+                yield return "Async";
             ``
             """;
     }

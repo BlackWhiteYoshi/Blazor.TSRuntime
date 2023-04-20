@@ -62,6 +62,19 @@ public sealed record class Config {
     public bool JSRuntimeAsyncEnabled { get; init; } = JSRUNTIME_ASYNC_ENABLED;
     private const bool JSRUNTIME_ASYNC_ENABLED = false;
 
+    /// <summary>
+    /// <para>If true, whenever a module function returns a promise, the <see cref="ModuleInvokeEnabled" />, <see cref="ModuleTrySyncEnabled" /> and <see cref="ModuleAsyncEnabled" /> flags will be ignored<br />
+    /// and instead only the async invoke method will be generated.</para>
+    /// <para>This value should always be true. Set it only to false when you know what you are doing.</para>
+    /// </summary>
+    public bool PromiseFunctionOnlyAsync { get; init; } = PROMISE_FUNCTION_ONLY_ASYNC;
+    private const bool PROMISE_FUNCTION_ONLY_ASYNC = true;
+    /// <summary>
+    /// <para>If true, whenever a module function returns a promise, the string "Async" is appended.</para>
+    /// <para>If your pattern ends already with "Async", for example with the #action# variable, this will result in a double: "AsyncAsync"</para>
+    /// </summary>
+    public bool PromiseFunctionAppendAsync { get; init; } = PROMISE_FUNCTION_APPEND_ASYNC;
+    private const bool PROMISE_FUNCTION_APPEND_ASYNC = false;
 
     /// <summary>
     /// Naming of the generated methods that invoke module functions.
@@ -175,6 +188,10 @@ public sealed record class Config {
                 "trysync enabled": {{(JSRuntimeTrySyncEnabled ? "true" : "false")}},
                 "async enabled": {{(JSRuntimeAsyncEnabled ? "true" : "false")}}
               },
+              "promise function": {
+                "only async enabled": {{(PromiseFunctionOnlyAsync ? "true" : "false")}},
+                "append Async": {{(PromiseFunctionAppendAsync ? "true" : "false")}}
+              },
               "function name pattern": {
                 "pattern": "{{FunctionNamePattern.NamePattern}}",
                 "function transform": "{{FunctionNamePattern.FunctionTransform}}",
@@ -221,6 +238,9 @@ public sealed record class Config {
             JSRuntimeInvokeEnabled = (bool?)root["js runtime"]?["invoke enabled"] ?? JSRUNTIME_INVOKE_ENABLED,
             JSRuntimeTrySyncEnabled = (bool?)root["js runtime"]?["trysync enabled"] ?? JSRUNTIME_TRYSYNC_ENABLED,
             JSRuntimeAsyncEnabled = (bool?)root["js runtime"]?["async enabled"] ?? JSRUNTIME_ASYNC_ENABLED,
+
+            PromiseFunctionOnlyAsync = (bool?)root["promise function"]?["only async enabled"] ?? PROMISE_FUNCTION_ONLY_ASYNC,
+            PromiseFunctionAppendAsync = (bool?)root["promise function"]?["append Async"] ?? PROMISE_FUNCTION_APPEND_ASYNC,
 
             FunctionNamePattern = new FunctionNamePattern(
                 (string?)root["function name pattern"]?["pattern"] ?? FUNCTION_NAME_PATTERN,
