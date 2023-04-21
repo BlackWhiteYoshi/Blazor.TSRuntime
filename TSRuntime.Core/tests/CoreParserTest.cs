@@ -13,11 +13,16 @@ public sealed class CoreParserTest {
     [InlineData("number | null", "number", true, false, false)]
     [InlineData("number | undefined", "number", true, false, false)]
     [InlineData("number[]", "number", false, true, false)]
+    [InlineData("readonly number[]", "number", false, true, false)]
     [InlineData("Array<number>", "number", false, true, false)]
+    [InlineData("readonly Array<number>", "number", false, true, false)]
     [InlineData("number[] | null", "number", false, true, true)]
     [InlineData("Array<number> | null", "number", false, true, true)]
     [InlineData("(number | null)[]", "number", true, true, false)]
     [InlineData("(number | null)[] | null", "number", true, true, true)]
+    [InlineData("readonly (number | null)[] | null", "number", true, true, true)]
+    [InlineData("[number, string]", "[number, string]", false, false, false)]
+    [InlineData("readonly [number, string]", "[number, string]", false, false, false)]
     public void ParsingParameter_Works(string input, string type, bool typeNullable, bool array, bool arrayNullable) {
         TSParameter parameter = new();
 
@@ -47,7 +52,7 @@ public sealed class CoreParserTest {
 
     [Theory]
     [InlineData("export declare function getCookies(): string;", "getCookies", "string", false)]
-    [InlineData("export declare function asdf(): voidy;", "asdf", "voidy", false)]
+    [InlineData("export declare function asdf(): qwer;", "asdf", "qwer", false)]
     [InlineData("export declare function longRunningTask(): Promise<void>;", "longRunningTask", "void", true)]
     [InlineData("export declare function longRunningTask2(): Promise<something>;", "longRunningTask2", "something", true)]
     public void ParsingFunction_Works(string input, string name, string returnType, bool promise) {

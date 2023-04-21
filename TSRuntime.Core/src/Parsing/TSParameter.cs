@@ -45,6 +45,9 @@ public sealed class TSParameter {
     /// </summary>
     /// <param name="subStr">Only the part of the string that represents the type of a parameter (starting after ": " and ending before ',' or ')'.</param>
     public void ParseType(ReadOnlySpan<char> subStr) {
+        if (subStr.StartsWith("readonly ".AsSpan()))
+            subStr = subStr[9..];
+
         bool nullable = ParseNullable(ref subStr);
 
         if (subStr.EndsWith("[]".AsSpan())) {
