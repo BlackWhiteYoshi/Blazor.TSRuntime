@@ -30,6 +30,11 @@ public sealed class TSParameter {
     public bool ArrayNullable { get; set; }
 
 
+    /// <summary>
+    /// <para>Parses the name of the given subStr.</para>
+    /// <para>Currently ignoring an optional question mark.</para>
+    /// </summary>
+    /// <param name="subStr"></param>
     public void ParseName(ReadOnlySpan<char> subStr) {
         if (subStr is [.., '?'])
             Name = subStr[..^1].ToString();
@@ -38,7 +43,7 @@ public sealed class TSParameter {
     }
 
     /// <summary>
-    /// <para>Parses the type of the given parameter.</para>
+    /// <para>Parses the type of the given subStr.</para>
     /// <para>
     /// e.g.<br />
     /// - number<br />
