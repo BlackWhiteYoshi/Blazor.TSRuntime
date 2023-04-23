@@ -67,7 +67,19 @@ public sealed class CoreConfigTest {
             return numberOfLeafNodes;
         }
     }
-    
+
+
+    [Fact]
+    public void Config_FromJson_EmptyPathWorks() {
+        string json = """
+            {
+                "declaration path": ""
+            }
+            """;
+        Config config = Config.FromJson(json);
+        
+        Assert.Equal(string.Empty, config.DeclarationPath);
+    }
     
     [Theory]
     [InlineData(new string[] { }, """[]""")]
@@ -79,7 +91,7 @@ public sealed class CoreConfigTest {
                                                             "yxcv"
                                                           ]
                                                         """)]
-    public void Config_AsJson_UsingStatementsWorks(string[] usingStatements, string expected) {
+    public void Config_ToJson_UsingStatementsWorks(string[] usingStatements, string expected) {
         Config config = new() {
             UsingStatements = usingStatements
         };
@@ -102,7 +114,7 @@ public sealed class CoreConfigTest {
                                                                 "e": "f"
                                                               }
                                                             """)]
-    public void Config_AsJson_TypeMapWorks(string[] types , string expected) {
+    public void Config_ToJson_TypeMapWorks(string[] types , string expected) {
         Dictionary<string, string> map = new(types.Length / 2);
         for (int i = 0; i < types.Length; i += 2)
             map.Add(types[i], types[i + 1]);

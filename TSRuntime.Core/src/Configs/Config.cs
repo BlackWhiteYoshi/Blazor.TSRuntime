@@ -13,7 +13,7 @@ public sealed record class Config {
     /// <para>Path relative to json-file and no starting or ending slash.</para>
     /// </summary>
     public string DeclarationPath { get; init; } = DECLARATION_PATH;
-    private const string DECLARATION_PATH = ".typescript-declarations";
+    private const string DECLARATION_PATH = "";
 
     /// <summary>
     /// <para>File-path of TSRuntime.</para>
@@ -219,7 +219,7 @@ public sealed record class Config {
         string? declarationPath = (string?)root["declaration path"];
         if (declarationPath != null) {
             declarationPath = declarationPath.Replace('\\', '/');
-            if (declarationPath[^1] == '/')
+            if (declarationPath is [.., '/'])
                 declarationPath = declarationPath[..^1];
         }
         else
