@@ -58,7 +58,7 @@ public sealed class TSFunction {
                 
                 // parse Name
                 int colon = IndexOf(line, ':');
-                tsParameter.Name = line[..colon].ToString();
+                tsParameter.ParseName(line[..colon]);
                 line = line[(colon + 2)..]; // skip ": "
 
                 // parse Type

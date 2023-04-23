@@ -34,6 +34,20 @@ public sealed class CoreParserTest {
         Assert.Equal(arrayNullable, parameter.ArrayNullable);
     }
 
+    [Theory]
+    [InlineData("", "")]
+    [InlineData("a", "a")]
+    [InlineData("asdf", "asdf")]
+    [InlineData("a?", "a")]
+    [InlineData("asdf?", "asdf")]
+    public void ParsingParameterName_Works(string input, string name) {
+        TSParameter parameter = new();
+
+        parameter.ParseName(input);
+
+        Assert.Equal(name, parameter.Name);
+    }
+
     #endregion
 
 
@@ -53,6 +67,7 @@ public sealed class CoreParserTest {
     [Theory]
     [InlineData("export declare function getCookies(): string;", "getCookies", "string", false)]
     [InlineData("export declare function asdf(): qwer;", "asdf", "qwer", false)]
+    [InlineData("export declare function Test(a?: number): void;", "Test", "void", false)]
     [InlineData("export declare function longRunningTask(): Promise<void>;", "longRunningTask", "void", true)]
     [InlineData("export declare function longRunningTask2(): Promise<something>;", "longRunningTask2", "something", true)]
     public void ParsingFunction_Works(string input, string name, string returnType, bool promise) {
