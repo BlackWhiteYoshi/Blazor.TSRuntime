@@ -1,14 +1,42 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <IsRoslynComponent>true</IsRoslynComponent>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>11</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    
+    <Title>TSRuntime Core</Title>
+    <Description>The Core of TSRuntime. It can be used to programmatically generate the TSRuntime class and interface. TSRuntime is an improved JSRuntime with automatic JS-module loading and caching, compile time errors instead of runtime errors and nice IntelliSense guidance.</Description>
+    <Authors>BlackWhiteYoshi</Authors>
+    <PackageTags>C#;.Net;Blazor;JSRuntime;TS;TypeScript;Interop</PackageTags>
+
+    <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/BlackWhiteYoshi/TSRuntime</PackageProjectUrl>
+
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/BlackWhiteYoshi/TSRuntime.git</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+    <PackageIconUrl>https://raw.githubusercontent.com/BlackWhiteYoshi/TSRuntime/main/ICON.png</PackageIconUrl>
+    <PackageIcon>ICON.png</PackageIcon>
+
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+
+    <Version>0.0.1</Version>
+
     <!--<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\PACKAGE.md" Pack="True" PackagePath="/" />
+    <None Include="..\..\ICON.png" Pack="True" PackagePath="/" />
+    <None Include="..\..\LICENSE" Pack="True" PackagePath="/" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>

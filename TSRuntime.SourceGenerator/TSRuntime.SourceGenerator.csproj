@@ -1,14 +1,45 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <IsRoslynComponent>true</IsRoslynComponent>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>11</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+
+    <Title>TSRuntime</Title>
+    <Description>An improved JSRuntime with automatic JS-module loading and caching, compile time errors instead of runtime errors and nice IntelliSense guidance.</Description>
+    <Authors>BlackWhiteYoshi</Authors>
+    <PackageTags>C#;.Net;Blazor;Source;Generator;JSRuntime;TS;TypeScript;Interop</PackageTags>
+
+    <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/BlackWhiteYoshi/TSRuntime</PackageProjectUrl>
+
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/BlackWhiteYoshi/TSRuntime.git</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+    <PackageIconUrl>https://raw.githubusercontent.com/BlackWhiteYoshi/TSRuntime/main/ICON.png</PackageIconUrl>
+    <PackageIcon>ICON.png</PackageIcon>
+
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+
+    <Version>0.0.1</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\PACKAGE.md" Pack="True" PackagePath="/" />
+    <None Include="..\ICON.png" Pack="True" PackagePath="/" />
+    <None Include="..\LICENSE" Pack="True" PackagePath="/" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,9 +56,9 @@
     <ProjectReference Include="..\TSRuntime.Core\src\TSRuntime.Core.csproj" PrivateAssets="all" />
   </ItemGroup>
 
-  
+
   <!-- generator dependencies -->  
-  
+
   <ItemGroup>
     <PackageReference Include="System.Text.Json" Version="7.0.2" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" PrivateAssets="all" GeneratePathProperty="true" />
@@ -46,13 +77,13 @@
   <Target Name="GetDependencyTargetPaths">
     <ItemGroup>
       <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-      
+
       <TargetPathWithTargetPlatformMoniker Include="$(PKGSystem_Text_Json)\lib\netstandard2.0\System.Text.Json.dll" IncludeRuntimeDependency="false" />
       <None Include="$(PKGSystem_Text_Json)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-      
+
       <TargetPathWithTargetPlatformMoniker Include="$(PKGMicrosoft_Bcl_AsyncInterfaces)\lib\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll" IncludeRuntimeDependency="false" />
       <None Include="$(PKGMicrosoft_Bcl_AsyncInterfaces)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-      
+
       <TargetPathWithTargetPlatformMoniker Include="$(PKGSystem_Buffers)\lib\netstandard2.0\System.Buffers.dll" IncludeRuntimeDependency="false" />
       <None Include="$(PKGSystem_Buffers)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 
