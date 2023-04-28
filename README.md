@@ -168,6 +168,11 @@ make sure
 - you are using *Microsoft.JSInterop* namespace
 - restart Visual Studio to reload the generator
 
+**Note**: The error TS18003 is not something to worry about. It looks something like this:  
+*Build:No inputs were found in config file 'path'. Specified 'include' paths were '["**/*"]' and 'exclude' paths were '["bin","obj","Properties","**/*.js","**/*.jsx"]'*.  
+That simply means, you have not created a .ts-file yet.
+Just create a .ts-file and the error will go away.
+
 
 <br></br>
 ## Get Started - Visual Studio Extension
