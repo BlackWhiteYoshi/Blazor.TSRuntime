@@ -508,6 +508,89 @@ public sealed class CoreGeneratorTest {
     }
 
     [Fact]
+    public void TypeMap_MapsIdentityNullable_WhenEmptyAndNullable() {
+        TSStructureTree structureTree = CreateExampleStructureTree();
+        structureTree.ModuleList[0].FunctionList[0].ReturnType.TypeNullable = true;
+        Config config = new() {
+            ModuleTrySyncEnabled = true,
+            TypeMap = new()
+        };
+
+        IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
+        string content = GetITSRuntimeContent(tsRuntimeContent);
+
+        const string expected = """
+                public ValueTask<number?> Test(number a, string b, CancellationToken cancellationToken = default)
+                    => InvokeTrySync<number?>(0, "/test.js", "Test", cancellationToken, a, b);
+            """;
+
+        Assert.Contains(expected, content);
+    }
+
+    [Fact]
+    public void TypeMap_MapsIdentityArray_WhenEmptyAndArray() {
+        TSStructureTree structureTree = CreateExampleStructureTree();
+        structureTree.ModuleList[0].FunctionList[0].ReturnType.Array = true;
+        Config config = new() {
+            ModuleTrySyncEnabled = true,
+            TypeMap = new()
+        };
+
+        IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
+        string content = GetITSRuntimeContent(tsRuntimeContent);
+
+        const string expected = """
+                public ValueTask<number[]> Test(number a, string b, CancellationToken cancellationToken = default)
+                    => InvokeTrySync<number[]>(0, "/test.js", "Test", cancellationToken, a, b);
+            """;
+
+        Assert.Contains(expected, content);
+    }
+
+    [Fact]
+    public void TypeMap_MapsIdentityArrayNullable_WhenEmptyAndArrayNullable() {
+        TSStructureTree structureTree = CreateExampleStructureTree();
+        structureTree.ModuleList[0].FunctionList[0].ReturnType.Array = true;
+        structureTree.ModuleList[0].FunctionList[0].ReturnType.ArrayNullable = true;
+        Config config = new() {
+            ModuleTrySyncEnabled = true,
+            TypeMap = new()
+        };
+
+        IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
+        string content = GetITSRuntimeContent(tsRuntimeContent);
+
+        const string expected = """
+                public ValueTask<number[]?> Test(number a, string b, CancellationToken cancellationToken = default)
+                    => InvokeTrySync<number[]?>(0, "/test.js", "Test", cancellationToken, a, b);
+            """;
+
+        Assert.Contains(expected, content);
+    }
+
+    [Fact]
+    public void TypeMap_MapsIdentityNullableArrayNullable_WhenEmptyAndNullableArrayNullable() {
+        TSStructureTree structureTree = CreateExampleStructureTree();
+        structureTree.ModuleList[0].FunctionList[0].ReturnType.TypeNullable = true;
+        structureTree.ModuleList[0].FunctionList[0].ReturnType.Array = true;
+        structureTree.ModuleList[0].FunctionList[0].ReturnType.ArrayNullable = true;
+        Config config = new() {
+            ModuleTrySyncEnabled = true,
+            TypeMap = new()
+        };
+
+        IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
+        string content = GetITSRuntimeContent(tsRuntimeContent);
+
+        const string expected = """
+                public ValueTask<number?[]?> Test(number a, string b, CancellationToken cancellationToken = default)
+                    => InvokeTrySync<number?[]?>(0, "/test.js", "Test", cancellationToken, a, b);
+            """;
+
+        Assert.Contains(expected, content);
+    }
+
+    [Fact]
     public void TypeMap_MapsToCorrespondingString() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {

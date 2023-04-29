@@ -122,7 +122,7 @@ public static partial class Generator {
     /// <param name="function"></param>
     /// <param name="typeMap"></param>
     /// <returns></returns>
-    private static (List<string> parameters, List<string> arguments) ParamterArgumentList(TSFunction function, Dictionary<string, string> typeMap) {
+    private static (List<string> parameters, List<string> arguments, string returnType) CreateParamterList(this Dictionary<string, string> typeMap, TSFunction function) {
         List<string> parameters = new(function.ParameterList.Count * 4);
         List<string> arguments = new(function.ParameterList.Count * 2);
 
@@ -144,9 +144,20 @@ public static partial class Generator {
             arguments.Add(parameter.Name);
         }
 
-        return (parameters, arguments);
-    }
+        TSParameter tsReturnType = function.ReturnType;
+        string rawReturnType = typeMap.ValueOrKey(tsReturnType.Type);
+        string returnType = (tsReturnType.TypeNullable, tsReturnType.Array, tsReturnType.ArrayNullable) switch {
+            (false, false, _) => rawReturnType,
+            (true, false, _) => $"{rawReturnType}?",
+            (false, true, false) => $"{rawReturnType}[]",
+            (false, true, true) => $"{rawReturnType}[]?",
+            (true, true, false) => $"{rawReturnType}?[]",
+            (true, true, true) => $"{rawReturnType}?[]?"
+        };
 
+        return (parameters, arguments, returnType);
+    }
+    
     /// <summary>
     /// <para>
     /// Dictionary extension method.<br/>

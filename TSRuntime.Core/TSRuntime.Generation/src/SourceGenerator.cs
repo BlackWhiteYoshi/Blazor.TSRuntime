@@ -146,8 +146,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 #region `module.ModuleName`
             ``
             foreach (TSFunction function in module.FunctionList) {
-                string returnTypeMapped = config.TypeMap.ValueOrKey(function.ReturnType.Type);
-                (List<string> parameters, List<string> arguments) = ParamterArgumentList(function, config.TypeMap);
+                (List<string> parameters, List<string> arguments, string returnTypeMapped) = config.TypeMap.CreateParamterList(function);
             `+
             ``
             if (config.PromiseFunctionOnlyAsync && function.ReturnPromise) {
