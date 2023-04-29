@@ -115,7 +115,7 @@ public sealed record class Config {
         ["number"] = "double",
         ["boolean"] = "bool",
         ["bigint"] = "long",
-        ["HTMLElement"] = "ElementReference"
+        ["HTMLObjectElement"] = "ElementReference"
     };
 
 
