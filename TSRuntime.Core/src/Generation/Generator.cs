@@ -116,18 +116,18 @@ public static partial class Generator {
 
 
     /// <summary>
-    /// <para>Creates a parameter list and a argument list that can be iterated to create generated code.</para>
+    /// <para>Creates a parameter list, an argument list and the mapped return type that can be used to create generated code.</para>
     /// <para>Used by the SourceGenerator.</para>
     /// </summary>
-    /// <param name="function"></param>
     /// <param name="typeMap"></param>
+    /// <param name="function"></param>
     /// <returns></returns>
     private static (List<string> parameters, List<string> arguments, string returnType) CreateParamterList(this Dictionary<string, string> typeMap, TSFunction function) {
         List<string> parameters = new(function.ParameterList.Count * 4);
         List<string> arguments = new(function.ParameterList.Count * 2);
 
         foreach (TSParameter parameter in function.ParameterList) {
-            string mappedType = typeMap.ValueOrKey(parameter.Type);
+            string mappedType = GetValueOrKey(typeMap, parameter.Type);
 
             parameters.Add(mappedType);
             if (parameter.TypeNullable)
@@ -145,7 +145,7 @@ public static partial class Generator {
         }
 
         TSParameter tsReturnType = function.ReturnType;
-        string rawReturnType = typeMap.ValueOrKey(tsReturnType.Type);
+        string rawReturnType = GetValueOrKey(typeMap, tsReturnType.Type);
         string returnType = (tsReturnType.TypeNullable, tsReturnType.Array, tsReturnType.ArrayNullable) switch {
             (false, false, _) => rawReturnType,
             (true, false, _) => $"{rawReturnType}?",
@@ -156,23 +156,15 @@ public static partial class Generator {
         };
 
         return (parameters, arguments, returnType);
-    }
-    
-    /// <summary>
-    /// <para>
-    /// Dictionary extension method.<br/>
-    /// Retrieves the value in a Dictionary and defaults to the given key if not found.
-    /// </para>
-    /// <para>Used by the SourceGenerator.</para>
-    /// </summary>
-    /// <param name="dictionary"></param>
-    /// <param name="key"></param>
-    /// <returns></returns>
-    private static string ValueOrKey(this Dictionary<string, string> dictionary, string key) {
-        bool success = dictionary.TryGetValue(key, out string? value);
-        if (success)
-            return value!;
-        else
-            return key;
+
+
+        /// Retrieves the value in a Dictionary and defaults to the given key if not found.
+        static string GetValueOrKey(Dictionary<string, string> dictionary, string key) {
+            bool success = dictionary.TryGetValue(key, out string? value);
+            if (success)
+                return value!;
+            else
+                return key;
+        }
     }
 }
