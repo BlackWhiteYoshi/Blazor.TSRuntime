@@ -66,10 +66,9 @@ There are many ways to set this up, but when you are using Visual Studio, you on
   * **Microsoft.TypeScript.MSBuild** NuGet package -> add the latest version to your project.
 
 ```xml
-<PackageReference Include="Microsoft.TypeScript.MSBuild" Version="x.x.x">
-    <PrivateAssets>all</PrivateAssets>
-    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-</PackageReference>
+<ItemGroup>
+  <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="x.x.x" PrivateAssets="all" />
+</ItemGroup>
 ```
 
   * **tsconfig.json** -> create the config file in the same folder as your .csproj-file.  
@@ -108,10 +107,8 @@ In your .csproj-file put a package reference to *TSRuntime.SourceGenerator*.
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="TSRuntime.SourceGenerator" Version="x.x.x">
-    <PrivateAssets>all</PrivateAssets>
-    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-  </PackageReference>
+  <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="x.x.x" PrivateAssets="all" />
+  <PackageReference Include="TSRuntime.SourceGenerator" Version="x.x.x" PrivateAssets="all" />
 </ItemGroup>
 ```
 
@@ -122,10 +119,8 @@ In your .csproj-file put an additional file directive to *tsconfig.tsruntime.jso
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="TSRuntime.SourceGenerator" Version="x.x.x">
-    <PrivateAssets>all</PrivateAssets>
-    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-  </PackageReference>
+  <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="x.x.x" PrivateAssets="all" />
+  <PackageReference Include="TSRuntime.SourceGenerator" Version="x.x.x" PrivateAssets="all" />
   <AdditionalFiles Include="tsconfig.tsruntime.json" />
 </ItemGroup>
 ```
