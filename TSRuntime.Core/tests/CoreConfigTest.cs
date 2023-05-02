@@ -52,18 +52,16 @@ public sealed class CoreConfigTest {
         
 
         static int NumberOfLeafNodes(JsonNode node) {
-            JsonObject jsonObject;
-            try {
-                jsonObject = node.AsObject();
-            }
-            catch (InvalidOperationException) {
+            if (node is not JsonObject jsonObject)
                 return 1;
-            }
+
 
             int numberOfLeafNodes = 0;
+            
             foreach (KeyValuePair<string, JsonNode?> child in jsonObject) {
                 numberOfLeafNodes += NumberOfLeafNodes(child.Value!);
             }
+            
             return numberOfLeafNodes;
         }
     }
