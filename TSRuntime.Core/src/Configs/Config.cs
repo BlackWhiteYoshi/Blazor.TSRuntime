@@ -263,7 +263,23 @@ public sealed record class Config {
 }
 
 file static class JsonNodeExtension {
-    internal static string[] ToStringArray(this JsonNode node) => node.AsArray().Select((JsonNode? node) => (string?)node ?? throw NullNotAllowed).ToArray();
+    internal static string[]? ToStringArray(this JsonNode node) {
+        switch (node) {
+            case JsonArray array:
+                string[] result = new string[array.Count];
+
+                for (int i = 0; i < array.Count; i++)
+                    result[i] = (string?)array[i] ?? throw NullNotAllowed;
+
+                return result;
+
+            case JsonNode valueNode:
+                return new string[1] { (string?)valueNode ?? throw NullNotAllowed };
+            
+            default:
+                throw NullNotAllowed;
+        };
+    }
 
     internal static Dictionary<string, string> ToStringDictionary(this JsonNode node) {
         JsonObject jsonObject = node.AsObject();
@@ -275,5 +291,6 @@ file static class JsonNodeExtension {
         return result;
     }
 
-    private static ArgumentException NullNotAllowed => new("null is not allowed - use string literal \"null\" instead");
+
+    private static ArgumentException NullNotAllowed => new("non-string literals and null is not allowed - use string literal \"null\" instead");
 }

@@ -78,7 +78,25 @@ public sealed class CoreConfigTest {
         
         Assert.Equal(string.Empty, config.DeclarationPath);
     }
-    
+
+    [Theory]
+    [InlineData(""" "" """, new string[1] { "" })]
+    [InlineData(""" "Something" """, new string[1] { "Something" })]
+    [InlineData(""" [] """, new string[0])]
+    [InlineData(""" ["Something"] """, new string[1] { "Something" })]
+    [InlineData(""" ["Something", "More"] """, new string[2] { "Something", "More" })]
+    public void Config_FromJson_UsingStatementsWork(string usingStatementsValue, string[] expected) {
+        string json = $$"""
+            {
+                "using statements": {{usingStatementsValue}}
+            }
+            """;
+        Config config = Config.FromJson(json);
+
+        for (int i = 0; i < config.UsingStatements.Length; i++)
+            Assert.Equal(expected[i], config.UsingStatements[i]);
+    }
+
     [Theory]
     [InlineData(new string[] { }, """[]""")]
     [InlineData(new string[] { "Microsoft.AspNetCore.Components" }, """[ "Microsoft.AspNetCore.Components" ]""")]
