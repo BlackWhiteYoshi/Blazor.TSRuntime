@@ -58,21 +58,13 @@ TSRuntime included as source generator generates C#-methods on the fly:
 - source generator detects file changes and generate C#-methods
 - methods are available in your code with IntelliSense support
 
-### 1. Setup TypeScript
+### 1. Setup TypeScript - tsconfig.json
 
 If you want to use TSRuntime you have to use a TS-compiler.
-There are many ways to set this up, but when you are using Visual Studio, you only have to do 2 steps.
-
-  * **Microsoft.TypeScript.MSBuild** NuGet package -> add the latest version to your project.
-
-```xml
-<ItemGroup>
-  <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="x.x.x" PrivateAssets="all" />
-</ItemGroup>
-```
-
-  * **tsconfig.json** -> create the config file in the same folder as your .csproj-file.  
-    Make sure you enable output for daclaration-files: **"declaration": true**.
+There are many different compilers and ways to get this done, but if you are using Visual Studio, you get one out of the box.
+You only need to add a tsconfig.json file.  
+Create a **tsconfig.json** file in the same folder as your .csproj-file.  
+Make sure you enable output for declaration-files: **"declaration": true**.
 
 ```json
 {
@@ -107,7 +99,6 @@ In your .csproj-file put a package reference to *TSRuntime.SourceGenerator*.
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="x.x.x" PrivateAssets="all" />
   <PackageReference Include="TSRuntime.SourceGenerator" Version="x.x.x" PrivateAssets="all" />
 </ItemGroup>
 ```
@@ -119,7 +110,6 @@ In your .csproj-file put an additional file directive to *tsconfig.tsruntime.jso
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="x.x.x" PrivateAssets="all" />
   <PackageReference Include="TSRuntime.SourceGenerator" Version="x.x.x" PrivateAssets="all" />
   <AdditionalFiles Include="tsconfig.tsruntime.json" />
 </ItemGroup>
@@ -163,16 +153,11 @@ make sure
 
 - typescript is working correctly
 - you are generating decalaration(.d.ts) files
-- you have *&lt;PackageReference&gt;* in .csproj
+- you have *&lt;PackageReference TSRuntime.SourceGenerator&gt;* in .csproj
 - you have *&lt;AdditionalFiles&gt;* in .csproj
 - you have a *tsconfig.tsruntime.json*-file
 - you are using *Microsoft.JSInterop* namespace
 - restart Visual Studio to reload the generator
-
-**Note**: The error TS18003 is not something to worry about. It looks something like this:  
-*Build:No inputs were found in config file 'path'. Specified 'include' paths were '["**/*"]' and 'exclude' paths were '["bin","obj","Properties","**/*.js","**/*.jsx"]'*.  
-That simply means, you have not created a .ts-file yet.
-Just create a .ts-file and the error will go away.
 
 
 <br></br>
@@ -256,12 +241,17 @@ If the name of your folder starts with a '.', the folder does not even show up i
 }
 ```
 
-**Note**:  
-This **does not work** if you only have 1 module.
+### Troubleshooting
+
+This does **not work** if you only have 1 module.
 You need to have **at least 2 modules in different folders** before this method is working properly.  
 The problem is, that the TS-compiler does not preserve the folder structure as long as there is only 1 folder path involved.
 If there is only 1 path, the declaration files are just created at the root level, so the generator will determine the wrong module path (except your module is in the wwwroot folder).
 As soon as you have 2 modules in different folders, the TS-compiler creates the corresponding folder structure and put the declaration files properly, so the generator can work properly.
+
+If you get an error like "*Type 'ITSRuntime' already defines a member called '...' with the same parameter types*", you have most likely duplicate files in your declaration folder.
+Check your declaration folder and remove any exceeding files.
+
 
 <br></br>
 ## Config - tsconfig.tsruntime.json
