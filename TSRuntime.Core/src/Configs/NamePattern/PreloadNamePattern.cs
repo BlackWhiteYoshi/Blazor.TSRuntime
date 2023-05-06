@@ -1,7 +1,8 @@
 ﻿namespace TSRuntime.Core.Configs.NamePattern;
 
 /// <summary>
-/// Naming of the generated methods that pre loads js-modules.
+/// <para>Naming of the generated methods that preloads js-modules.</para>
+/// <para>It supports the variable #module#.</para>
 /// </summary>
 public struct PreloadNamePattern : IEquatable<PreloadNamePattern>
 {
@@ -115,11 +116,13 @@ public struct PreloadNamePattern : IEquatable<PreloadNamePattern>
     }
 
     public override int GetHashCode() {
-        int hash = NamePattern.GetHashCode();
+        return Combine(NamePattern.GetHashCode(), ModuleTransform.GetHashCode());
 
-        hash = (hash << 5) - hash + ModuleTransform.GetHashCode();
 
-        return hash;
+        static int Combine(int h1, int h2) {
+            uint r = ((uint)h1 << 5) | ((uint)h1 >> 27);
+            return ((int)r + h1) ^ h2;
+        }
     }
 
     #endregion

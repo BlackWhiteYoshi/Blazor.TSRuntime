@@ -1,7 +1,8 @@
 ﻿namespace TSRuntime.Core.Configs.NamePattern;
 
 /// <summary>
-/// Naming of the generated methods that invoke js-functions.
+/// <para>Naming of the generated methods that invoke js-functions.</para>
+/// <para>It supports the variables #function#, #module# and #action#.</para>
 /// </summary>
 public struct FunctionNamePattern : IEquatable<FunctionNamePattern>
 {
@@ -158,12 +159,17 @@ public struct FunctionNamePattern : IEquatable<FunctionNamePattern>
 
     public override int GetHashCode() {
         int hash = NamePattern.GetHashCode();
-
-        hash = (hash << 5) - hash + FunctionTransform.GetHashCode();
-        hash = (hash << 5) - hash + ModuleTransform.GetHashCode();
-        hash = (hash << 5) - hash + ActionTransform.GetHashCode();
+        hash = Combine(hash, FunctionTransform.GetHashCode());
+        hash = Combine(hash, ModuleTransform.GetHashCode());
+        hash = Combine(hash, ActionTransform.GetHashCode());
 
         return hash;
+
+
+        static int Combine(int h1, int h2) {
+            uint r = ((uint)h1 << 5) | ((uint)h1 >> 27);
+            return ((int)r + h1) ^ h2;
+        }
     }
 
     #endregion
