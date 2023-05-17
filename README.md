@@ -215,45 +215,6 @@ In the example it is directly written to disk, but you can also use a StringBuil
 
 
 <br></br>
-## Configure declaration-files (.d.ts) directory.
-
-The generated declaration files do not hide behind your .razor files and make your folders dirty/clunky.
-To solve that problem you can configure a declaration directory in tsconfig.json and tsconfig.tsruntime.json.  
-If the name of your folder starts with a '.', the folder does not even show up in Visual Studio.
-
-```json
-// tsconfig.json
-{
-  "compilerOptions": {
-    "declaration": true,
-    "declarationDir": ".typescript-declarations",
-    ...
-  },
-  ...
-}
-```
-
-```json
-// tsconfig.tsruntime.json
-{
-  "declaration path": ".typescript-declarations",
-  ...
-}
-```
-
-### Troubleshooting
-
-This does **not work** if you only have 1 module.
-You need to have **at least 2 modules in different folders** before this method is working properly.  
-The problem is, that the TS-compiler does not preserve the folder structure as long as there is only 1 folder path involved.
-If there is only 1 path, the declaration files are just created at the root level, so the generator will determine the wrong module path (except your module is in the wwwroot folder).
-As soon as you have 2 modules in different folders, the TS-compiler creates the corresponding folder structure and put the declaration files properly, so the generator can work properly.
-
-If you get an error like "*Type 'ITSRuntime' already defines a member called '...' with the same parameter types*", you have most likely duplicate files in your declaration folder.
-Check your declaration folder and remove any exceeding files.
-
-
-<br></br>
 ## Config - tsconfig.tsruntime.json
 
 All available config keys with its default value:
@@ -300,7 +261,7 @@ All available config keys with its default value:
 }
 ```
 
-- **[declaration path]**: Folder where to locate the d.ts declaration files. Path relative to this file and no starting or ending slash.
+- **[\[declaration path\]](#configure-declaration-files-dts-directory)**: Folder where to locate the d.ts declaration files. Path relative to this file and no starting or ending slash.
 - **[file output].[class]**: File-path of TSRuntime. Path relative to json-file and no starting slash. Not used in source generator.
 - **[file output].[interface]**: File-path of ITSRuntime. Path relative to json-file and no starting slash. Not used in source generator.
 - **[module].[invoke enabled]**: Toggles whether sync invoke methods should be generated for modules.
@@ -309,26 +270,36 @@ All available config keys with its default value:
 - **[js runtime].[invoke enabled]**: Toggles whether generic JSRuntime sync invoke method should be generated.
 - **[js runtime].[trysync enabled]**: Toggles whether generic JSRuntime try-sync invoke method should be generated.
 - **[js runtime].[async enabled]**: Toggles whether generic JSRuntime async invoke method should be generated.
-- **[promise function].[only async enabled]**: If true, whenever a module function returns a promise, the *[module].[invoke enabled]*, *[module].[trysync enabled]* and *[module].[async enabled]* flags will be ignored and instead only the async invoke method will be generated.  
-This value should always be true. Set it only to false when you know what you are doing.
-- **[promise function].[append Async]**: If true, whenever a module function returns a promise, the string "Async" is appended.  
-If your pattern ends already with "Async", for example with the #action# variable, this will result in a double: "AsyncAsync"
-- **[function name pattern].[pattern]**: Naming of the generated methods that invoke module functions.
-- **[function name pattern].[function transform]**: Lower/Upper case transform for the variable #function#. See Notes below.
-- **[function name pattern].[module transform]**: Lower/Upper case transform for the variable #module#. See Notes below.
-- **[function name pattern].[action transform]**: Lower/Upper case transform for the variable #action#.. See Notes below.
-- **[preload name pattern].[pattern]**: Naming of the generated methods that preloads a specific module.
-- **[preload name pattern].[module transform]**: Lower/Upper case transform for the variable #module#.. See Notes below.
-- **[preload all modules name]**: Naming of the method that preloads all modules.
-- **[using statements]**: List of generated using statements at the top of ITSRuntime.
-- **[type map]**: Mapping of typescript-types (key) to C#-types (value). Not listed types are mapped unchanged (Identity function).
+- **[\[promise function\].\[only async enabled\]](#promise-function)**: Generates only async invoke method when return-type is promise.
+- **[\[promise function\].\[append Async\]](#promise-function)**: Appends to the name 'Async' when return-type is promise.
+- **[\[function name pattern\].\[pattern\]](#name-pattern)**: Naming of the generated methods that invoke module functions.
+- **[\[function name pattern\].\[function transform\]](#name-pattern)**: Lower/Upper case transform for the variable #function#.
+- **[\[function name pattern\].\[module transform\]](#name-pattern)**: Lower/Upper case transform for the variable #module#.
+- **[\[function name pattern\].\[action transform\]](#name-pattern)**: Lower/Upper case transform for the variable #action#.. 
+- **[\[preload name pattern\].\[pattern\]](#name-pattern)**: Naming of the generated methods that preloads a specific module.
+- **[\[preload name pattern\].\[module transform\]](#name-pattern)**: Lower/Upper case transform for the variable #module#.
+- **[\[preload all modules name\]](#name-pattern)**: Naming of the method that preloads all modules.
+- **[\[using statements\]](#using-statements)**: List of generated using statements at the top of ITSRuntime.
+- **[\[type map\]](#type-map)**: Mapping of typescript-types (key) to C#-types (value). Not listed types are mapped unchanged (Identity function).
 
-<br></br>
-**Note: *Name Pattern***
+
+### Promise Function
+
+
+**[only async enabled]**: If true, whenever a module function returns a promise, the *[module].[invoke enabled]*, *[module].[trysync enabled]* and *[module].[async enabled]* flags will be ignored
+and instead, only the async invoke method will be generated.  
+Asynchronous JS-functions will only be awaited with the async invoke method, so this value should always be true.
+Set it only to false when you know what you are doing.
+
+**[append Async]**: Whenever a module function returns a promise, the string "Async" is appended.  
+If your pattern ends already with "Async", for example with the #action# variable, this will result in a double: "AsyncAsync".
+
+
+### Name Pattern
 
 [function name pattern] describes the naming of the generated invoke methods.
 For example, if you provide for the key [pattern] the value "MyMethod", all generated methods will have the name "MyMethod", which will result in a compile error.
-Therefore, there are 3 variables provided to customize your method-naming:
+That is why there are 3 variables provided to customize your method-naming:
 
 - #function#
 - #module#
@@ -372,8 +343,20 @@ With [function transform] set to "first upper case" you get:
 
 - #module#
 
-<br></br>
-**Note: *Type Map***
+
+### Using Statements
+
+The following using statements are always included
+
+- using Microsoft.JSInterop.Infrastructure;
+- using System.Diagnostics.CodeAnalysis;
+- using System.Threading;
+- using System.Threading.Tasks;
+
+The values given in \[using statements] will add additional using statements.
+
+
+### Type Map
 
 Variants of nullable or optional are not concidered as different types.
 If a TS-variable is nullable, it is also nullable in C#.
@@ -388,16 +371,102 @@ Assuming *bigint* is mapped to *long*
 - (myParameter?: bigint | null)            -> (), (long? myParameter)
 - (myParameter: bigint | null | undefined) -> (), (long? myParameter)
 
+
 <br></br>
-**Note**: The following using statements are always included
+## Configure declaration-files (.d.ts) directory
 
-- using Microsoft.JSInterop.Infrastructure;
-- using System.Diagnostics.CodeAnalysis;
-- using System.Threading;
-- using System.Threading.Tasks;
+The generated declaration files do not hide behind your .razor files and can make your folders look dirty/clunky.
+To solve that problem you can configure a declaration directory in tsconfig.json and tsconfig.tsruntime.json.  
+If the name of your folder starts with a ".", the folder does not even show up in Visual Studio.
 
-There is currently no way to change this default.
-*[using statements]* will add additional using statements.
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "declaration": true,
+    "declarationDir": ".typescript-declarations",
+    ...
+  },
+  ...
+}
+```
+
+```json
+// tsconfig.tsruntime.json
+{
+  "declaration path": ".typescript-declarations",
+  ...
+}
+```
+
+
+### [declaration path] in depth
+The value for [declaration path] is actually much more than a string. Setting it to the string ".typescript-declarations" is just a shorthand for:
+
+```json
+{
+  "declaration path": [
+    {
+      "include": ".typescript-declarations",
+      "excludes": [],
+      "file module path": null
+    }
+  ]
+}
+```
+
+So, you can have a list of include paths. Each path can be a folder or a file.  
+Each include path can have a list of exclude paths, each can be a folder or a file.
+An exclude path must start with the same as include path in order to match.
+
+**Example**:  
+```json
+{
+  "declaration path": [
+    {
+      "include": ".typescript-declarations",
+      "excludes": [
+        ".typescript-declarations/private",
+        ".typescript-declarations/wwwroot/service-worker.d.ts"
+      ]
+    },
+    "otherDeclarationFolder"
+  ]
+}
+```
+
+The preceding configuration has two include paths ".typescript-declarations" and "otherDeclarationFolder" and inside ".typescript-declarations" the folder "private" and inside "wwwroot" the file "service-worker.d.ts" will not be included.
+
+If your include path is a file, the module path will be the same as your include path.
+If that path does not fit, you can set it explicit with [file module path].
+
+**Example**:  
+```json
+{
+  "declaration path": {
+    "include": "scripts/declarations/shared.d.ts",
+    "file module path": "/scripts/shared.js"
+  }
+}
+```
+
+The preceding configuration only reads in one module: "shared.d.ts".
+If [file module path] would be not set, the module path would be "/scripts/declarations/shared.js".
+Because the actual script is served on the URL "/scripts/shared.js", it has to be set explicitly.
+
+Setting explicit module path for folders is not supported.
+
+
+### Troubleshooting
+
+Setting in *tsconfig.json* [declarationDir] does **not work** if you only have 1 module.
+You need to have **at least 2 modules in different folders** before this method is working properly.  
+The problem is, that the TS-compiler does not preserve the folder structure as long as there is only 1 folder path involved.
+If there is only 1 path, the declaration files are just created at the root level, so the generator will determine the wrong module path (except your module is in the wwwroot folder).
+As soon as you have 2 modules in different folders, the TS-compiler creates the corresponding folder structure and put the declaration files properly, so the generator can work properly.
+
+If you get an error like "*Type 'ITSRuntime' already defines a member called '...' with the same parameter types*", you have most likely duplicate files in your declaration folder.
+Check your declaration folder and remove any exceeding files.
 
 
 <br></br>
@@ -408,14 +477,24 @@ This package is in preview and breaking changes may occur.
 There are some features planned (no guarantees whatsoever):
 
 * optional parameters -> function-overload (at the moment optional is ignored and undefined is mapped the same as null)
-* more options in config
-  - generate on save (not used in source generator)
-  - include/exclude folder
-* TSRuntime as VS-Extension
-* GenericSupport (INumber&lt;T&gt; instead of double)
-* Support for non-module JS-files
+* module grouping in seperate interfaces
+* option in config: generate on save (not used in source generator)
 * TypeMapDefault more default types (e.g. Uint8Array -> byte[], DotNetStreamReference -> DotNetStreamReference)
-* map callbacks <-> delegates
-* option for grouping methods of a module in structs
+* Generic type-mapping (INumber&lt;T&gt; instead of double)
+* Generic TS-Functions
+
+- TSRuntime as VS-Extension
+- map callbacks <-> delegates
+- improved parser (summary, .ts, .js with JSDocs)
+- support for non-module files
+
 * [JSImport]/[JSExport] interop
-* autogenerate types to map to -> recursive figure out the structure (requires complex parser)
+
+
+<br></br>
+## Release Notes
+
+- 0.0.1  
+  First version. Includes all basic functionalities for generating TSRuntime.
+- 0.1  
+  Improved declaration path: Instead of one include string, an array of objects { "include": string, "excludes": string[], "file module path": string } is now supported.

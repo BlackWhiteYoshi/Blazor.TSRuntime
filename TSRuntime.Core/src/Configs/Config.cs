@@ -12,8 +12,8 @@ public sealed record class Config {
     /// <para>Folder where to locate the d.ts declaration files.</para>
     /// <para>Path relative to json-file and no starting or ending slash.</para>
     /// </summary>
-    public string DeclarationPath { get; init; } = DECLARATION_PATH;
-    private const string DECLARATION_PATH = "";
+    public DeclarationPath[] DeclarationPath { get; init; } = DeclarationPathDefault;
+    private static readonly DeclarationPath[] DeclarationPathDefault = new DeclarationPath[1] { new(string.Empty) };
 
     /// <summary>
     /// <para>File-path of TSRuntime.</para>
@@ -119,6 +119,56 @@ public sealed record class Config {
     };
 
 
+    /// <summary>
+    /// Compares all values when changed result in a change of the structureTree.
+    /// </summary>
+    /// <param name="other"></param>
+    /// <remarks><see cref="DeclarationPath"/> is not included here, although it changes the structureTree, because it also changes parsing paths and therefore must be treated especially.</remarks>
+    /// <returns>true, when all values are the same and thereby no change in the structureTree happened.</returns>
+    public bool StructureTreeEquals(Config other) {
+        if (ModuleInvokeEnabled != other.ModuleInvokeEnabled)
+            return false;
+        if (ModuleTrySyncEnabled != other.ModuleTrySyncEnabled)
+            return false;
+        if (ModuleAsyncEnabled != other.ModuleAsyncEnabled)
+            return false;
+        if (JSRuntimeInvokeEnabled != other.JSRuntimeInvokeEnabled)
+            return false;
+        if (JSRuntimeTrySyncEnabled != other.JSRuntimeTrySyncEnabled)
+            return false;
+        if (JSRuntimeAsyncEnabled != other.JSRuntimeAsyncEnabled)
+            return false;
+        if (PromiseFunctionOnlyAsync != other.PromiseFunctionOnlyAsync)
+            return false;
+        if (PromiseFunctionAppendAsync != other.PromiseFunctionAppendAsync)
+            return false;
+        if (FunctionNamePattern != other.FunctionNamePattern)
+            return false;
+        if (PreloadNamePattern != other.PreloadNamePattern)
+            return false;
+        if (PreloadAllModulesName != other.PreloadAllModulesName)
+            return false;
+
+        if (UsingStatements.Length != other.UsingStatements.Length)
+            return false;
+        for (int i = 0; i < UsingStatements.Length; i++)
+            if (UsingStatements[i] != other.UsingStatements[i])
+                return false;
+
+        if (TypeMap.Count != other.TypeMap.Count)
+            return false;        
+        foreach (KeyValuePair<string, string> pair in TypeMap) {
+            if (!other.TypeMap.TryGetValue(pair.Key, out string value))
+                return false;
+
+            if (pair.Value != value)
+                return false;
+        }
+
+        return true;
+    }
+
+
     #region json
 
     /// <summary>
@@ -130,15 +180,49 @@ public sealed record class Config {
     /// Converts this instance as a json-file.
     /// </summary>
     public string ToJson() {
+        StringBuilder builder = new(100);
+
+
+        string declarationPath;
+        if (DeclarationPath.Length == 0)
+            declarationPath = string.Empty;
+        else {
+            builder.Clear();
+
+            foreach ((string include, string[] excludes, string? fileModulePath) in DeclarationPath) {
+                builder.Append($$"""
+                    
+                        {
+                          "include": "{{include}}",
+                          "excludes": {{excludes.Length switch {
+                    0 => "[]",
+                    1 => $"""[ "{excludes[0]}" ]""",
+                    _ => $"""
+                        [
+                                "{string.Join("\",\n        \"", excludes)}"
+                              ]
+                        """
+                }}}
+                    """);
+                if (fileModulePath != null)
+                    builder.Append($"""
+                        ,
+                              "file module path": "{fileModulePath}"
+                        """);
+                builder.Append("\n    },");
+            }
+
+            builder.Length--;
+            builder.Append("\n  ");
+            declarationPath = builder.ToString();
+        }
+
         string usingStatements = UsingStatements.Length switch {
             0 => string.Empty,
             1 => $""" "{UsingStatements[0]}" """,
             _ => $"""
                     
-                        "{string.Join("""
-                            ",
-                                "
-                            """, UsingStatements)}"
+                        "{string.Join("\",\n    \"", UsingStatements)}"
                       
                     """
         };
@@ -147,33 +231,33 @@ public sealed record class Config {
         if (TypeMap.Count == 0)
             typeMap = " ";
         else {
-            StringBuilder typeMapBuilder = new(100);
+            builder.Clear();
 
-            foreach(KeyValuePair<string, string> pair in TypeMap) {
-                typeMapBuilder.Append("""
+            foreach (KeyValuePair<string, string> pair in TypeMap) {
+                builder.Append("""
 
                         "
                     """);
-                typeMapBuilder.Append(pair.Key);
-                typeMapBuilder.Append("""
+                builder.Append(pair.Key);
+                builder.Append("""
                     ": "
                     """);
-                typeMapBuilder.Append(pair.Value);
-                typeMapBuilder.Append("""
+                builder.Append(pair.Value);
+                builder.Append("""
                     ",
                     """);
             }
-            typeMapBuilder.Length--;
-            typeMapBuilder.Append("""
+            builder.Length--;
+            builder.Append("""
 
               
             """);
-            typeMap = typeMapBuilder.ToString();
+            typeMap = builder.ToString();
         }
 
         return $$"""
             {
-              "declaration path": "{{DeclarationPath}}",
+              "declaration path": [{{declarationPath}}],
               "file output": {
                 "class": "{{FileOutputClass}}",
                 "interface": "{{FileOutputinterface}}"
@@ -216,17 +300,8 @@ public sealed record class Config {
     public static Config FromJson(string json) {
         JsonNode root = JsonNode.Parse(json) ?? throw new ArgumentException($"json is not in a valid format:\n{json}");
 
-        string? declarationPath = (string?)root["declaration path"];
-        if (declarationPath != null) {
-            declarationPath = declarationPath.Replace('\\', '/');
-            if (declarationPath is [.., '/'])
-                declarationPath = declarationPath[..^1];
-        }
-        else
-            declarationPath = DECLARATION_PATH;
-
         return new Config() {
-            DeclarationPath = declarationPath,
+            DeclarationPath = root["declaration path"]?.ParseDeclarationPath() ?? DeclarationPathDefault,
 
             FileOutputClass = (string?)root["file output"]?["class"] ?? FILE_OUTPUT_CLASS,
             FileOutputinterface = (string?)root["file output"]?["interface"] ?? FILE_OUTPUT_INTERFACE,
@@ -263,7 +338,7 @@ public sealed record class Config {
 }
 
 file static class JsonNodeExtension {
-    internal static string[]? ToStringArray(this JsonNode node) {
+    internal static string[] ToStringArray(this JsonNode node) {
         switch (node) {
             case JsonArray array:
                 string[] result = new string[array.Count];
@@ -289,6 +364,66 @@ file static class JsonNodeExtension {
             result.Add(item.Key, (string?)item.Value ?? throw NullNotAllowed);
 
         return result;
+    }
+
+    internal static DeclarationPath[] ParseDeclarationPath(this JsonNode node) {
+        switch (node) {
+            case JsonArray array:
+                DeclarationPath[] result = new DeclarationPath[array.Count];
+
+                for (int i = 0; i < array.Count; i++)
+                    if (array[i] is JsonObject jsonObject)
+                        result[i] = ParseJsonObject(jsonObject);
+                    else
+                        result[i] = new DeclarationPath(GetPath(array[i]));
+
+                return result;
+
+            case JsonObject jsonObject:
+                return new DeclarationPath[1] { ParseJsonObject(jsonObject) };
+
+            default:
+                return new DeclarationPath[1] { new(GetPath(node)) };
+        }
+
+
+        static DeclarationPath ParseJsonObject(JsonObject jsonObject) {
+            string? fileModulePath = (string?)jsonObject["file module path"];
+            if (fileModulePath != null)
+                fileModulePath = Normalize(fileModulePath);
+
+
+            if (!jsonObject.TryGetPropertyValue("include", out JsonNode? includeNode))
+                throw new ArgumentException("Key \"include\" not found in a DeclarationPath object.");
+
+            string include = GetPath(includeNode);
+
+
+            if (!jsonObject.TryGetPropertyValue("excludes", out JsonNode? excludeNode))
+                return new DeclarationPath(include, fileModulePath);
+
+            string[] excludes = excludeNode!.ToStringArray();
+            for (int i = 0; i < excludes.Length; i++)
+                excludes[i] = Normalize(excludes[i]);
+
+
+            return new DeclarationPath(include, excludes, fileModulePath); 
+        }
+
+        static string GetPath(JsonNode? node) {
+            string path = (string?)node ?? throw NullNotAllowed;
+            return Normalize(path);
+        }
+
+        // replaces '\' with '/' and removes trailing slash
+        static string Normalize(string path) {
+            path = path.Replace('\\', '/');
+
+            if (path is [.., '/'])
+                path = path[..^1];
+
+            return path;
+        }
     }
 
 

@@ -85,7 +85,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             string index = i.ToString();
         `+
             /// <summary>
-            /// <para>Preloads `module.ModuleName` (`module.ModulePath`) as javascript-module.</para>
+            /// <para>Preloads '`module.ModuleName`' (`module.ModulePath`) as javascript-module.</para>
             /// <para>If already loading, it doesn't trigger a second loading and if already loaded, it returns a completed task.</para>
             /// </summary>
             public Task {{PreloadNamePattern("module.ModuleName")}}()
@@ -164,7 +164,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             `+
 
                 /// <summary>
-                /// <para>Invokes in module `module.ModuleName` the JS-function `function.Name` synchronously.</para>
+                /// <para>Invokes in module '`module.ModuleName`' the JS-function '`function.Name`' synchronously.</para>
                 /// <para>If module is not loaded or synchronous is not supported, it fails with an exception.</para>
                 /// </summary>
             {{SUMMARY_PARAMETERS}}
@@ -217,7 +217,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
 
         return $$"""
                 /// <summary>
-                /// Invokes in module `module.ModuleName` the JS-function `function.Name` {{summaryDescription}}.
+                /// Invokes in module '`module.ModuleName`' the JS-function '`function.Name`' {{summaryDescription}}.
                 /// </summary>
             {{SUMMARY_PARAMETERS}}
                 /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>

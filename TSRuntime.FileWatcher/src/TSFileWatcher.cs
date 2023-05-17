@@ -5,67 +5,146 @@ namespace TSRuntime.FileWatching;
 
 /// <summary>
 /// <para>Watches module folder specified in <see cref="Config.DeclarationPath"/> and the config file tsconfig.tsruntime.json.</para>
-/// <para>When a change is detected, <see cref="structureTree"/> / <see cref="Config"/> is updated accordingly.</para>
+/// <para>When a change is detected, <see cref="StructureTree"/> / <see cref="Config"/> is updated accordingly.</para>
 /// </summary>
 public sealed class TSFileWatcher : IDisposable {
-    private readonly FileSystemWatcher configWatcher;
-    private readonly FileSystemWatcher moduleWatcher;
-
-    private readonly TSStructureTree structureTree = new();
+    public TSStructureTree StructureTree { get; } = new();
     private readonly Dictionary<string, int> moduleMap = new();
 
-
-    private readonly string basePath;
-    private string declarationPath;
     public Config Config { get; private set; }
+    private readonly string basePath;
 
-    public event Action? TSRuntimeLocationChanged;
-    public event Action? ITSRuntimeLocationChanged;
-    public event Action<TSStructureTree>? ITSRuntimeChanged;
+    private readonly FileSystemWatcher configWatcher;
+    private FileSystemWatcher[] moduleWatcherList;
+
+    public event Action<Config>? TSRuntimeLocationChanged;
+    public event Action<Config>? ITSRuntimeLocationChanged;
+    public event Action<TSStructureTree, Config>? StructureTreeChanged;
 
 
     /// <summary>
-    /// <para>Creates an instance of <see cref="TSFileWatcher"/> without proactive initializing the structureTree.</para>
-    /// <para>To initialize the structureTree, call <see cref="CreateStructureTree"/>.</para>
+    /// Maps from relative path to absolute path.
     /// </summary>
-    /// <param name="config">If null, default config is supplied.</param>
-    /// <param name="basePath">Directory where tsconfig.tsruntime.json file is located.<br />It's also the starting point for relative pathes.</param>
-    public TSFileWatcher(Config? config, string basePath) {
-        this.basePath = basePath;
-        if (config != null)
-            Config = config;
-        else
-            Config = new();
+    /// <param name="declarationPath">content to map</param>
+    /// <param name="basePath">absolute path, not empty and without trailing slash.</param>
+    /// <returns>A new Array of <see cref="DeclarationPath"/> with absolute paths.</returns>
+    public static DeclarationPath[] ConvertToAbsolutePath(DeclarationPath[] declarationPath, string basePath) {
+        DeclarationPath[] result = new DeclarationPath[declarationPath.Length];
+        for (int i = 0; i < declarationPath.Length; i++) {
+            string include = declarationPath[i].Include switch {
+                "" => basePath,
+                ['/', ..] => $"{basePath}{declarationPath[i].Include}",
+                _ => $"{basePath}/{declarationPath[i].Include}"
+            };
 
-        declarationPath = Path.Combine(basePath, Config.DeclarationPath);
+            string[] excludes = new string[declarationPath[i].Excludes.Length];
+            for (int j = 0; j < declarationPath[i].Excludes.Length; j++)
+                excludes[j] = declarationPath[i].Excludes[j] switch {
+                    "" => basePath,
+                    ['/', ..] => $"{basePath}{declarationPath[i].Excludes[j]}",
+                    _ => $"{basePath}/{declarationPath[i].Excludes[j]}"
+                };
+
+            string? fileModulePath = declarationPath[i].FileModulePath;
+            if (fileModulePath == null && File.Exists(include))
+                fileModulePath = declarationPath[i].Include;
+
+            result[i] = new DeclarationPath(include, excludes, fileModulePath);
+        }
+
+        return result;
+    }
+
+
+    #region Construction
+
+    /// <summary>
+    /// Creates an instance of <see cref="TSFileWatcher"/> and initializes the structureTree.
+    /// </summary>
+    /// <param name="config">config</param>
+    /// <param name="basePath">Directory where tsconfig.tsruntime.json file is located.<br />It's also the starting point for relative paths.</param>
+    /// <param name="structureTreeChanged">It is set to <see cref="StructureTreeChanged"/> before initialization of the structureTree, so it gets invoked the first time ITSRuntimeContent is build.</param>
+    /// <returns></returns>
+    public static async Task<TSFileWatcher> CreateTSFileWatcher(Config config, string basePath, Action<TSStructureTree, Config>? structureTreeChanged = null) {
+        DeclarationPath[] declarationPathList = ConvertToAbsolutePath(config.DeclarationPath, basePath);
+        TSFileWatcher tsFileWatcher = new(config, basePath, declarationPathList, structureTreeChanged);
+        await tsFileWatcher.CreateStructureTree(declarationPathList);
+        return tsFileWatcher;
+    }
+
+
+    private TSFileWatcher(Config config, string basePath, DeclarationPath[] declarationPathList, Action<TSStructureTree, Config>? structureTreeChanged = null) {
+        Config = config;
+        this.basePath = basePath;
+        StructureTreeChanged += structureTreeChanged;
+
         configWatcher = CreateConfigWatcher(basePath);
-        moduleWatcher = CreateModuleWatcher(declarationPath);
+
+        moduleWatcherList = new FileSystemWatcher[Config.DeclarationPath.Length];
+        for (int i = 0; i < Config.DeclarationPath.Length; i++)
+            moduleWatcherList[i] = CreateModuleWatcher(declarationPathList[i]);
     }
 
     public void Dispose() {
         configWatcher.Dispose();
-        moduleWatcher.Dispose();
+        foreach (FileSystemWatcher moduleWatcher in moduleWatcherList)
+            moduleWatcher.Dispose();
     }
 
+    #endregion
 
-    /// <summary>
-    /// Parses all files and recreate the structureTree.
-    /// </summary>
-    /// <returns></returns>
-    public async Task CreateStructureTree() {
+
+    #region StructureTree
+
+    private async Task CreateStructureTree(DeclarationPath[] declarationPathList) {
         TSStructureTree localStructureTree = new();
-        await localStructureTree.ParseModules(declarationPath);
+        await localStructureTree.ParseModules(declarationPathList);
 
-        lock (structureTree) {
-            structureTree.ModuleList.Clear();
+        lock (StructureTree) {
+            StructureTree.ModuleList.Clear();
+            StructureTree.ModuleList.AddRange(localStructureTree.ModuleList);
             moduleMap.Clear();
-            structureTree.ModuleList.AddRange(localStructureTree.ModuleList);
-            for (int i = 0; i < structureTree.ModuleList.Count; i++)
+            for (int i = 0; i < StructureTree.ModuleList.Count; i++)
                 moduleMap.Add(localStructureTree.ModuleList[i].FilePath, i);
 
-            ITSRuntimeChanged?.Invoke(structureTree);
+            StructureTreeChanged?.Invoke(StructureTree, Config);
         }
     }
+
+    private void AddModule(TSModule module) {
+        lock (StructureTree) {
+            moduleMap.Add(module.FilePath, StructureTree.ModuleList.Count);
+            StructureTree.ModuleList.Add(module);
+
+            StructureTreeChanged?.Invoke(StructureTree, Config);
+        }
+    }
+
+    private void RemoveModule(string filePath) {
+        if (moduleMap.TryGetValue(filePath, out int index)) {
+            lock (StructureTree) {
+                StructureTree.ModuleList.RemoveAt(index);
+                moduleMap.Remove(filePath);
+
+                StructureTreeChanged?.Invoke(StructureTree, Config);
+            }
+        }
+    }
+
+    private void UpdateModule(TSModule module) {
+        if (moduleMap.TryGetValue(module.FilePath, out int index)) {
+            TSModule dirtyModule = StructureTree.ModuleList[index];
+            lock (StructureTree) {
+                dirtyModule.FunctionList = module.FunctionList;
+
+                StructureTreeChanged?.Invoke(StructureTree, Config);
+            }
+        }
+        else
+            AddModule(module);
+    }
+
+    #endregion
 
 
     #region config watcher
@@ -84,24 +163,22 @@ public sealed class TSFileWatcher : IDisposable {
         watcher.EnableRaisingEvents = true;
 
         return watcher;
+
+
+        void OnConfigChanged(object sender, FileSystemEventArgs e) => UpdateConfig(e.FullPath.Replace('\\', '/'));
+
+        void OnConfigCreated(object sender, FileSystemEventArgs e) => UpdateConfig(e.FullPath.Replace('\\', '/'));
+
+        void OnConfigDeleted(object sender, FileSystemEventArgs e) => _ = UpdateConfig(new Config());
+
+        void OnConfigRenamed(object sender, RenamedEventArgs e) {
+            if (e.Name == Config.JSON_FILE_NAME)
+                UpdateConfig(e.FullPath.Replace('\\', '/'));
+            else
+                _ = UpdateConfig(new Config());
+        }
     }
 
-
-    private void OnConfigChanged(object sender, FileSystemEventArgs e) => UpdateConfig(e.FullPath.Replace('\\', '/'));
-
-    private void OnConfigCreated(object sender, FileSystemEventArgs e) => UpdateConfig(e.FullPath.Replace('\\', '/'));
-
-    private void OnConfigDeleted(object sender, FileSystemEventArgs e) => _ = UpdateConfig(new Config());
-
-    private void OnConfigRenamed(object sender, RenamedEventArgs e) {
-        if (e.Name == Config.JSON_FILE_NAME)
-            UpdateConfig(e.FullPath.Replace('\\', '/'));
-        else
-            UpdateConfig(new Config());
-    }
-
-
-    #region UpdateConfig
 
     private Task configUpdater = Task.CompletedTask;
 
@@ -129,72 +206,46 @@ public sealed class TSFileWatcher : IDisposable {
             await me.UpdateConfig(Config.FromJson(json));
         }
     }
-    
+
     private Task UpdateConfig(Config config) {
         Config oldConfig = Config;
         Config = config;
 
-
         if (Config.FileOutputClass != oldConfig.FileOutputClass)
-            TSRuntimeLocationChanged?.Invoke();
+            TSRuntimeLocationChanged?.Invoke(Config);
 
-        if (Config.FileOutputinterface != oldConfig.FileOutputinterface) 
-            ITSRuntimeLocationChanged?.Invoke();
-
-        if (Config.DeclarationPath != oldConfig.DeclarationPath) {
-            declarationPath = Path.Combine(basePath, Config.DeclarationPath);
-            return CreateStructureTree();
-        }
+        if (Config.FileOutputinterface != oldConfig.FileOutputinterface)
+            ITSRuntimeLocationChanged?.Invoke(Config);
         
-        if (Config.ModuleInvokeEnabled != oldConfig.ModuleInvokeEnabled)
-            return CreateStructureTree();
+        if (Config.DeclarationPath != oldConfig.DeclarationPath) {
+            foreach (FileSystemWatcher moduleWatcher in moduleWatcherList)
+                moduleWatcher.Dispose();
 
-        if (Config.ModuleTrySyncEnabled != oldConfig.ModuleTrySyncEnabled)
-            return CreateStructureTree();
-
-        if (Config.ModuleAsyncEnabled != oldConfig.ModuleAsyncEnabled)
-            return CreateStructureTree();
-
-        if (Config.JSRuntimeInvokeEnabled != oldConfig.JSRuntimeInvokeEnabled)
-            return CreateStructureTree();
-
-        if (Config.JSRuntimeTrySyncEnabled != oldConfig.JSRuntimeTrySyncEnabled)
-            return CreateStructureTree();
-
-        if (Config.JSRuntimeAsyncEnabled != oldConfig.JSRuntimeAsyncEnabled)
-            return CreateStructureTree();
-
-        if (Config.FunctionNamePattern != oldConfig.FunctionNamePattern)
-            return CreateStructureTree();
-
-        if (Config.UsingStatements.Length != oldConfig.UsingStatements.Length)
-            return CreateStructureTree();
-        for (int i = 0; i < Config.UsingStatements.Length; i++)
-            if (Config.UsingStatements[i] != oldConfig.UsingStatements[i])
-                return CreateStructureTree();
-
-        if (Config.TypeMap.Count != oldConfig.TypeMap.Count)
-            return CreateStructureTree();
-        foreach (KeyValuePair<string, string> pair in Config.TypeMap) {
-            if (!oldConfig.TypeMap.TryGetValue(pair.Key, out string value))
-                return CreateStructureTree();
-
-            if (pair.Value != value)
-                return CreateStructureTree();
+            DeclarationPath[] declarationPathList = ConvertToAbsolutePath(config.DeclarationPath, basePath);
+            moduleWatcherList = new FileSystemWatcher[Config.DeclarationPath.Length];
+            for (int i = 0; i < Config.DeclarationPath.Length; i++)
+                moduleWatcherList[i] = CreateModuleWatcher(declarationPathList[i]);
+            return CreateStructureTree(declarationPathList);
         }
+
+        if (!Config.StructureTreeEquals(oldConfig))
+            StructureTreeChanged?.Invoke(StructureTree, Config);
 
         return Task.CompletedTask;
     }
 
     #endregion
 
-    #endregion
-
 
     #region module watcher
 
-    private FileSystemWatcher CreateModuleWatcher(string path) {
-        FileSystemWatcher watcher = new(path, "*.d.ts");
+    private FileSystemWatcher CreateModuleWatcher(DeclarationPath path) {
+        FileSystemWatcher watcher = path.FileModulePath switch {
+            // watching folder
+            null => new FileSystemWatcher(path.Include, "*.d.ts"),
+            // watching file
+            _ => new FileSystemWatcher(Path.GetDirectoryName(path.Include), Path.GetFileName(path.Include))
+        };
 
         watcher.Changed += OnModuleChanged;
         watcher.Created += OnModuleCreated;
@@ -207,58 +258,81 @@ public sealed class TSFileWatcher : IDisposable {
         watcher.EnableRaisingEvents = true;
 
         return watcher;
-    }
 
 
-    private void OnModuleChanged(object sender, FileSystemEventArgs e) {
-        if (moduleMap.TryGetValue(e.FullPath.Replace('\\', '/'), out int index)) {
-            TSModule module = structureTree.ModuleList[index];
-            TSModule localModule = new() {
-                FilePath = module.FilePath,
-                RelativePath = module.RelativePath,
-                ModulePath = module.FilePath,
-                ModuleName = module.ModuleName
-            };
+        void OnModuleChanged(object sender, FileSystemEventArgs e) {
+            string filePath = e.FullPath.Replace('\\', '/');
+            if (!DeclarationPath.IsIncluded(filePath, path.Excludes))
+                return;
 
-            AddToDirtyList(localModule);
+            if (moduleMap.TryGetValue(filePath, out int index))
+                AddToDirtyList(StructureTree.ModuleList[index]);
         }
-    }
 
-    private void OnModuleCreated(object sender, FileSystemEventArgs e) {
-        TSModule module = new();
-        module.ParseMetaData(e.FullPath.Replace('\\', '/'), declarationPath);
-        
-        AddToDirtyList(module);
-    }
+        void OnModuleCreated(object sender, FileSystemEventArgs e) {
+            string filePath = e.FullPath.Replace('\\', '/');
+            if (!DeclarationPath.IsIncluded(filePath, path.Excludes))
+                return;
 
-    private void OnModuleDeleted(object sender, FileSystemEventArgs e) {
-        string path = e.FullPath.Replace('\\', '/');
-        if (moduleMap.TryGetValue(path, out int index)) {
-            lock (structureTree) {
-                moduleMap.Remove(path);
-                structureTree.ModuleList.RemoveAt(index);
+            TSModule module = new();
+            if (path.FileModulePath == null)
+                module.ParseMetaDataRootFolder(filePath, path.Include);
+            else
+                module.ParseMetaDataModulePath(filePath, path.FileModulePath);
+
+            AddToDirtyList(module);
+        }
+
+        void OnModuleDeleted(object sender, FileSystemEventArgs e) {
+            string filePath = e.FullPath.Replace('\\', '/');
+            if (!DeclarationPath.IsIncluded(filePath, path.Excludes))
+                return;
+
+            RemoveModule(filePath);
+        }
+
+        void OnModuleRenamed(object sender, RenamedEventArgs e) {
+            string oldPath = e.OldFullPath.Replace('\\', '/');
+            string newPath = e.FullPath.Replace('\\', '/');
+
+            bool isIncludedOld = DeclarationPath.IsIncluded(oldPath, path.Excludes);
+            bool isIncludedNew = DeclarationPath.IsIncluded(newPath, path.Excludes);
+            switch ((isIncludedOld, isIncludedNew)) {
+                case (false, false):
+                    return;
+
+                case (true, false):
+                    RemoveModule(oldPath);
+                    break;
+
+                case (false, true):
+                    TSModule module = new();
+                    if (path.FileModulePath == null)
+                        module.ParseMetaDataRootFolder(newPath, path.Include);
+                    else
+                        module.ParseMetaDataModulePath(newPath, path.FileModulePath);
+
+                    AddToDirtyList(module);
+                    break;
+
+                case (true, true):
+                    int index = moduleMap[oldPath];
+                    lock (StructureTree) {
+                        moduleMap.Remove(oldPath);
+                        moduleMap.Add(newPath, index);
+                        if (path.FileModulePath == null)
+                            StructureTree.ModuleList[index].ParseMetaDataRootFolder(newPath, path.Include);
+                        else
+                            StructureTree.ModuleList[index].ParseMetaDataModulePath(newPath, path.FileModulePath);
+                    }
+
+                    break;
             }
-
-            _ = CreateStructureTree();
+            
+            StructureTreeChanged?.Invoke(StructureTree, Config);
         }
     }
 
-    private void OnModuleRenamed(object sender, RenamedEventArgs e) {
-        string oldPath = e.OldFullPath.Replace('\\', '/');
-        string newPath = e.FullPath.Replace('\\', '/');
-        if (moduleMap.TryGetValue(oldPath, out int index)) {
-            lock (structureTree) {
-                moduleMap.Remove(oldPath);
-                moduleMap.Add(newPath, index);
-                structureTree.ModuleList[index].ParseMetaData(newPath, declarationPath);
-            }
-
-            _ = CreateStructureTree();
-        }
-    }
-
-
-    #region Module Updater
 
     private void AddToDirtyList(TSModule module) {
         lock (dirtyModules) {
@@ -290,29 +364,12 @@ public sealed class TSFileWatcher : IDisposable {
                     continue;
                 }
 
-                if (moduleMap.TryGetValue(module.FilePath, out int index)) {
-                    // changed module, update the corresponding one in structureTree
-                    TSModule dirtyModule = structureTree.ModuleList[index];
-                    lock (structureTree) {
-                        dirtyModule.FunctionList = module.FunctionList;
-                    }
-                    await CreateStructureTree();
-                }
-                else {
-                    // new module, add to structureTree
-                    lock (structureTree) {
-                        moduleMap.Add(module.FilePath, structureTree.ModuleList.Count);
-                        structureTree.ModuleList.Add(module);
-                    }
-                    await CreateStructureTree();
-                }
+                UpdateModule(module);
             }
 
             await Task.Delay(1000);
         }
     }
-
-    #endregion
 
     #endregion
 }

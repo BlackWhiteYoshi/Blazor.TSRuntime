@@ -1,3 +1,4 @@
+using TSRuntime.Core.Configs;
 using TSRuntime.Core.Parsing;
 using Xunit;
 
@@ -83,23 +84,25 @@ public sealed class CoreParserTest {
 
     #region TSModule
 
-    private const string FOLDER = "TestFolder/";
-    private const string MODULE = "CoreParserTest";
-    private const string MODULE_FILE = $"{MODULE}.d.ts";
+    private const string RootFolder = "./CorePaserTestData";
+    private const string MODULE = "TestModule";
+
+    private const string NESTED_FOLDER = $"NestedFolder";
+    private const string NESTED_MODULE = "NestedTestModule";
+
 
     [Fact]
     public async Task ParsingModule_WrongFilePathThrows() {
-        await Assert.ThrowsAsync<ArgumentException>(() => TSModule.Parse("", string.Empty));
-        await Assert.ThrowsAsync<FileNotFoundException>(() => TSModule.Parse($"#", string.Empty));
+        await Assert.ThrowsAsync<ArgumentException>(() => TSModule.ParseWithRootFolder("", string.Empty));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => TSModule.ParseWithRootFolder($"#", string.Empty));
     }
 
     [Fact]
     public void ParsingModule_MetadataOnlyHasEmptyFunctionList() {
         TSModule module = new();
-        module.ParseMetaData(MODULE_FILE, string.Empty);
+        module.ParseMetaDataRootFolder($"{RootFolder}/{MODULE}.d.ts", string.Empty);
 
         Assert.NotEqual(string.Empty, module.FilePath);
-        Assert.NotEqual(string.Empty, module.RelativePath);
         Assert.NotEqual(string.Empty, module.ModulePath);
         Assert.NotEqual(string.Empty, module.ModuleName);
         Assert.Empty(module.FunctionList);
@@ -107,27 +110,53 @@ public sealed class CoreParserTest {
 
     [Fact]
     public async Task ParsingModule_FunctionsOnlyHasEmptyMetaData() {
+        const string filePath = $"{RootFolder}/{MODULE}.d.ts";
         TSModule module = new() {
-            FilePath = MODULE_FILE
+            FilePath = filePath
         };
         await module.ParseFunctions();
 
-        Assert.Equal(MODULE_FILE, module.FilePath);
-        Assert.Equal(string.Empty, module.RelativePath);
+        Assert.Equal(filePath, module.FilePath);
         Assert.Equal(string.Empty, module.ModulePath);
         Assert.Equal(string.Empty, module.ModuleName);
         Assert.NotEmpty(module.FunctionList);
     }
 
     [Fact]
-    public async Task ParsingModule_Example() {
-        TSModule module = await TSModule.Parse($"{FOLDER}{MODULE_FILE}", FOLDER);
+    public async Task ParsingModuleWithRootFolder() {
+        const string filePath = $"{RootFolder}/{MODULE}.d.ts";
+        TSModule module = await TSModule.ParseWithRootFolder(filePath, RootFolder);
 
-        Assert.Equal($"{FOLDER}{MODULE_FILE}", module.FilePath);
-        Assert.Equal(MODULE_FILE, module.RelativePath);
+        Assert.Equal(filePath, module.FilePath);
         Assert.Equal($"/{MODULE}.js", module.ModulePath);
         Assert.Equal(MODULE, module.ModuleName);
         Assert.Single(module.FunctionList);
+    }
+
+    [Fact]
+    public async Task ParsingModuleWithModulePath() {
+        const string filePath = $"{RootFolder}/{MODULE}.d.ts";
+        const string modulePath = "somePath";
+        TSModule module = await TSModule.ParseWithModulePath(filePath, modulePath);
+
+        Assert.Equal(filePath, module.FilePath);
+        Assert.Equal($"/{modulePath}.js", module.ModulePath);
+        Assert.Equal(modulePath, module.ModuleName);
+        Assert.Single(module.FunctionList);
+    }
+
+
+    [Theory]
+    [InlineData("test")]
+    [InlineData("/test")]
+    [InlineData("test.js")]
+    [InlineData("/test.js")]
+    public void ParseMetaDataModulePath(string input) {
+        TSModule tSModule = new();
+        tSModule.ParseMetaDataModulePath(string.Empty, input);
+
+        Assert.Equal("/test.js", tSModule.ModulePath);
+        Assert.Equal("test", tSModule.ModuleName);
     }
 
     #endregion
@@ -136,13 +165,195 @@ public sealed class CoreParserTest {
     #region TSStructureTree
 
     [Fact]
-    public async Task StructureTree_ParseModulesParsesEvery_d_ts_File() {
+    public async Task StructureTree_ParseModules_ParsesEvery_d_ts_File_WhenParameterIsFolderString() {
         TSStructureTree structureTree = new();
-        await structureTree.ParseModules("./");
+
+        await structureTree.ParseModules(RootFolder);
 
         Assert.Equal(2, structureTree.ModuleList.Count);
         Assert.Empty(structureTree.FunctionList);
     }
+
+    [Fact]
+    public async Task StructureTree_ParseModules_ParsesEvery_d_ts_File_WhenParameterIsIncludeOnly() {
+        DeclarationPath[] declarationPath = new DeclarationPath[1] {
+            new DeclarationPath(RootFolder)
+        };
+        TSStructureTree structureTree = new();
+
+        await structureTree.ParseModules(declarationPath);
+
+        Assert.Equal(2, structureTree.ModuleList.Count);
+        Assert.Empty(structureTree.FunctionList);
+    }
+
+    [Fact]
+    public async Task StructureTree_ParseModules_ParsesNoExcludesFolder() {
+        DeclarationPath[] declarationPath = new DeclarationPath[1] {
+            new DeclarationPath(RootFolder) {
+                Excludes = new string[1] { $"{RootFolder}/{NESTED_FOLDER}" }
+            }
+        };
+        TSStructureTree structureTree = new();
+
+        await structureTree.ParseModules(declarationPath);
+
+        Assert.Single(structureTree.ModuleList);
+        Assert.Empty(structureTree.FunctionList);
+    }
+
+    [Fact]
+    public async Task StructureTree_ParseModules_ParsesNoExcludesFile() {
+        DeclarationPath[] declarationPath = new DeclarationPath[1] {
+            new DeclarationPath(RootFolder) {
+                Excludes = new string[1] { $"{RootFolder}/{NESTED_FOLDER}/{NESTED_MODULE}.d.ts" }
+            }
+        };
+        TSStructureTree structureTree = new();
+
+        await structureTree.ParseModules(declarationPath);
+
+        Assert.Single(structureTree.ModuleList);
+        Assert.Empty(structureTree.FunctionList);
+    }
+
+    [Fact]
+    public async Task StructureTree_ParseModules_ExcludesFolderAndFileOnly() {
+        DeclarationPath[] declarationPath = new DeclarationPath[1] {
+            new DeclarationPath(RootFolder) {
+                Excludes = new string[1] { $"{RootFolder}/{NESTED_FOLDER[..^1]}" }
+            }
+        };
+        TSStructureTree structureTree = new();
+
+        await structureTree.ParseModules(declarationPath);
+
+        Assert.Equal(2, structureTree.ModuleList.Count);
+        Assert.Empty(structureTree.FunctionList);
+    }
+
+    [Fact]
+    public async Task StructureTree_ParseModules_MultipleExcludes() {
+        DeclarationPath[] declarationPath = new DeclarationPath[1] {
+            new DeclarationPath(RootFolder) {
+                Excludes = new string[2] { $"{RootFolder}/{NESTED_FOLDER}", $"{RootFolder}/{MODULE}.d.ts" }
+            }
+        };
+        TSStructureTree structureTree = new();
+
+        await structureTree.ParseModules(declarationPath);
+
+        Assert.Empty(structureTree.ModuleList);
+        Assert.Empty(structureTree.FunctionList);
+    }
+
+    [Fact]
+    public async Task StructureTree_ParseModules_ParseMultipleFolders() {
+        DeclarationPath[] declarationPath = new DeclarationPath[2] {
+            new DeclarationPath(RootFolder),
+            new DeclarationPath($"{RootFolder}/{NESTED_FOLDER}")
+        };
+        TSStructureTree structureTree = new();
+
+        await structureTree.ParseModules(declarationPath);
+
+        Assert.Equal(3, structureTree.ModuleList.Count);
+        Assert.Empty(structureTree.FunctionList);
+    }
+
+
+    [Fact]
+    public async Task StructureTree_ParseModules_ParseModule_WhenPathIsFile() {
+        DeclarationPath[] declarationPath = new DeclarationPath[1] {
+            new DeclarationPath($"{RootFolder}/{MODULE}.d.ts") {
+                FileModulePath = "somePath"
+            }
+        };
+        TSStructureTree structureTree = new();
+
+        await structureTree.ParseModules(declarationPath);
+
+        Assert.Single(structureTree.ModuleList);
+        Assert.Empty(structureTree.FunctionList);
+    }
+
+    [Fact]
+    public async Task StructureTree_ParseModules_IgnoresExclude_WhenPathIsFile() {
+        const string modulePath = $"{RootFolder}/{MODULE}.d.ts";
+        DeclarationPath[] declarationPath = new DeclarationPath[1] {
+            new DeclarationPath(modulePath) {
+                Excludes = new string[1] { modulePath },
+                FileModulePath = "somePath"
+            }
+        };
+        TSStructureTree structureTree = new();
+
+        await structureTree.ParseModules(declarationPath);
+
+        Assert.Single(structureTree.ModuleList);
+        Assert.Empty(structureTree.FunctionList);
+    }
+
+    [Fact]
+    public async Task StructureTree_ParseModules_ThrowsDirectoryNotFoundException_WhenWrongModulePath() {
+        DeclarationPath[] declarationPath = new DeclarationPath[1] { new("somePath") };
+        TSStructureTree structureTree = new();
+
+        await Assert.ThrowsAsync<DirectoryNotFoundException>(async () => await structureTree.ParseModules(declarationPath));
+    }
+
+    [Fact]
+    public async Task StructureTree_ParseModules_ParseMultipleModules() {
+        DeclarationPath[] declarationPath = new DeclarationPath[2] {
+            new DeclarationPath($"{RootFolder}/{MODULE}.d.ts") {
+                FileModulePath = "somePath"
+            },
+            new DeclarationPath($"{RootFolder}/{NESTED_FOLDER}/{NESTED_MODULE}.d.ts") {
+                FileModulePath = "somePath"
+            }
+        };
+        TSStructureTree structureTree = new();
+
+        await structureTree.ParseModules(declarationPath);
+
+        Assert.Equal(2, structureTree.ModuleList.Count);
+        Assert.Empty(structureTree.FunctionList);
+    }
+
+
+    [Fact]
+    public async Task StructureTree_ParseModules_FolderAndFilesWorks() {
+        DeclarationPath[] declarationPath = new DeclarationPath[2] {
+            new DeclarationPath($"{RootFolder}/{NESTED_FOLDER}"),
+            new DeclarationPath($"{RootFolder}/{MODULE}.d.ts") {
+                FileModulePath = "somePath"
+            }
+        };
+        TSStructureTree structureTree = new();
+
+        await structureTree.ParseModules(declarationPath);
+
+        Assert.Equal(2, structureTree.ModuleList.Count);
+        Assert.Empty(structureTree.FunctionList);
+    }
+
+    [Fact]
+    public async Task StructureTree_ParseModules_ExcludesAreScopedToSingle() {
+        const string nestedFolderPath = $"{RootFolder}/{NESTED_FOLDER}";
+        DeclarationPath[] declarationPath = new DeclarationPath[2] {
+            new DeclarationPath(RootFolder) {
+                Excludes = new string[1] { nestedFolderPath }
+            },
+            new DeclarationPath(nestedFolderPath)
+        };
+        TSStructureTree structureTree = new();
+
+        await structureTree.ParseModules(declarationPath);
+
+        Assert.Equal(2, structureTree.ModuleList.Count);
+        Assert.Empty(structureTree.FunctionList);
+    }
+
 
     [Fact]
     public void StructureTree_ParseFunctionsThrowsNotImplementedException() {

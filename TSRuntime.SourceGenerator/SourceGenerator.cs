@@ -15,23 +15,31 @@ public sealed class SourceGenerator : ISourceGenerator, IDisposable {
     private string source = string.Empty;
     private readonly StringBuilder sourceBuilder = new(10000);
 
-    private void CreateITSRuntimeContentString(TSStructureTree structureTree) {
-        if (fileWatcher == null)
-            return;
-
-        sourceBuilder.Clear();
-        foreach (string str in Generator.GetITSRuntimeContent(structureTree, fileWatcher.Config))
-            sourceBuilder.Append(str);
-        source = sourceBuilder.ToString();
+    private void CreateITSRuntimeContentString(TSStructureTree structureTree, Config config) {
+        lock (sourceBuilder) {
+            sourceBuilder.Clear();
+            foreach (string str in Generator.GetITSRuntimeContent(structureTree, config))
+                sourceBuilder.Append(str);
+        
+            source = sourceBuilder.ToString();
+        }
     }
 
 
     public void Dispose() {
-        fileWatcher?.Dispose();
+        if (fileWatcher != null) {
+            fileWatcher.StructureTreeChanged -= CreateITSRuntimeContentString;
+            fileWatcher.Dispose();
+        }
         GC.SuppressFinalize(this);
     }
 
-    ~SourceGenerator() => fileWatcher?.Dispose();
+    ~SourceGenerator() {
+        if (fileWatcher != null) {
+            fileWatcher.StructureTreeChanged -= CreateITSRuntimeContentString;
+            fileWatcher.Dispose();
+        }
+    }
 
 
     public void Initialize(GeneratorInitializationContext context) { }
@@ -47,10 +55,18 @@ public sealed class SourceGenerator : ISourceGenerator, IDisposable {
                 return;
 
             Config config = Config.FromJson(jsonSourceText.ToString());
+            string basePath = Path.GetDirectoryName(file.Path).Replace('\\', '/');
 
-            fileWatcher = new TSFileWatcher(config, Path.GetDirectoryName(file.Path));
-            fileWatcher.ITSRuntimeChanged += CreateITSRuntimeContentString;
-            fileWatcher.CreateStructureTree().GetAwaiter().GetResult();
+            // first time could be just one time compiling, so no need to instantiate fileWatcher
+            if (source == string.Empty) {
+                DeclarationPath[] declarationPath = TSFileWatcher.ConvertToAbsolutePath(config.DeclarationPath, basePath);
+                TSStructureTree structureTree = new();
+                structureTree.ParseModules(declarationPath).GetAwaiter().GetResult();
+                CreateITSRuntimeContentString(structureTree, config);
+            }
+            else
+                TSFileWatcher.CreateTSFileWatcher(config, basePath, CreateITSRuntimeContentString)
+                    .ContinueWith((Task<TSFileWatcher> fileWatcherTask) => fileWatcher = fileWatcherTask.Result);
         }
 
         context.AddSource("TSRuntime.g.cs", Generator.TSRuntimeContent);

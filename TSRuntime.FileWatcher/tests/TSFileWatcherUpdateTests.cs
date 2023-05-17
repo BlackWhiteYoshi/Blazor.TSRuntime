@@ -5,37 +5,42 @@ using Xunit;
 
 namespace TSRuntime.FileWatcher.Tests;
 
-public sealed class TSFileWatcherTests : IAsyncLifetime {
+public sealed class TSFileWatcherUpdateTests : IAsyncLifetime {
     #region initialization
 
-    private const string DECLARATION_PATH = ".typescript-declarations/";
+    private const int FILE_WRITE_DELAY = 1000;
+
+    private const string DECLARATION_FOLDER = ".typescript-declarations";
     private static int testFolderCounter = 0;
 
-    private string folderPath = null!;
+    private string rootFolderPath = null!;
     private string declarationPath = null!;
     private TSFileWatcher fileWatcher = null!;
 
 
-    public Task InitializeAsync() {
+    /**
+     * - TempUpdateTestFolder{number}
+     *   - .typescript-declarations/   <-- SystemFileWatcher
+     **/
+    public async Task InitializeAsync() {
         int counter = Interlocked.Increment(ref testFolderCounter);
         
-        folderPath = Path.Combine(Directory.GetCurrentDirectory(), $"TempTestFolder{counter}/").Replace('\\', '/');
-        Directory.CreateDirectory(folderPath);
+        rootFolderPath = Path.Combine(Directory.GetCurrentDirectory(), $"TempUpdateTestFolder{counter}").Replace('\\', '/');
+        Directory.CreateDirectory(rootFolderPath);
 
-        declarationPath = Path.Combine(folderPath, DECLARATION_PATH).Replace('\\', '/');
+        declarationPath = Path.Combine(rootFolderPath, DECLARATION_FOLDER).Replace('\\', '/');
         Directory.CreateDirectory(declarationPath);
 
         Config config = new() {
-            DeclarationPath = DECLARATION_PATH
+            DeclarationPath = new DeclarationPath[1] { new(DECLARATION_FOLDER) }
         };
 
-        fileWatcher = new TSFileWatcher(config, folderPath);
-        return fileWatcher.CreateStructureTree();
+        fileWatcher = await TSFileWatcher.CreateTSFileWatcher(config, rootFolderPath);
     }
 
     public Task DisposeAsync() {
         fileWatcher.Dispose();
-        Directory.Delete(folderPath, recursive: true);
+        Directory.Delete(rootFolderPath, recursive: true);
         return Task.CompletedTask;
     }
 
@@ -66,36 +71,36 @@ public sealed class TSFileWatcherTests : IAsyncLifetime {
     #region tsconfig.tsruntime.json
 
     [Fact]
-    public async Task CreateWithMoveConfig_Updates_StructureTree() {
+    public async Task CreateWithMoveConfig_UpdatesStructureTree() {
         int iTsRuntimeChangedCounter = 0;
-        fileWatcher.ITSRuntimeChanged += _ => iTsRuntimeChangedCounter++;
+        fileWatcher.StructureTreeChanged += (_, _) => iTsRuntimeChangedCounter++;
 
         string configFilePath = Path.Combine(Directory.GetCurrentDirectory(), "CreateWithMoveConfigTemp.json");
         await File.WriteAllTextAsync(configFilePath, TestFileContent.CONFIG_JSON);
-        File.Move(configFilePath, Path.Combine(folderPath, Config.JSON_FILE_NAME));
+        File.Move(configFilePath, Path.Combine(rootFolderPath, Config.JSON_FILE_NAME));
 
         Assert.True(await WaitForCondition(() => iTsRuntimeChangedCounter == 1));
     }
 
     [Fact]
-    public async Task CreateConfig_Updates_StructureTree() {
+    public async Task CreateConfig_UpdatesStructureTree() {
         int iTsRuntimeChangedCounter = 0;
-        fileWatcher.ITSRuntimeChanged += _ => iTsRuntimeChangedCounter++;
+        fileWatcher.StructureTreeChanged += (_, _) => iTsRuntimeChangedCounter++;
 
-        string configFilePath = Path.Combine(folderPath, Config.JSON_FILE_NAME);
+        string configFilePath = Path.Combine(rootFolderPath, Config.JSON_FILE_NAME);
         await File.WriteAllTextAsync(configFilePath, TestFileContent.CONFIG_JSON);
 
         Assert.True(await WaitForCondition(() => iTsRuntimeChangedCounter == 1));
     }
 
     [Fact]
-    public async Task UpdateConfig_Updates_StructureTree() {
-        string configFilePath = Path.Combine(folderPath, Config.JSON_FILE_NAME);
+    public async Task UpdateConfig_UpdatesStructureTree() {
+        string configFilePath = Path.Combine(rootFolderPath, Config.JSON_FILE_NAME);
         await File.WriteAllTextAsync(configFilePath, TestFileContent.CONFIG_JSON);
-        await Task.Delay(2000);
+        await Task.Delay(FILE_WRITE_DELAY);
 
         int iTsRuntimeChangedCounter = 0;
-        fileWatcher.ITSRuntimeChanged += _ => iTsRuntimeChangedCounter++;
+        fileWatcher.StructureTreeChanged += (_, _) => iTsRuntimeChangedCounter++;
 
         string newConfig = TestFileContent.CONFIG_JSON.Replace(@"""function transform"": ""first upper case""", @"""function transform"": ""first lower case""");
         await File.WriteAllTextAsync(configFilePath, newConfig);
@@ -104,13 +109,13 @@ public sealed class TSFileWatcherTests : IAsyncLifetime {
     }
 
     [Fact]
-    public async Task RemoveConfig_Updates_StructureTree() {
-        string configFilePath = Path.Combine(folderPath, Config.JSON_FILE_NAME);
+    public async Task RemoveConfig_UpdatesStructureTree() {
+        string configFilePath = Path.Combine(rootFolderPath, Config.JSON_FILE_NAME);
         await File.WriteAllTextAsync(configFilePath, TestFileContent.CONFIG_JSON);
-        await Task.Delay(2000);
+        await Task.Delay(FILE_WRITE_DELAY);
 
         int iTsRuntimeChangedCounter = 0;
-        fileWatcher.ITSRuntimeChanged += _ => iTsRuntimeChangedCounter++;
+        fileWatcher.StructureTreeChanged += (_, _) => iTsRuntimeChangedCounter++;
 
         File.Delete(configFilePath);
 
@@ -118,30 +123,30 @@ public sealed class TSFileWatcherTests : IAsyncLifetime {
     }
 
     [Fact]
-    public async Task RenameToConfig_Updates_StructureTree() {
+    public async Task RenameToConfig_UpdatesStructureTree() {
         int iTsRuntimeChangedCounter = 0;
-        fileWatcher.ITSRuntimeChanged += _ => iTsRuntimeChangedCounter++;
+        fileWatcher.StructureTreeChanged += (_, _) => iTsRuntimeChangedCounter++;
 
-        string configFilePathWithWrongName = Path.Combine(folderPath, "wrong name");
+        string configFilePathWithWrongName = Path.Combine(rootFolderPath, "wrong name");
         await File.WriteAllTextAsync(configFilePathWithWrongName, TestFileContent.CONFIG_JSON);
-        await Task.Delay(2000);
+        await Task.Delay(FILE_WRITE_DELAY);
 
-        string configFilePath = Path.Combine(folderPath, Config.JSON_FILE_NAME);
+        string configFilePath = Path.Combine(rootFolderPath, Config.JSON_FILE_NAME);
         File.Move(configFilePathWithWrongName, configFilePath);
 
         Assert.True(await WaitForCondition(() => iTsRuntimeChangedCounter == 1));
     }
 
     [Fact]
-    public async Task RenameFromConfig_Updates_StructureTree() {
-        string configFilePath = Path.Combine(folderPath, Config.JSON_FILE_NAME);
+    public async Task RenameFromConfig_UpdatesStructureTree() {
+        string configFilePath = Path.Combine(rootFolderPath, Config.JSON_FILE_NAME);
         await File.WriteAllTextAsync(configFilePath, TestFileContent.CONFIG_JSON);
-        await Task.Delay(2000);
+        await Task.Delay(FILE_WRITE_DELAY);
 
         int iTsRuntimeChangedCounter = 0;
-        fileWatcher.ITSRuntimeChanged += _ => iTsRuntimeChangedCounter++;
+        fileWatcher.StructureTreeChanged += (_, _) => iTsRuntimeChangedCounter++;
 
-        string configFilePathWithWrongName = Path.Combine(folderPath, "wrong name");
+        string configFilePathWithWrongName = Path.Combine(rootFolderPath, "wrong name");
         File.Move(configFilePath, configFilePathWithWrongName);
 
         Assert.True(await WaitForCondition(() => iTsRuntimeChangedCounter == 1));
@@ -153,94 +158,78 @@ public sealed class TSFileWatcherTests : IAsyncLifetime {
     #region ts modules
 
     [Fact]
-    public async Task CreateWithMoveFile_Updates_StructureTree() {
+    public async Task CreateWithMoveFile_UpdatesStructureTree() {
         int iTsRuntimeChangedCounter = 0;
-        fileWatcher.ITSRuntimeChanged += (TSStructureTree structureTree) => {
-            Assert.Single(structureTree.ModuleList);
-            Assert.Equal(6, structureTree.ModuleList[0].FunctionList.Count);
+        fileWatcher.StructureTreeChanged += (_, _) => iTsRuntimeChangedCounter++;
 
-            iTsRuntimeChangedCounter++;
-        };
-
-        string sourceFilePath = Path.Combine(folderPath, "createTest.d.ts");
+        string sourceFilePath = Path.Combine(rootFolderPath, "createTest.d.ts");
         await File.WriteAllTextAsync(sourceFilePath, TestFileContent.TS_DECLARATION);
         File.Move(sourceFilePath, Path.Combine(declarationPath, "createTest.d.ts"));
 
         Assert.True(await WaitForCondition(() => iTsRuntimeChangedCounter == 1));
-
+        Assert.Single(fileWatcher.StructureTree.ModuleList);
+        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
     }
 
     [Fact]
-    public async Task CreateFile_Updates_StructureTree() {
+    public async Task CreateFile_UpdatesStructureTree() {
         int iTsRuntimeChangedCounter = 0;
-        fileWatcher.ITSRuntimeChanged += (TSStructureTree structureTree) => {
-            Assert.Single(structureTree.ModuleList);
-            Assert.Equal(6, structureTree.ModuleList[0].FunctionList.Count);
-
-            iTsRuntimeChangedCounter++;
-        };
+        fileWatcher.StructureTreeChanged += (_, _) => iTsRuntimeChangedCounter++;
 
         await File.WriteAllTextAsync(Path.Combine(declarationPath, "updateTest.d.ts"), TestFileContent.TS_DECLARATION);
 
         Assert.True(await WaitForCondition(() => iTsRuntimeChangedCounter == 1));
+        Assert.Single(fileWatcher.StructureTree.ModuleList);
+        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
     }
 
     [Fact]
-    public async Task UpdateFile_Updates_StructureTree() {
+    public async Task UpdateFile_UpdatesStructureTree() {
         string moduleFilePath = Path.Combine(declarationPath, "updateTest.d.ts");
         await File.WriteAllTextAsync(moduleFilePath, TestFileContent.TS_DECLARATION);
-        await Task.Delay(2000);
+        await Task.Delay(FILE_WRITE_DELAY);
 
         int iTsRuntimeChangedCounter = 0;
-        fileWatcher.ITSRuntimeChanged += (TSStructureTree structureTree) => {
-            Assert.Single(structureTree.ModuleList);
-            Assert.Equal(5, structureTree.ModuleList[0].FunctionList.Count);
+        fileWatcher.StructureTreeChanged += (_, _) => iTsRuntimeChangedCounter++;
 
-            iTsRuntimeChangedCounter++;
-        };
-
-        string newModule = TestFileContent.TS_DECLARATION.Replace("export declare function mathJaxRender(): void;", "");
-        await File.WriteAllTextAsync(moduleFilePath, newModule);
+        string newContent = TestFileContent.TS_DECLARATION.Replace("export declare function mathJaxRender(): void;", "");
+        await File.WriteAllTextAsync(moduleFilePath, newContent);
 
         Assert.True(await WaitForCondition(() => iTsRuntimeChangedCounter >= 1));
+        Assert.Single(fileWatcher.StructureTree.ModuleList);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
     }
 
     [Fact]
-    public async Task RemoveFile_Updates_StructureTree() {
+    public async Task RemoveFile_UpdatesStructureTree() {
         string moduleFilePath = Path.Combine(declarationPath, "updateTest.d.ts");
         await File.WriteAllTextAsync(moduleFilePath, TestFileContent.TS_DECLARATION);
-        await Task.Delay(2000);
+        await Task.Delay(FILE_WRITE_DELAY);
 
         int iTsRuntimeChangedCounter = 0;
-        fileWatcher.ITSRuntimeChanged += (TSStructureTree structureTree) => {
-            Assert.Empty(structureTree.ModuleList);
-
-            iTsRuntimeChangedCounter++;
-        };
+        fileWatcher.StructureTreeChanged += (_, _) => iTsRuntimeChangedCounter++;
 
         File.Delete(moduleFilePath);
 
         Assert.True(await WaitForCondition(() => iTsRuntimeChangedCounter == 1));
+        Assert.Empty(fileWatcher.StructureTree.ModuleList);
     }
 
     [Fact]
-    public async Task RenameFile_Updates_StructureTree() {
+    public async Task RenameFile_UpdatesStructureTree() {
         string moduleFilePath1 = Path.Combine(declarationPath, "updateTest1.d.ts");
         await File.WriteAllTextAsync(moduleFilePath1, TestFileContent.TS_DECLARATION);
-        await Task.Delay(2000);
+        await Task.Delay(FILE_WRITE_DELAY);
 
         int iTsRuntimeChangedCounter = 0;
-        fileWatcher.ITSRuntimeChanged += (TSStructureTree structureTree) => {
-            Assert.Single(structureTree.ModuleList);
-            Assert.Equal(6, structureTree.ModuleList[0].FunctionList.Count);
-
-            iTsRuntimeChangedCounter++;
-        };
+        fileWatcher.StructureTreeChanged += (_, _) => iTsRuntimeChangedCounter++;
 
         string moduleFilePath2 = Path.Combine(declarationPath, "updateTest2.d.ts");
         File.Move(moduleFilePath1, moduleFilePath2);
 
         Assert.True(await WaitForCondition(() => iTsRuntimeChangedCounter == 1));
+        Assert.Single(fileWatcher.StructureTree.ModuleList);
+        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
     }
 
     #endregion

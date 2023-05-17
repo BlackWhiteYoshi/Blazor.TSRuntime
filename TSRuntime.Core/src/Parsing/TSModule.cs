@@ -10,11 +10,6 @@ public sealed class TSModule {
     public string FilePath { get; set; } = string.Empty;
 
     /// <summary>
-    /// The <see cref="FilePath"/> without starting <see cref="Config.DECLARATION_PATH"/>.
-    /// </summary>
-    public string RelativePath { get; set; } = string.Empty;
-
-    /// <summary>
     /// The <see cref="RelativePath"/> but starts with "/" and ends with ".js", also ignoring starting "/wwwroot".
     /// </summary>
     public string ModulePath { get; set; } = string.Empty;
@@ -30,24 +25,23 @@ public sealed class TSModule {
     public List<TSFunction> FunctionList { get; set; } = new();
 
 
+    #region ParseMetaData
+
     /// <summary>
-    /// Writes <see cref="FilePath"/>, <see cref="RelativePath"/>, <see cref="ModulePath"/> and <see cref="ModuleName"/> by reading meta-data of the given file. 
+    /// Writes <see cref="FilePath"/>, <see cref="ModulePath"/> and <see cref="ModuleName"/> by reading meta-data of the given file.
     /// </summary>
     /// <param name="filePath"></param>
     /// <param name="rootFolder"></param>
-    public void ParseMetaData(string filePath, string rootFolder) {
+    public void ParseMetaDataRootFolder(string filePath, string rootFolder) {
         FilePath = filePath;
         ReadOnlySpan<char> path = filePath.AsSpan();
 
-
-        // RelativePath
+        // relative path
         if (rootFolder != string.Empty)
             if (rootFolder is [.., '/'])
                 path = path[rootFolder.Length..];
             else
                 path = path[(rootFolder.Length + 1)..];
-        RelativePath = path.ToString();
-
 
         // ModulePath
         if (path.EndsWith(".d.ts".AsSpan()))
@@ -58,7 +52,48 @@ public sealed class TSModule {
 
         ModulePath = $"/{path.ToString()}.js";
 
+        // ModuleName
+        ParseModuleName(path);
+    }
 
+    /// <summary>
+    /// Writes <see cref="FilePath"/>, <see cref="ModulePath"/> and <see cref="ModuleName"/> by reading meta-data of the given file.
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <param name="modulePath"></param>
+    public void ParseMetaDataModulePath(string filePath, string modulePath) {
+        FilePath = filePath;
+
+        // ModulePath
+        ReadOnlySpan<char> path;
+        switch (modulePath.StartsWith("/"), modulePath.EndsWith(".js")) {
+            case (true, true):
+                ModulePath = modulePath;
+                path = modulePath.AsSpan(1, modulePath.Length - 4);
+                break;
+            case (false, true):
+                ModulePath = $"/{modulePath}";
+                path = modulePath.AsSpan(0, modulePath.Length - 3);
+                break;
+            case (true, false):
+                ModulePath = $"{modulePath}.js";
+                path = modulePath.AsSpan(1, modulePath.Length - 1);
+                break;
+            case (false, false):
+                ModulePath = $"/{modulePath}.js";
+                path = modulePath.AsSpan();
+                break;
+        };
+
+        // ModuleName
+        ParseModuleName(path);
+    }
+
+    /// <summary>
+    /// Retrieves the file name of the path (without ".razor") and replaces unsafe characters with "_".
+    /// </summary>
+    /// <param name="path">relative path of the module without starting "/" and ending ".js"</param>
+    private void ParseModuleName(ReadOnlySpan<char> path) {
         // FileName
         int lastSlash = path.LastIndexOf('/');
         ReadOnlySpan<char> rawModuleName = (lastSlash != -1) switch {
@@ -92,6 +127,9 @@ public sealed class TSModule {
         }
     }
 
+    #endregion
+
+
     /// <summary>
     /// <para>Parses the file given in <see cref="FilePath"/> and adds the found functions in <see cref="FunctionList"/></para>
     /// <para><see cref="FunctionList"/> is cleared before adding some functions.</para>
@@ -116,12 +154,27 @@ public sealed class TSModule {
     /// Creates a <see cref="TSModule"/> with meta-data of the given file and a <see cref="FunctionList">list of js-functions</see> included in the file.
     /// </summary>
     /// <param name="filePath"></param>
-    /// /// <param name="rootFolder"></param>
+    /// <param name="rootFolder"></param>
     /// <returns></returns>
-    public static async Task<TSModule> Parse(string filePath, string rootFolder) {
+    public static async Task<TSModule> ParseWithRootFolder(string filePath, string rootFolder) {
         TSModule module = new();
 
-        module.ParseMetaData(filePath, rootFolder);
+        module.ParseMetaDataRootFolder(filePath, rootFolder);
+        await module.ParseFunctions();
+
+        return module;
+    }
+
+    /// <summary>
+    /// Creates a <see cref="TSModule"/> with meta-data of the given file and a <see cref="FunctionList">list of js-functions</see> included in the file.
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <param name="modulePath"></param>
+    /// <returns></returns>
+    public static async Task<TSModule> ParseWithModulePath(string filePath, string modulePath) {
+        TSModule module = new();
+
+        module.ParseMetaDataModulePath(filePath, modulePath);
         await module.ParseFunctions();
 
         return module;

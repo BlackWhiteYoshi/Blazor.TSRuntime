@@ -23,7 +23,6 @@ public sealed class CoreGeneratorTest {
                 new TSModule() {
                     ModuleName = "Test",
                     FilePath = "/test",
-                    RelativePath = "/test",
                     ModulePath = "/test.js",
                     FunctionList = new List<TSFunction>() {
                         new TSFunction() {

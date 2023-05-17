@@ -8,10 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="TestFolder\CoreParserTest.d.ts">
+    <None Update="CorePaserTestData\NestedFolder\NestedTestModule.d.ts">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="CoreParserTest.d.ts">
+    <None Update="CorePaserTestData\TestModule.d.ts">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -40,11 +40,12 @@ public sealed class CoreConfigTest {
         JsonObject jsonObject = root.AsObject();
 
         // maps to one property but has leaf nodes
+        jsonObject.Remove("declaration path");
         jsonObject.Remove("type map");
         jsonObject.Remove("function name pattern");
         jsonObject.Remove("preload name pattern");
 
-        int numberOfLeafNodes = 3;
+        int numberOfLeafNodes = 4;
         foreach (KeyValuePair<string, JsonNode?> node in jsonObject)
             numberOfLeafNodes += NumberOfLeafNodes(node.Value!);
             
@@ -76,8 +77,121 @@ public sealed class CoreConfigTest {
             """;
         Config config = Config.FromJson(json);
         
-        Assert.Equal(string.Empty, config.DeclarationPath);
+        Assert.Equal(string.Empty, config.DeclarationPath[0].Include);
     }
+
+
+    [Theory]
+    [InlineData("""{ "declaration path": "" }""", new string?[3] { "", "", null })]
+    [InlineData("""{ "declaration path": "\\test" }""", new string?[3] { "/test", "", null })]
+    [InlineData("""{ "declaration path": { "include": "\\test" } }""", new string?[3] { "/test", "", null })]
+    [InlineData("""{ "declaration path": [{ "include": "\\test" }] }""", new string?[3] { "/test", "", null })]
+    [InlineData("""{ "declaration path": { "include": "\\test", "excludes": "as\\df" } }""", new string?[3] { "/test", "as/df", null })]
+    [InlineData("""{ "declaration path": { "include": "\\test", "excludes": [ "as\\df", "ghjk" ] } }""", new string?[3] { "/test", "as/df,ghjk", null })]
+    [InlineData("""{ "declaration path": { "include": "\\test", "file module path": "yx\\cv" } }""", new string?[3] { "/test", "", "yx/cv" })]
+    [InlineData("""{ "declaration path": { "include": "\\test", "excludes": "as\\df", "file module path": "yx\\cv" } }""", new string?[3] { "/test", "as/df", "yx/cv" })]
+    [InlineData("""{ "declaration path": [{ "include": "\\test", "excludes": "as\\df", "file module path": "yx\\cv" }, { "include": "q", "excludes": ["w", "ww" ] } ] }""", new string?[6] { "/test", "as/df", "yx/cv", "q", "w,ww", null })]
+    public void Config_FromJson_DeclarationPathWorks(string json, string?[] expected) {
+        Config config = Config.FromJson(json);
+
+        string?[] result = new string[config.DeclarationPath.Length * 3];
+        for (int i = 0; i < config.DeclarationPath.Length; i++) {
+            DeclarationPath declarationPath = config.DeclarationPath[i];
+
+            result[i * 3 + 0] = declarationPath.Include;
+            result[i * 3 + 1] = string.Join(",", declarationPath.Excludes);
+            result[i * 3 + 2] = declarationPath.FileModulePath;
+        }
+
+        for (int i = 0; i < result.Length; i++)
+            Assert.Equal(expected[i], result[i]);
+    }
+
+    [Theory]
+    [InlineData("", new string[0], null, """
+        [
+            {
+              "include": "",
+              "excludes": []
+            }
+          ]
+        """)]
+    [InlineData("", new string[0], "", """
+        [
+            {
+              "include": "",
+              "excludes": [],
+              "file module path": ""
+            }
+          ]
+        """)]
+    [InlineData("qwer", new string[1] { "asdf" }, "yxcv", """
+        [
+            {
+              "include": "qwer",
+              "excludes": [ "asdf" ],
+              "file module path": "yxcv"
+            }
+          ]
+        """)]
+    [InlineData("qwer", new string[2] { "asdf", "ghjk" }, "yxcv", """
+        [
+            {
+              "include": "qwer",
+              "excludes": [
+                "asdf",
+                "ghjk"
+              ],
+              "file module path": "yxcv"
+            }
+          ]
+        """)]
+    public void Config_ToJson_DeclarationPathWorks(string include, string[] excludes, string fileModulePath, string expected) {
+        Config config = new() {
+            DeclarationPath = new DeclarationPath[1] { new(include, excludes, fileModulePath) }
+        };
+        string json = config.ToJson();
+
+        Assert.Contains($""" "declaration path": {expected},""", json);
+    }
+
+    [Fact]
+    public void Config_ToJson_MultipleDeclarationPath() {
+        Config config = new() {
+            DeclarationPath = new DeclarationPath[2] { new("qwer", new string[1] { "asdf" }, "yxcv"), new("rewq", new string[2] { "fdsa", "kjhg" }, "vcxy") }
+        };
+        string json = config.ToJson();
+
+        const string expected = """
+            "declaration path": [
+                {
+                  "include": "qwer",
+                  "excludes": [ "asdf" ],
+                  "file module path": "yxcv"
+                },
+                {
+                  "include": "rewq",
+                  "excludes": [
+                    "fdsa",
+                    "kjhg"
+                  ],
+                  "file module path": "vcxy"
+                }
+              ],
+            """;
+        Assert.Contains(expected, json);
+    }
+
+    [Fact]
+    public void Config_ToJson_EmptyDeclarationPath() {
+        Config config = new() {
+            DeclarationPath = Array.Empty<DeclarationPath>()
+        };
+        string json = config.ToJson();
+
+        Assert.Contains($""" "declaration path": [],""", json);
+    }
+
 
     [Theory]
     [InlineData(""" "" """, new string[1] { "" })]
@@ -115,6 +229,7 @@ public sealed class CoreConfigTest {
 
         Assert.Contains($""" "using statements": {expected},""", json);
     }
+
 
     [Theory]
     [InlineData(new string[] { }, """{ }""")]

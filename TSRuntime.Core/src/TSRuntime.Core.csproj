@@ -24,7 +24,7 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 
-    <Version>0.0.3</Version>
+    <Version>0.1.0</Version>
 
     <!--<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
   </PropertyGroup>
@@ -41,10 +41,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.Text.Json" Version="6.0.7" />
-    <PackageReference Include="PolySharp" Version="1.13.1">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <PackageReference Include="PolySharp" Version="1.13.1" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
