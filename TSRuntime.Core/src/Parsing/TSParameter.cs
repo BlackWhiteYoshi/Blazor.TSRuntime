@@ -17,17 +17,22 @@ public sealed class TSParameter {
     /// <summary>
     /// Indicates if the type may be null.
     /// </summary>
-    public bool TypeNullable { get; set; }
+    public bool TypeNullable { get; set; } = false;
 
     /// <summary>
     /// Indicates if the given parameter is an array.
     /// </summary>
-    public bool Array { get; set; }
+    public bool Array { get; set; } = false;
 
     /// <summary>
     /// Indicates if the array itself may be null.
     /// </summary>
-    public bool ArrayNullable { get; set; }
+    public bool ArrayNullable { get; set; } = false;
+
+    /// <summary>
+    /// Indicates if the parameter is optional
+    /// </summary>
+    public bool Optional { get; set; } = false;
 
 
     /// <summary>
@@ -36,8 +41,10 @@ public sealed class TSParameter {
     /// </summary>
     /// <param name="subStr"></param>
     public void ParseName(ReadOnlySpan<char> subStr) {
-        if (subStr is [.., '?'])
+        if (subStr is [.., '?']) {
+            Optional = true;
             Name = subStr[..^1].ToString();
+        }
         else
             Name = subStr.ToString();
     }
@@ -60,53 +67,67 @@ public sealed class TSParameter {
         if (subStr.StartsWith("readonly ".AsSpan()))
             subStr = subStr[9..];
 
-        bool nullable = ParseNullable(ref subStr);
+        {
+            (TypeNullable, bool optional) = ParseNullUndefined(ref subStr);
+            Optional |= optional;
+        }
 
         if (subStr.EndsWith("[]".AsSpan())) {
             Array = true;
-            ArrayNullable = nullable;
+            ArrayNullable = TypeNullable;
             subStr = subStr[..^2];   // cut "..[]"
             if (subStr[0] == '(') {
                 subStr = subStr[1..^1]; // cut "(..)"
-                nullable = ParseNullable(ref subStr);
+                (bool nullable, bool optional) = ParseNullUndefined(ref subStr);
+                TypeNullable = nullable | optional;
             }
             else
-                nullable = false;
+                TypeNullable = false;
         }
         else if (subStr.StartsWith("Array<".AsSpan())) {
             Array = true;
-            ArrayNullable = nullable;
+            ArrayNullable = TypeNullable;
             subStr = subStr[6..^1];   // cut "Array<..>"
-            nullable = ParseNullable(ref subStr);
+            (bool nullable, bool optional) = ParseNullUndefined(ref subStr);
+            TypeNullable = nullable | optional;
         }
 
-        TypeNullable = nullable;
         Type = subStr.ToString();
         return;
 
 
-        static bool ParseNullable(ref ReadOnlySpan<char> subStr) {
-            if (subStr.StartsWith("null |".AsSpan())) {
-                subStr = subStr[7..]; // cut "null | .."
-                return true;    
-            }
-            
-            if (subStr.StartsWith("undefined |".AsSpan())) {
-                subStr = subStr[12..]; // cut "undefined | .."
-                return true;   
+        static (bool nullable, bool optional) ParseNullUndefined(ref ReadOnlySpan<char> subStr) {
+            switch (subStr) {
+                case [.., '|', ' ', 'n', 'u', 'l', 'l', ' ', '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd']
+                or [.., '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', ' ', 'n', 'u', 'l', 'l']:
+                    subStr = subStr[..^19]; // cut " | null | undefined" or " | undefined | null"
+                    return (true, true);
+                case ['n', 'u', 'l', 'l', ' ', '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', ..]
+                or ['u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', ' ', 'n', 'u', 'l', 'l', ' ', '|', ..]:
+                    subStr = subStr[19..]; // cut "null | undefined | " or "undefined | null | "
+                    return (true, true);
+                case ['n', 'u', 'l', 'l', ' ', '|', .., '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd']:
+                    subStr = subStr[7..^12]; // cut "null | .. | undefined"
+                    return (true, true);
+                case ['u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', .., '|', ' ', 'n', 'u', 'l', 'l']:
+                    subStr = subStr[12..^7]; // cut "undefined | .. | null"
+                    return (true, true);
+
+                case [.., '|', ' ', 'n', 'u', 'l', 'l']:
+                    subStr = subStr[..^7]; // cut " | null"
+                    return (true, false);
+                case ['n', 'u', 'l', 'l', ' ', '|', ..]:
+                    subStr = subStr[7..]; // cut "null | "
+                    return (true, false);
+                case [.., '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd']:
+                    subStr = subStr[..^12]; // cut " | undefined"
+                    return (false, true);
+                case ['u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', ..]:
+                    subStr = subStr[12..]; // cut "undefined | "
+                    return (false, true);
             }
 
-            if (subStr.EndsWith("| null".AsSpan())) {
-                subStr= subStr[..^7]; // cut "..| null"
-                return true;
-            }
-            
-            if (subStr.EndsWith("| undefined".AsSpan())) {
-                subStr = subStr[..^12]; // cut "..| undefined"
-                return true;   
-            }
-
-            return false;
+            return (false, false);
         }
     }
 }

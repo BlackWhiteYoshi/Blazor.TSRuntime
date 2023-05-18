@@ -8,23 +8,44 @@ public sealed class CoreParserTest {
     #region TSParamter
 
     [Theory]
-    [InlineData("number", "number", false, false, false)]
-    [InlineData("string", "string", false, false, false)]
-    [InlineData("asdf", "asdf", false, false, false)]
-    [InlineData("number | null", "number", true, false, false)]
-    [InlineData("number | undefined", "number", true, false, false)]
-    [InlineData("number[]", "number", false, true, false)]
-    [InlineData("readonly number[]", "number", false, true, false)]
-    [InlineData("Array<number>", "number", false, true, false)]
-    [InlineData("readonly Array<number>", "number", false, true, false)]
-    [InlineData("number[] | null", "number", false, true, true)]
-    [InlineData("Array<number> | null", "number", false, true, true)]
-    [InlineData("(number | null)[]", "number", true, true, false)]
-    [InlineData("(number | null)[] | null", "number", true, true, true)]
-    [InlineData("readonly (number | null)[] | null", "number", true, true, true)]
-    [InlineData("[number, string]", "[number, string]", false, false, false)]
-    [InlineData("readonly [number, string]", "[number, string]", false, false, false)]
-    public void ParsingParameter_Works(string input, string type, bool typeNullable, bool array, bool arrayNullable) {
+    [InlineData("number", "number", false, false, false, false)]
+    [InlineData("string", "string", false, false, false, false)]
+    [InlineData("asdf", "asdf", false, false, false, false)]
+
+    [InlineData("number | null", "number", true, false, false, false)]
+    [InlineData("number | undefined", "number", false, false, false, true)]
+    [InlineData("number | null | undefined", "number", true, false, false, true)]
+    [InlineData("number | undefined | null", "number", true, false, false, true)]
+    [InlineData("null | undefined | number", "number", true, false, false, true)]
+    [InlineData("undefined | null | number", "number", true, false, false, true)]
+    [InlineData("null | number | undefined", "number", true, false, false, true)]
+    [InlineData("undefined | number | null", "number", true, false, false, true)]
+
+
+    [InlineData("number[]", "number", false, true, false, false)]
+    [InlineData("readonly number[]", "number", false, true, false, false)]
+    [InlineData("Array<number>", "number", false, true, false, false)]
+    [InlineData("readonly Array<number>", "number", false, true, false, false)]
+    [InlineData("number[] | null", "number", false, true, true, false)]
+    [InlineData("number[] | undefined", "number", false, true, false, true)]
+    [InlineData("number[] | null | undefined", "number", false, true, true, true)]
+    [InlineData("Array<number> | null", "number", false, true, true, false)]
+    [InlineData("Array<number> | undefined", "number", false, true, false, true)]
+    [InlineData("Array<number> | null | undefined", "number", false, true, true, true)]
+
+    [InlineData("(number | null)[]", "number", true, true, false, false)]
+    [InlineData("(number | undefined)[]", "number", true, true, false, false)]
+    [InlineData("(number | null | undefined)[]", "number", true, true, false, false)]
+    [InlineData("(number | null)[] | null", "number", true, true, true, false)]
+    [InlineData("(number | undefined)[] | undefined", "number", true, true, false, true)]
+    [InlineData("(number | null | undefined)[] | null | undefined", "number", true, true, true, true)]
+    [InlineData("readonly (number | null)[] | null", "number", true, true, true, false)]
+    [InlineData("readonly (number | undefined)[] | undefined", "number", true, true, false, true)]
+    [InlineData("readonly (number | null | undefined)[] | null | undefined", "number", true, true, true, true)]
+
+    [InlineData("[number, string]", "[number, string]", false, false, false, false)]
+    [InlineData("readonly [number, string]", "[number, string]", false, false, false, false)]
+    public void ParsingParameter_Works(string input, string type, bool typeNullable, bool array, bool arrayNullable, bool optional) {
         TSParameter parameter = new();
 
         parameter.ParseType(input);
@@ -33,20 +54,22 @@ public sealed class CoreParserTest {
         Assert.Equal(typeNullable, parameter.TypeNullable);
         Assert.Equal(array, parameter.Array);
         Assert.Equal(arrayNullable, parameter.ArrayNullable);
+        Assert.Equal(optional, parameter.Optional);
     }
 
     [Theory]
-    [InlineData("", "")]
-    [InlineData("a", "a")]
-    [InlineData("asdf", "asdf")]
-    [InlineData("a?", "a")]
-    [InlineData("asdf?", "asdf")]
-    public void ParsingParameterName_Works(string input, string name) {
+    [InlineData("", "", false)]
+    [InlineData("a", "a", false)]
+    [InlineData("asdf", "asdf", false)]
+    [InlineData("a?", "a", true)]
+    [InlineData("asdf?", "asdf", true)]
+    public void ParsingParameterName_Works(string input, string name, bool optional) {
         TSParameter parameter = new();
 
         parameter.ParseName(input);
 
         Assert.Equal(name, parameter.Name);
+        Assert.Equal(optional, parameter.Optional);
     }
 
     #endregion
