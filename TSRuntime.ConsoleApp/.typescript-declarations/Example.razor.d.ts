@@ -11,3 +11,5 @@ export declare function scrollIntoView(elementId: string): void;
 export declare function mathJaxRender(): void;
 
 export declare function LongWait(): Promise<void>;
+
+export declare function test(p1?: undefined | string | null): (string | null)[] | null;

@@ -116,55 +116,16 @@ public static partial class Generator {
 
 
     /// <summary>
-    /// <para>Creates a parameter list, an argument list and the mapped return type that can be used to create generated code.</para>
-    /// <para>Used by the SourceGenerator.</para>
+    /// Retrieves the value in a Dictionary and defaults to the given key if not found.
     /// </summary>
-    /// <param name="typeMap"></param>
-    /// <param name="function"></param>
+    /// <param name="dictionary"></param>
+    /// <param name="key"></param>
     /// <returns></returns>
-    private static (List<string> parameters, List<string> arguments, string returnType) CreateParamterList(this Dictionary<string, string> typeMap, TSFunction function) {
-        List<string> parameters = new(function.ParameterList.Count * 4);
-        List<string> arguments = new(function.ParameterList.Count * 2);
-
-        foreach (TSParameter parameter in function.ParameterList) {
-            string mappedType = GetValueOrKey(typeMap, parameter.Type);
-
-            parameters.Add(mappedType);
-            if (parameter.TypeNullable)
-                parameters.Add("?");
-            if (parameter.Array)
-                parameters.Add("[]");
-            if (parameter.ArrayNullable)
-                parameters.Add("?");
-            parameters.Add(" ");
-            parameters.Add(parameter.Name);
-            parameters.Add(", ");
-
-            arguments.Add(", ");
-            arguments.Add(parameter.Name);
-        }
-
-        TSParameter tsReturnType = function.ReturnType;
-        string rawReturnType = GetValueOrKey(typeMap, tsReturnType.Type);
-        string returnType = (tsReturnType.TypeNullable, tsReturnType.Array, tsReturnType.ArrayNullable) switch {
-            (false, false, _) => rawReturnType,
-            (true, false, _) => $"{rawReturnType}?",
-            (false, true, false) => $"{rawReturnType}[]",
-            (false, true, true) => $"{rawReturnType}[]?",
-            (true, true, false) => $"{rawReturnType}?[]",
-            (true, true, true) => $"{rawReturnType}?[]?"
-        };
-
-        return (parameters, arguments, returnType);
-
-
-        /// Retrieves the value in a Dictionary and defaults to the given key if not found.
-        static string GetValueOrKey(Dictionary<string, string> dictionary, string key) {
-            bool success = dictionary.TryGetValue(key, out string? value);
-            if (success)
-                return value!;
-            else
-                return key;
-        }
+    private static string GetValueOrKey(this Dictionary<string, string> dictionary, string key) {
+        bool success = dictionary.TryGetValue(key, out string? value);
+        if (success)
+            return value!;
+        else
+            return key;
     }
 }

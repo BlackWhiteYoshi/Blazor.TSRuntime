@@ -146,13 +146,22 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 #region `module.ModuleName`
             ``
             foreach (TSFunction function in module.FunctionList) {
-                (List<string> parameters, List<string> arguments, string returnTypeMapped) = config.TypeMap.CreateParamterList(function);
+                string returnType = config.TypeMap.GetValueOrKey(function.ReturnType.Type);
+                string returnModifiers = (function.ReturnType.TypeNullable, function.ReturnType.Array, function.ReturnType.ArrayNullable) switch {
+                    (false, false, _) => string.Empty,
+                    (true, false, _) => "?",
+                    (false, true, false) => "[]",
+                    (false, true, true) => "[]?",
+                    (true, true, false) => "?[]",
+                    (true, true, true) => "?[]?"
+                };
             `+
             ``
             if (config.PromiseFunctionOnlyAsync && function.ReturnPromise) {
             `+
 
             {{Get_TrySync_Async(trySync: false)}}
+
             ``
             }
             `-
@@ -169,7 +178,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 /// </summary>
             {{SUMMARY_PARAMETERS}}
                 /// <returns>result of the JS-function</returns>
-                public `returnTypeMapped` {{GetFunctionNamePattern("Invoke")}}({{PARAMETERS_WITHOUT_ENDING_COMMA}})
+                public `returnType``returnModifiers` {{GetFunctionNamePattern("Invoke")}}({{PARAMETERS}})
                     => Invoke<{{MAPPED_IJS_VOID_RESULT}}>(`index`, "`module.ModulePath`", "`function.Name`"{{ARGUMENTS}});
             ``
             }
@@ -223,9 +232,9 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
                 /// <returns>result of the JS-function</returns>
             ``
-            if (returnTypeMapped == "void") {
+            if (returnType == "void") {
             `+
-                public Task {{GetFunctionNamePattern(methodName)}}({{PARAMETERS}}CancellationToken cancellationToken = default) {
+                public Task {{GetFunctionNamePattern(methodName)}}({{PARAMETERS}}, CancellationToken cancellationToken = default) {
                     ValueTask<IJSVoidResult> task = {{methodName}}<IJSVoidResult>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
                     return task.IsCompleted ? Task.CompletedTask : task.AsTask();
                 }
@@ -235,8 +244,8 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             ``
             else {
             `+
-                public ValueTask<`returnTypeMapped`> {{GetFunctionNamePattern(methodName)}}({{PARAMETERS}}CancellationToken cancellationToken = default)
-                    => {{methodName}}<`returnTypeMapped`>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
+                public ValueTask<`returnType``returnModifiers`> {{GetFunctionNamePattern(methodName)}}({{PARAMETERS}}, CancellationToken cancellationToken = default)
+                    => {{methodName}}<`returnType``returnModifiers`>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
             ``
             }
             `-
@@ -478,33 +487,54 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         `-
         """;
 
-    private const string PARAMETERS = """
+    private const string PARAMETERS = $$"""
         ``
-        foreach (string str in parameters)
-            yield return str;
+        int lastIndex = function.ParameterList.Count - 1 - 0;
+        if (lastIndex >= 0) {
+            for (int __i = 0; __i < lastIndex; __i++) {
+                TSParameter parameter = function.ParameterList[__i];
+
+                {{PARAMETERS_INNTER}}
+                yield return ", ";
+            }
+
+            {
+                TSParameter parameter = function.ParameterList[lastIndex];
+
+                {{PARAMETERS_INNTER}}
+            }
+        }
         ``
         """;
-
-    private const string PARAMETERS_WITHOUT_ENDING_COMMA = """
-        ``
-        for (int __i = 0; __i < parameters.Count - 1; __i++)
-            yield return parameters[__i];
-        ``
+    private const string PARAMETERS_INNTER = """
+        yield return config.TypeMap.GetValueOrKey(parameter.Type);
+                if (parameter.TypeNullable)
+                    yield return "?";
+                if (parameter.Array)
+                    yield return "[]";
+                if (parameter.ArrayNullable)
+                    yield return "?";
+                yield return " ";
+                yield return parameter.Name;
         """;
 
     private const string ARGUMENTS = """
         ``
-        foreach (string str in arguments)
-            yield return str;
+        for (int __i = 0; __i < function.ParameterList.Count - 0; __i++) {
+            yield return ", ";
+            yield return function.ParameterList[__i].Name;
+        }
         ``
         """;
 
     private const string MAPPED_IJS_VOID_RESULT = """
         ``
-        if (returnTypeMapped == "void")
+        if (returnType == "void")
             yield return "IJSVoidResult";
-        else
-            yield return returnTypeMapped;
+        else {
+            yield return returnType;
+            yield return returnModifiers;
+        }
         ``
         """;
 
