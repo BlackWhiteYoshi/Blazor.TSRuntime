@@ -79,16 +79,16 @@ public sealed record class Config {
     /// <summary>
     /// Naming of the generated methods that invoke module functions.
     /// </summary>
-    public FunctionNamePattern FunctionNamePattern { get; init; } = new(FUNCTION_NAME_PATTERN, FUNCTION_TRANSFORM, MODULE_TRANSFORM, ACTION_TRANSFORM);
+    public FunctionNamePattern FunctionNamePattern { get; init; } = new(FUNCTION_NAME_PATTERN, MODULE_TRANSFORM, FUNCTION_TRANSFORM, ACTION_TRANSFORM);
     private const string FUNCTION_NAME_PATTERN = "#function#";
-    private const NameTransform FUNCTION_TRANSFORM = NameTransform.FirstUpperCase;
     private const NameTransform MODULE_TRANSFORM = NameTransform.None;
+    private const NameTransform FUNCTION_TRANSFORM = NameTransform.FirstUpperCase;
     private const NameTransform ACTION_TRANSFORM = NameTransform.None;
 
     /// <summary>
     /// Naming of the generated methods that preloads a specific module.
     /// </summary>
-    public PreloadNamePattern PreloadNamePattern { get; init; } = new(PRELOAD_NAME_PATTERN, PRELOAD_MODULE_TRANSFORM);
+    public ModuleNamePattern PreloadNamePattern { get; init; } = new(PRELOAD_NAME_PATTERN, PRELOAD_MODULE_TRANSFORM);
     private const string PRELOAD_NAME_PATTERN = "Preload#module#";
     private const NameTransform PRELOAD_MODULE_TRANSFORM = NameTransform.None;
 
@@ -319,11 +319,11 @@ public sealed record class Config {
 
             FunctionNamePattern = new FunctionNamePattern(
                 (string?)root["function name pattern"]?["pattern"] ?? FUNCTION_NAME_PATTERN,
-                Enum.TryParse(((string?)root["function name pattern"]?["function transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform functionTransform) ? functionTransform : FUNCTION_TRANSFORM,
                 Enum.TryParse(((string?)root["function name pattern"]?["module transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform moduleTransform) ? moduleTransform : MODULE_TRANSFORM,
+                Enum.TryParse(((string?)root["function name pattern"]?["function transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform functionTransform) ? functionTransform : FUNCTION_TRANSFORM,
                 Enum.TryParse(((string?)root["function name pattern"]?["action transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform actionTransform) ? actionTransform : ACTION_TRANSFORM),
             
-            PreloadNamePattern = new PreloadNamePattern(
+            PreloadNamePattern = new ModuleNamePattern(
                 (string?)root["preload name pattern"]?["pattern"] ?? PRELOAD_NAME_PATTERN,
                 Enum.TryParse(((string?)root["preload name pattern"]?["module transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform preLoadModuleTransform) ? preLoadModuleTransform : PRELOAD_MODULE_TRANSFORM),
             PreloadAllModulesName = (string?)root["preload all modules name"] ?? PRELOAD_ALL_MODULES_NAME,

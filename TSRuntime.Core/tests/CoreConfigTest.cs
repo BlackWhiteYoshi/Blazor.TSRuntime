@@ -277,7 +277,7 @@ public sealed class CoreConfigTest {
         FunctionNamePattern functionNaming = new(naming, NameTransform.None, NameTransform.None, NameTransform.None);
 
         StringBuilder builder = new();
-        foreach (string str in functionNaming.GetNaming(FUNCTION, MODULE, ACTION))
+        foreach (string str in functionNaming.GetNaming(MODULE, FUNCTION, ACTION))
             builder.Append(str);
         string result = builder.ToString();
 
@@ -285,16 +285,17 @@ public sealed class CoreConfigTest {
     }
 
     [Theory]
-    [InlineData(NameTransform.None, NameTransform.None, NameTransform.None, "#function##module##action#", $"{FUNCTION}{MODULE}{ACTION}")]
-    [InlineData(NameTransform.UpperCase, NameTransform.None, NameTransform.None, "#function#", "FUNCTION")]
-    [InlineData(NameTransform.None, NameTransform.LowerCase, NameTransform.None, "#module#", "module")]
-    [InlineData(NameTransform.FirstUpperCase, NameTransform.None, NameTransform.None, "#function#", "Function")]
-    [InlineData(NameTransform.None, NameTransform.FirstLowerCase, NameTransform.None, "#module#", "module")]
-    public void FunctionNamePattern_TransformWorks(NameTransform function, NameTransform module, NameTransform action, string naming, string expected) {
-        FunctionNamePattern functionNaming = new(naming, function, module, action);
+    [InlineData(NameTransform.None, NameTransform.None, NameTransform.None, "#module##function##action#", $"{MODULE}{FUNCTION}{ACTION}")]
+    [InlineData(NameTransform.None, NameTransform.UpperCase, NameTransform.None, "#function#", "FUNCTION")]
+    [InlineData(NameTransform.LowerCase, NameTransform.None, NameTransform.None, "#module#", "module")]
+    [InlineData(NameTransform.None, NameTransform.FirstUpperCase, NameTransform.None, "#function#", "Function")]
+    [InlineData(NameTransform.FirstLowerCase, NameTransform.None, NameTransform.None, "#module#", "module")]
+    [InlineData(NameTransform.None, NameTransform.None, NameTransform.FirstLowerCase, "#action#", "action")]
+    public void FunctionNamePattern_TransformWorks(NameTransform module, NameTransform function, NameTransform action, string naming, string expected) {
+        FunctionNamePattern functionNaming = new(naming, module, function, action);
 
         StringBuilder builder = new();
-        foreach (string str in functionNaming.GetNaming(FUNCTION, MODULE, ACTION))
+        foreach (string str in functionNaming.GetNaming(MODULE, FUNCTION, ACTION))
             builder.Append(str);
         string result = builder.ToString();
 
@@ -324,7 +325,7 @@ public sealed class CoreConfigTest {
     [InlineData("test2", $"test2")]
     [InlineData("", "")]
     public void PreloadNamePattern_ParsingWorks(string naming, string expected) {
-        PreloadNamePattern preLoadNaming = new(naming, NameTransform.None);
+        ModuleNamePattern preLoadNaming = new(naming, NameTransform.None);
 
         StringBuilder builder = new();
         foreach (string str in preLoadNaming.GetNaming(MODULE))
@@ -340,7 +341,7 @@ public sealed class CoreConfigTest {
     [InlineData(NameTransform.LowerCase, "#module#", "module")]
     [InlineData(NameTransform.FirstLowerCase, "#module#", "module")]
     public void PreloadNamePattern_TransformWorks(NameTransform module, string naming, string expected) {
-        PreloadNamePattern preLoadNaming = new(naming, module);
+        ModuleNamePattern preLoadNaming = new(naming, module);
 
         StringBuilder builder = new();
         foreach (string str in preLoadNaming.GetNaming(MODULE))
@@ -361,7 +362,7 @@ public sealed class CoreConfigTest {
     [InlineData("test#function#")]
     public void PreloadNamePattern_ThrowsException_WhenWrongNamingPattern(string naming) {
         try {
-            PreloadNamePattern preLoadNaming = new(naming, NameTransform.None);
+            ModuleNamePattern preLoadNaming = new(naming, NameTransform.None);
             Assert.Fail("No Exception happened");
         }
         catch (ArgumentException) { }

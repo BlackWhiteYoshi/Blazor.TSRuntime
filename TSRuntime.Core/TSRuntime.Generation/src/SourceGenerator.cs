@@ -273,7 +273,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
     private static string GetFunctionNamePattern(string action) {
         return $"""
             ``
-            foreach (string str in config.FunctionNamePattern.GetNaming(function.Name, module.ModuleName, "{action}"))
+            foreach (string str in config.FunctionNamePattern.GetNaming(module.ModuleName, function.Name, "{action}"))
                 yield return str;
             if (config.PromiseFunctionAppendAsync && function.ReturnPromise)
                 yield return "Async";

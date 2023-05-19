@@ -1,19 +1,20 @@
 ﻿namespace TSRuntime.Core.Configs.NamePattern;
 
 /// <summary>
-/// <para>Naming of the generated methods that preloads js-modules.</para>
-/// <para>It supports the variable #module#.</para>
+/// Naming with 1 variable: #module#.
 /// </summary>
-public struct PreloadNamePattern : IEquatable<PreloadNamePattern>
+public struct ModuleNamePattern : IEquatable<ModuleNamePattern>
 {
     private const string MODULE = "#module#";
 
     
-    private readonly List<OutputBlock> outputList = new(2); // default "Preload#module#" are 2 entries
+    private readonly List<OutputBlock> outputList = new(2); // default "Preload#module#" of "I#module#" are 2 entries
     /// <summary>
-    /// <para>The name pattern for creating the method name.</para>
-    /// <para>placeholder:<br />
-    /// #module#</para>
+    /// <para>The name pattern for creating the name.</para>
+    /// <para>
+    /// placeholder:<br />
+    /// #module#
+    /// </para>
     /// </summary>
     public string NamePattern { get; }
     /// <summary>
@@ -31,7 +32,7 @@ public struct PreloadNamePattern : IEquatable<PreloadNamePattern>
     /// #module#</para></param>
     /// <param name="moduleTransform">Upper/Lower case transform for the #module# placeholder.</param>
     /// <exception cref="ArgumentException">Throws when an invalid placeholder in namePattern is used e.g. #invalid#</exception>
-    public PreloadNamePattern(string namePattern, NameTransform moduleTransform)
+    public ModuleNamePattern(string namePattern, NameTransform moduleTransform)
     {
         NamePattern = namePattern;
         ModuleTransform = moduleTransform;
@@ -68,7 +69,7 @@ public struct PreloadNamePattern : IEquatable<PreloadNamePattern>
     }
 
     /// <summary>
-    /// Returns the name of the method based on the values of this object and the given parameters.
+    /// Returns the name based on the values of this object and the given parameters.
     /// </summary>
     /// <param name="module">Name of the module.</param>
     /// <returns></returns>
@@ -90,7 +91,7 @@ public struct PreloadNamePattern : IEquatable<PreloadNamePattern>
 
     #region IEquatable
 
-    public bool Equals(PreloadNamePattern other) {
+    public bool Equals(ModuleNamePattern other) {
         if (NamePattern != other.NamePattern)
             return false;
 
@@ -101,17 +102,17 @@ public struct PreloadNamePattern : IEquatable<PreloadNamePattern>
     }
 
     public override bool Equals(object obj) {
-        if (obj is not PreloadNamePattern other)
+        if (obj is not ModuleNamePattern other)
             return false;
 
         return Equals(other);
     }
 
-    public static bool operator ==(PreloadNamePattern left, PreloadNamePattern right) {
+    public static bool operator ==(ModuleNamePattern left, ModuleNamePattern right) {
         return left.Equals(right);
     }
 
-    public static bool operator !=(PreloadNamePattern left, PreloadNamePattern right) {
+    public static bool operator !=(ModuleNamePattern left, ModuleNamePattern right) {
         return !left.Equals(right);
     }
 
