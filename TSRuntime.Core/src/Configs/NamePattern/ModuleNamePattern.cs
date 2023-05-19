@@ -8,7 +8,7 @@ public struct ModuleNamePattern : IEquatable<ModuleNamePattern>
     private const string MODULE = "#module#";
 
     
-    private readonly List<OutputBlock> outputList = new(2); // default "Preload#module#" of "I#module#" are 2 entries
+    private readonly List<OutputBlock> outputList = new(3); // default "I#module#Module" are 3 entries
     /// <summary>
     /// <para>The name pattern for creating the name.</para>
     /// <para>
@@ -74,7 +74,7 @@ public struct ModuleNamePattern : IEquatable<ModuleNamePattern>
     /// <param name="module">Name of the module.</param>
     /// <returns></returns>
     /// <exception cref="Exception">Throws when this object is created with an invalid enum value.</exception>
-    public IEnumerable<string> GetNaming(string module)
+    public readonly IEnumerable<string> GetNaming(string module)
     {
         string moduleName = ModuleTransform.Transform(module);
 
@@ -91,7 +91,7 @@ public struct ModuleNamePattern : IEquatable<ModuleNamePattern>
 
     #region IEquatable
 
-    public bool Equals(ModuleNamePattern other) {
+    public readonly bool Equals(ModuleNamePattern other) {
         if (NamePattern != other.NamePattern)
             return false;
 
@@ -101,7 +101,7 @@ public struct ModuleNamePattern : IEquatable<ModuleNamePattern>
         return true;
     }
 
-    public override bool Equals(object obj) {
+    public override readonly bool Equals(object obj) {
         if (obj is not ModuleNamePattern other)
             return false;
 
@@ -116,7 +116,7 @@ public struct ModuleNamePattern : IEquatable<ModuleNamePattern>
         return !left.Equals(right);
     }
 
-    public override int GetHashCode() {
+    public override readonly int GetHashCode() {
         return Combine(NamePattern.GetHashCode(), ModuleTransform.GetHashCode());
 
 

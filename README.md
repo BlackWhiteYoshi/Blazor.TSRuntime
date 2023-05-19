@@ -242,13 +242,13 @@ All available config keys with its default value:
   },
   "function name pattern": {
     "pattern": "#function#",
+    "module transform": "first upper case",
     "function transform": "first upper case",
-    "module transform": "none",
     "action transform": "none"
   },
   "preload name pattern": {
     "pattern": "Preload#module#",
-    "module transform": "none"
+    "module transform": "first upper case"
   },
   "preload all modules name": "PreloadAllModules",
   "using statements": ["Microsoft.AspNetCore.Components"],

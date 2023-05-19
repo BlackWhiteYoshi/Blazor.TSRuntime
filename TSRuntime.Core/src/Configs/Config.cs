@@ -81,7 +81,7 @@ public sealed record class Config {
     /// </summary>
     public FunctionNamePattern FunctionNamePattern { get; init; } = new(FUNCTION_NAME_PATTERN, MODULE_TRANSFORM, FUNCTION_TRANSFORM, ACTION_TRANSFORM);
     private const string FUNCTION_NAME_PATTERN = "#function#";
-    private const NameTransform MODULE_TRANSFORM = NameTransform.None;
+    private const NameTransform MODULE_TRANSFORM = NameTransform.FirstUpperCase;
     private const NameTransform FUNCTION_TRANSFORM = NameTransform.FirstUpperCase;
     private const NameTransform ACTION_TRANSFORM = NameTransform.None;
 
@@ -90,7 +90,7 @@ public sealed record class Config {
     /// </summary>
     public ModuleNamePattern PreloadNamePattern { get; init; } = new(PRELOAD_NAME_PATTERN, PRELOAD_MODULE_TRANSFORM);
     private const string PRELOAD_NAME_PATTERN = "Preload#module#";
-    private const NameTransform PRELOAD_MODULE_TRANSFORM = NameTransform.None;
+    private const NameTransform PRELOAD_MODULE_TRANSFORM = NameTransform.FirstUpperCase;
 
     /// <summary>
     /// Naming of the method that preloads all modules.
@@ -278,8 +278,8 @@ public sealed record class Config {
               },
               "function name pattern": {
                 "pattern": "{{FunctionNamePattern.NamePattern}}",
-                "function transform": "{{FunctionNamePattern.FunctionTransform}}",
                 "module transform": "{{FunctionNamePattern.ModuleTransform}}",
+                "function transform": "{{FunctionNamePattern.FunctionTransform}}",
                 "action transform": "{{FunctionNamePattern.ActionTransform}}"
               },
               "preload name pattern": {

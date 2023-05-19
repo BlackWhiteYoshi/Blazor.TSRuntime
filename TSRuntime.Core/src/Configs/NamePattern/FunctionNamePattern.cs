@@ -105,7 +105,7 @@ public struct FunctionNamePattern : IEquatable<FunctionNamePattern>
     /// <param name="action">Name of the action.</param>
     /// <returns></returns>
     /// <exception cref="Exception">Throws when this object is created with one or more invalid enum values.</exception>
-    public IEnumerable<string> GetNaming(string module, string function, string action)
+    public readonly IEnumerable<string> GetNaming(string module, string function, string action)
     {
         string moduleName = ModuleTransform.Transform(module);
         string functionName = FunctionTransform.Transform(function);
@@ -126,7 +126,7 @@ public struct FunctionNamePattern : IEquatable<FunctionNamePattern>
 
     #region IEquatable
 
-    public bool Equals(FunctionNamePattern other) {
+    public readonly bool Equals(FunctionNamePattern other) {
         if (NamePattern != other.NamePattern)
             return false;
 
@@ -142,7 +142,7 @@ public struct FunctionNamePattern : IEquatable<FunctionNamePattern>
         return true;
     }
 
-    public override bool Equals(object obj) {
+    public override readonly bool Equals(object obj) {
         if (obj is not FunctionNamePattern other)
             return false;
 
@@ -157,7 +157,7 @@ public struct FunctionNamePattern : IEquatable<FunctionNamePattern>
         return !left.Equals(right);
     }
 
-    public override int GetHashCode() {
+    public override readonly int GetHashCode() {
         int hash = NamePattern.GetHashCode();
         hash = Combine(hash, ModuleTransform.GetHashCode());
         hash = Combine(hash, FunctionTransform.GetHashCode());
