@@ -159,7 +159,6 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             ``
             if (config.PromiseFunctionOnlyAsync && function.ReturnPromise) {
             `+
-
             {{Get_TrySync_Async(trySync: false)}}
 
             ``
@@ -171,6 +170,11 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             ``
             if (config.ModuleInvokeEnabled) {
             `+
+             ``
+            int lastIndex = function.ParameterList.Count;
+            do {
+                lastIndex--;
+            `+
 
                 /// <summary>
                 /// <para>Invokes in module '`module.ModuleName`' the JS-function '`function.Name`' synchronously.</para>
@@ -178,8 +182,12 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 /// </summary>
             {{SUMMARY_PARAMETERS}}
                 /// <returns>result of the JS-function</returns>
-                public `returnType``returnModifiers` {{GetFunctionNamePattern("Invoke")}}({{PARAMETERS}})
+                public `returnType``returnModifiers` {{GetFunctionNamePattern("Invoke")}}({{PARAMETERS_JOIN}})
                     => Invoke<{{MAPPED_IJS_VOID_RESULT}}>(`index`, "`module.ModulePath`", "`function.Name`"{{ARGUMENTS}});
+            ``
+            }
+            while (lastIndex >= 0 && function.ParameterList[lastIndex].Optional);
+            `-
             ``
             }
             `-
@@ -225,6 +233,12 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         }
 
         return $$"""
+            ``
+            int lastIndex = function.ParameterList.Count;
+            do {
+                lastIndex--;
+            `+
+
                 /// <summary>
                 /// Invokes in module '`module.ModuleName`' the JS-function '`function.Name`' {{summaryDescription}}.
                 /// </summary>
@@ -234,7 +248,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             ``
             if (returnType == "void") {
             `+
-                public Task {{GetFunctionNamePattern(methodName)}}({{PARAMETERS}}, CancellationToken cancellationToken = default) {
+                public Task {{GetFunctionNamePattern(methodName)}}({{PARAMETERS}}CancellationToken cancellationToken = default) {
                     ValueTask<IJSVoidResult> task = {{methodName}}<IJSVoidResult>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
                     return task.IsCompleted ? Task.CompletedTask : task.AsTask();
                 }
@@ -244,10 +258,14 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             ``
             else {
             `+
-                public ValueTask<`returnType``returnModifiers`> {{GetFunctionNamePattern(methodName)}}({{PARAMETERS}}, CancellationToken cancellationToken = default)
+                public ValueTask<`returnType``returnModifiers`> {{GetFunctionNamePattern(methodName)}}({{PARAMETERS}}CancellationToken cancellationToken = default)
                     => {{methodName}}<`returnType``returnModifiers`>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
             ``
             }
+            `-
+            ``
+            }
+            while (lastIndex >= 0 && function.ParameterList[lastIndex].Optional);
             `-
             """;
     }
@@ -487,9 +505,10 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         `-
         """;
 
-    private const string PARAMETERS = $$"""
+    #region PARAMETERS
+
+    private const string PARAMETERS_JOIN = $$"""
         ``
-        int lastIndex = function.ParameterList.Count - 1 - 0;
         if (lastIndex >= 0) {
             for (int __i = 0; __i < lastIndex; __i++) {
                 TSParameter parameter = function.ParameterList[__i];
@@ -506,6 +525,18 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         }
         ``
         """;
+
+    private const string PARAMETERS = $$"""
+        ``
+        for (int __i = 0; __i <= lastIndex; __i++) {
+            TSParameter parameter = function.ParameterList[__i];
+
+            {{PARAMETERS_INNTER}}
+            yield return ", ";
+        }
+        ``
+        """;
+
     private const string PARAMETERS_INNTER = """
         yield return config.TypeMap.GetValueOrKey(parameter.Type);
                 if (parameter.TypeNullable)
@@ -518,9 +549,11 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 yield return parameter.Name;
         """;
 
+    #endregion
+
     private const string ARGUMENTS = """
         ``
-        for (int __i = 0; __i < function.ParameterList.Count - 0; __i++) {
+        for (int __i = 0; __i <= lastIndex; __i++) {
             yield return ", ";
             yield return function.ParameterList[__i].Name;
         }
