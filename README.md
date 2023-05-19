@@ -361,15 +361,27 @@ The values given in \[using statements] will add additional using statements.
 Variants of nullable or optional are not concidered as different types.
 If a TS-variable is nullable, it is also nullable in C#.
 If a TS-variable is optional/undefined, it is also optional in C# by creating overload methods, but only if the last parameters are optional/undefined.
+If an array item is undefined, it is treated like nullable.
 
-Assuming *bigint* is mapped to *long*
+e.g. Assuming *bigint* is mapped to *long*
 
-- (myParameter: bigint)                    -> (long myParameter)
-- (myParameter: bigint | null)             -> (long? myParameter)
-- (myParameter?: bigint)                   -> (), (long myParameter)
-- (myParameter: bigint | undefined)        -> (), (long myParameter)
-- (myParameter?: bigint | null)            -> (), (long? myParameter)
-- (myParameter: bigint | null | undefined) -> (), (long? myParameter)
+| TypeScript                                               | C#                             |
+| -------------------------------------------------------- | ------------------------------ |
+| do(myParameter: bigint)                                  | Do(long myParameter)           |
+| do(myParameter: bigint \| null)                          | Do(long? myParameter)          |
+| do(myParameter?: bigint)                                 | Do(), Do(long myParameter)     |
+| do(myParameter: bigint \| undefined)                     | Do(), Do(long myParameter)     |
+| do(myParameter?: bigint \| undefined)                    | Do(), Do(long myParameter)     |
+| do(myParameter?: bigint \| null)                         | Do(), Do(long? myParameter)    |
+| do(myParameter: bigint \| null \| undefined)             | Do(), Do(long? myParameter)    |
+| do(myParameter: (bigint \| null)[])                      | Do(long?[] myParameter)        |
+| do(myParameter: (bigint \| undefined)[])                 | Do(long?[] myParameter)        |
+| do(myParameter: (bigint \| null \| undefined)[])         | Do(long?[] myParameter)        |
+| do(myParameter: (bigint \| null)[] \| null)              | Do(), Do(long?[]? myParameter) |
+| do(myParameter: (bigint \| null)[] \| undefined)         | Do(), Do(long?[] myParameter)  |
+| do(myParameter: (bigint \| null)[] \| null \| undefined) | Do(), Do(long?[]? myParameter) |
+
+**Note**: default value parameters (e.g. do(myParameter = 5)) are automatically mapped to optional parameters in .d.ts-files, so they will work as expected.
 
 
 <br></br>
@@ -476,7 +488,6 @@ This package is in preview and breaking changes may occur.
 
 There are some features planned (no guarantees whatsoever):
 
-* optional parameters -> function-overload (at the moment optional is ignored and undefined is mapped the same as null)
 * module grouping in seperate interfaces
 * option in config: generate on save (not used in source generator)
 * TypeMapDefault more default types (e.g. Uint8Array -> byte[], DotNetStreamReference -> DotNetStreamReference)
@@ -498,3 +509,5 @@ There are some features planned (no guarantees whatsoever):
   First version. Includes all basic functionalities for generating TSRuntime.
 - 0.1  
   Improved declaration path: Instead of one include string, an array of objects { "include": string, "excludes": string[], "file module path": string } is now supported.
+- 0.2  
+  Optional parameters and default parameter values are now supported.
