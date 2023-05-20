@@ -20,8 +20,8 @@
   },
   "function name pattern": {
     "pattern": "#function#_#module#_#action#",
-    "function transform": "first upper case",
     "module transform": "none",
+    "function transform": "first upper case",
     "action transform": "none"
   },
   "preload name pattern": {

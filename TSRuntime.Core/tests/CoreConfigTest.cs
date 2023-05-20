@@ -44,8 +44,8 @@ public sealed class CoreConfigTest {
         jsonObject.Remove("type map");
         jsonObject.Remove("function name pattern");
         jsonObject.Remove("preload name pattern");
-
         int numberOfLeafNodes = 4;
+
         foreach (KeyValuePair<string, JsonNode?> node in jsonObject)
             numberOfLeafNodes += NumberOfLeafNodes(node.Value!);
             

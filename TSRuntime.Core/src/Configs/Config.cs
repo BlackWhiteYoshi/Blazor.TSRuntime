@@ -79,11 +79,11 @@ public sealed record class Config {
     /// <summary>
     /// Naming of the generated methods that invoke module functions.
     /// </summary>
-    public FunctionNamePattern FunctionNamePattern { get; init; } = new(FUNCTION_NAME_PATTERN, MODULE_TRANSFORM, FUNCTION_TRANSFORM, ACTION_TRANSFORM);
+    public FunctionNamePattern FunctionNamePattern { get; init; } = new(FUNCTION_NAME_PATTERN, FUNCTION_MODULE_TRANSFORM, FUNCTION_FUNCTION_TRANSFORM, FUNCTION_ACTION_TRANSFORM);
     private const string FUNCTION_NAME_PATTERN = "#function#";
-    private const NameTransform MODULE_TRANSFORM = NameTransform.FirstUpperCase;
-    private const NameTransform FUNCTION_TRANSFORM = NameTransform.FirstUpperCase;
-    private const NameTransform ACTION_TRANSFORM = NameTransform.None;
+    private const NameTransform FUNCTION_MODULE_TRANSFORM = NameTransform.FirstUpperCase;
+    private const NameTransform FUNCTION_FUNCTION_TRANSFORM = NameTransform.FirstUpperCase;
+    private const NameTransform FUNCTION_ACTION_TRANSFORM = NameTransform.None;
 
     /// <summary>
     /// Naming of the generated methods that preloads a specific module.
@@ -156,7 +156,7 @@ public sealed record class Config {
                 return false;
 
         if (TypeMap.Count != other.TypeMap.Count)
-            return false;        
+            return false;
         foreach (KeyValuePair<string, string> pair in TypeMap) {
             if (!other.TypeMap.TryGetValue(pair.Key, out string value))
                 return false;
@@ -300,37 +300,194 @@ public sealed record class Config {
     public static Config FromJson(string json) {
         JsonNode root = JsonNode.Parse(json) ?? throw new ArgumentException($"json is not in a valid format:\n{json}");
 
+
+        DeclarationPath[] declarationPath;
+        {
+            try {
+                declarationPath = root["declaration path"] switch {
+                    JsonArray array => ParseJsonArray(array),
+                    JsonObject jsonObject => new DeclarationPath[1] { ParseJsonObject(jsonObject) },
+                    JsonValue value => new DeclarationPath[1] { new(Normalize(value.ParseAsString("declaration path"))) },
+                    null => DeclarationPathDefault,
+                    _ => throw JsonException.UnexpectedType("declaration path")
+                };
+            }
+            catch (ArgumentException exception) { throw new ArgumentException($"invalid declaration path: {exception.Message}", exception); }
+
+
+            static DeclarationPath[] ParseJsonArray(JsonArray array) {
+                DeclarationPath[] result = new DeclarationPath[array.Count];
+
+                for (int i = 0; i < array.Count; i++)
+                    try {
+                        result[i] = array[i] switch {
+                            JsonObject jsonObject => ParseJsonObject(jsonObject),
+                            JsonValue value => new DeclarationPath(Normalize(value.ParseAsString("declaration path"))),
+                            _ => throw JsonException.UnexpectedType("declaration path")
+                        };
+                    }
+                    catch (ArgumentException exception) { throw new ArgumentException($"error at array index {i}: {exception.Message}", exception); }
+
+                return result;
+            }
+
+            static DeclarationPath ParseJsonObject(JsonObject jsonObject) {
+                string include = jsonObject["include"] switch {
+                    JsonValue value => Normalize(value.ParseAsString("include")),
+                    null => throw JsonException.KeyNotFound("include"),
+                    _ => throw JsonException.UnexpectedType("include")
+                };
+
+                string[] excludes = jsonObject.ParseAsStringArray("excludes") ?? Array.Empty<string>();
+                for (int i = 0; i < excludes.Length; i++)
+                    excludes[i] = Normalize(excludes[i]);
+
+                string? fileModulePath = jsonObject["file module path"] switch {
+                    JsonValue value => Normalize(value.ParseAsString("file module path")),
+                    null => null,
+                    _ => throw JsonException.UnexpectedType("file module path")
+                };
+
+                return new DeclarationPath(include, excludes, fileModulePath);
+            }
+
+            // replaces '\' with '/' and removes trailing slash
+            static string Normalize(string path) {
+                path = path.Replace('\\', '/');
+
+                if (path is [.., '/'])
+                    path = path[..^1];
+
+                return path;
+            }
+        }
+
+        string fileOutputClass;
+        string fileOutputinterface;
+        {
+            if (root.AsJsonObjectOrNull("file output") is JsonObject jsonObject) {
+                fileOutputClass = jsonObject["class"].ParseAsString("[file output].class");
+                fileOutputinterface = jsonObject["interface"].ParseAsString("[file output].interface");
+            }
+            else {
+                fileOutputClass = FILE_OUTPUT_CLASS;
+                fileOutputinterface = FILE_OUTPUT_INTERFACE;
+            }
+        }
+
+        bool moduleInvokeEnabled;
+        bool moduleTrySyncEnabled;
+        bool moduleAsyncEnabled;
+        {
+            if (root.AsJsonObjectOrNull("module") is JsonObject jsonObject) {
+                moduleInvokeEnabled = jsonObject["invoke enabled"].ParseAsBool("module.[invoke enabled]");
+                moduleTrySyncEnabled = jsonObject["trysync enabled"].ParseAsBool("module.[trysync enabled]");
+                moduleAsyncEnabled = jsonObject["async enabled"].ParseAsBool("module.[async enabled]");
+            }
+            else {
+                moduleInvokeEnabled = MODULE_INVOKE_ENABLED;
+                moduleTrySyncEnabled = MODULE_TRYSYNC_ENABLED;
+                moduleAsyncEnabled = MODULE_ASYNC_ENABLED;
+            }
+        }
+
+        bool jsRuntimeInvokeEnabled;
+        bool jsRuntimeTrySyncEnabled;
+        bool jsRuntimeAsyncEnabled;
+        {
+            if (root.AsJsonObjectOrNull("js runtime") is JsonObject jsonObject) {
+                jsRuntimeInvokeEnabled = jsonObject["invoke enabled"].ParseAsBool("[js runtime].[invoke enabled]");
+                jsRuntimeTrySyncEnabled = jsonObject["trysync enabled"].ParseAsBool("[js runtime].[trysync enabled]");
+                jsRuntimeAsyncEnabled = jsonObject["async enabled"].ParseAsBool("[js runtime].[async enabled]");
+            }
+            else {
+                jsRuntimeInvokeEnabled = JSRUNTIME_INVOKE_ENABLED;
+                jsRuntimeTrySyncEnabled = JSRUNTIME_TRYSYNC_ENABLED;
+                jsRuntimeAsyncEnabled = JSRUNTIME_ASYNC_ENABLED;
+            }
+        }
+
+        bool promiseFunctionOnlyAsync;
+        bool promiseFunctionAppendAsync;
+        {
+            if (root.AsJsonObjectOrNull("promise function") is JsonObject jsonObject) {
+                promiseFunctionOnlyAsync = jsonObject["only async enabled"].ParseAsBool("[promise function].[only async enabled]");
+                promiseFunctionAppendAsync = jsonObject["append Async"].ParseAsBool("[promise function].[append Async]");
+            }
+            else {
+                promiseFunctionOnlyAsync = PROMISE_FUNCTION_ONLY_ASYNC;
+                promiseFunctionAppendAsync = PROMISE_FUNCTION_APPEND_ASYNC;
+            }
+        }
+
+        string functionNamePattern;
+        NameTransform functionModuleTransform;
+        NameTransform functionFunctionTransform;
+        NameTransform functionActionTransform;
+        {
+            if (root.AsJsonObjectOrNull("function name pattern") is JsonObject jsonObject) {
+                functionNamePattern = jsonObject["pattern"].ParseAsString("[function name pattern].pattern");
+                functionModuleTransform = jsonObject["module transform"].ParseAsNameTransform("[function name pattern].[module transform]");
+                functionFunctionTransform = jsonObject["function transform"].ParseAsNameTransform("[function name pattern].[function transform]");
+                functionActionTransform = jsonObject["action transform"].ParseAsNameTransform("[function name pattern].[action transform]");
+            }
+            else {
+                functionNamePattern = FUNCTION_NAME_PATTERN;
+                functionModuleTransform = FUNCTION_MODULE_TRANSFORM;
+                functionFunctionTransform = FUNCTION_FUNCTION_TRANSFORM;
+                functionActionTransform = FUNCTION_ACTION_TRANSFORM;
+            }
+        }
+
+        string preloadNamePattern;
+        NameTransform preloadModuleTransform;
+        {
+            if (root.AsJsonObjectOrNull("preload name pattern") is JsonObject jsonObject) {
+                preloadNamePattern = jsonObject["pattern"].ParseAsString("[preload name pattern].pattern");
+                preloadModuleTransform = jsonObject["module transform"].ParseAsNameTransform("[preload name pattern].[module transform]");
+            }
+            else {
+                preloadNamePattern = PRELOAD_NAME_PATTERN;
+                preloadModuleTransform = PRELOAD_MODULE_TRANSFORM;
+            }
+        }
+
+        string preloadAllModulesName = root["preload all modules name"] switch {
+            JsonValue jsonValue => jsonValue.ParseAsString("preload all modules name"),
+            null => PRELOAD_ALL_MODULES_NAME,
+            _ => throw JsonException.UnexpectedType("preload all modules name")
+        };
+
+        string[] usingStatements = root.ParseAsStringArray("using statements") ?? new string[1] { USING_STATEMENT };
+
+        Dictionary<string, string> typeMap = root.ParseAsStringDictionary("type map") ?? TypeMapDefault;
+
+
         return new Config() {
-            DeclarationPath = root["declaration path"]?.ParseDeclarationPath() ?? DeclarationPathDefault,
+            DeclarationPath = declarationPath,
 
-            FileOutputClass = (string?)root["file output"]?["class"] ?? FILE_OUTPUT_CLASS,
-            FileOutputinterface = (string?)root["file output"]?["interface"] ?? FILE_OUTPUT_INTERFACE,
+            FileOutputClass = fileOutputClass,
+            FileOutputinterface = fileOutputinterface,
 
-            ModuleInvokeEnabled = (bool?)root["module"]?["invoke enabled"] ?? MODULE_INVOKE_ENABLED,
-            ModuleTrySyncEnabled = (bool?)root["module"]?["trysync enabled"] ?? MODULE_TRYSYNC_ENABLED,
-            ModuleAsyncEnabled = (bool?)root["module"]?["async enabled"] ?? MODULE_ASYNC_ENABLED,
+            ModuleInvokeEnabled = moduleInvokeEnabled,
+            ModuleTrySyncEnabled = moduleTrySyncEnabled,
+            ModuleAsyncEnabled = moduleAsyncEnabled,
 
-            JSRuntimeInvokeEnabled = (bool?)root["js runtime"]?["invoke enabled"] ?? JSRUNTIME_INVOKE_ENABLED,
-            JSRuntimeTrySyncEnabled = (bool?)root["js runtime"]?["trysync enabled"] ?? JSRUNTIME_TRYSYNC_ENABLED,
-            JSRuntimeAsyncEnabled = (bool?)root["js runtime"]?["async enabled"] ?? JSRUNTIME_ASYNC_ENABLED,
+            JSRuntimeInvokeEnabled = jsRuntimeInvokeEnabled,
+            JSRuntimeTrySyncEnabled = jsRuntimeTrySyncEnabled,
+            JSRuntimeAsyncEnabled = jsRuntimeAsyncEnabled,
 
-            PromiseFunctionOnlyAsync = (bool?)root["promise function"]?["only async enabled"] ?? PROMISE_FUNCTION_ONLY_ASYNC,
-            PromiseFunctionAppendAsync = (bool?)root["promise function"]?["append Async"] ?? PROMISE_FUNCTION_APPEND_ASYNC,
+            PromiseFunctionOnlyAsync = promiseFunctionOnlyAsync,
+            PromiseFunctionAppendAsync = promiseFunctionAppendAsync,
 
-            FunctionNamePattern = new FunctionNamePattern(
-                (string?)root["function name pattern"]?["pattern"] ?? FUNCTION_NAME_PATTERN,
-                Enum.TryParse(((string?)root["function name pattern"]?["module transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform moduleTransform) ? moduleTransform : MODULE_TRANSFORM,
-                Enum.TryParse(((string?)root["function name pattern"]?["function transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform functionTransform) ? functionTransform : FUNCTION_TRANSFORM,
-                Enum.TryParse(((string?)root["function name pattern"]?["action transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform actionTransform) ? actionTransform : ACTION_TRANSFORM),
-            
-            PreloadNamePattern = new ModuleNamePattern(
-                (string?)root["preload name pattern"]?["pattern"] ?? PRELOAD_NAME_PATTERN,
-                Enum.TryParse(((string?)root["preload name pattern"]?["module transform"])?.Replace(" ", ""), ignoreCase: true, out NameTransform preLoadModuleTransform) ? preLoadModuleTransform : PRELOAD_MODULE_TRANSFORM),
-            PreloadAllModulesName = (string?)root["preload all modules name"] ?? PRELOAD_ALL_MODULES_NAME,
-            
-            UsingStatements = root["using statements"]?.ToStringArray() ?? new string[1] { USING_STATEMENT },
+            FunctionNamePattern = new FunctionNamePattern(functionNamePattern, functionModuleTransform, functionFunctionTransform, functionActionTransform),
 
-            TypeMap = root["type map"]?.ToStringDictionary() ?? TypeMapDefault
+            PreloadNamePattern = new ModuleNamePattern(preloadNamePattern, preloadModuleTransform),
+            PreloadAllModulesName = preloadAllModulesName,
+
+            UsingStatements = usingStatements,
+
+            TypeMap = typeMap
         };
     }
 
@@ -338,94 +495,75 @@ public sealed record class Config {
 }
 
 file static class JsonNodeExtension {
-    internal static string[] ToStringArray(this JsonNode node) {
-        switch (node) {
-            case JsonArray array:
-                string[] result = new string[array.Count];
-
-                for (int i = 0; i < array.Count; i++)
-                    result[i] = (string?)array[i] ?? throw NullNotAllowed;
-
-                return result;
-
-            case JsonNode valueNode:
-                return new string[1] { (string?)valueNode ?? throw NullNotAllowed };
-            
-            default:
-                throw NullNotAllowed;
+    internal static JsonObject? AsJsonObjectOrNull(this JsonNode parentNode, string key, string? parentkey = null)
+        => parentNode[key] switch {
+            JsonObject jsonObject => jsonObject,
+            null => null,
+            _ => throw JsonException.UnexpectedType(parentkey ?? key)
+        };
+    
+    internal static string[]? ParseAsStringArray(this JsonNode parentNode, string parentKey) {
+        return parentNode[parentKey] switch {
+            JsonArray array => array.ParseAsStringArray(parentKey),
+            JsonValue valueNode => new string[1] { valueNode.ParseAsString(parentKey) },
+            null => null,
+            _ => throw JsonException.UnexpectedType(parentKey)
         };
     }
+    internal static string[] ParseAsStringArray(this JsonArray array, string parentKey) {
+        string[] result = new string[array.Count];
 
-    internal static Dictionary<string, string> ToStringDictionary(this JsonNode node) {
-        JsonObject jsonObject = node.AsObject();
-        Dictionary<string, string> result = new(jsonObject.Count);
-
-        foreach (KeyValuePair<string, JsonNode?> item in jsonObject)
-            result.Add(item.Key, (string?)item.Value ?? throw NullNotAllowed);
+        for (int i = 0; i < array.Count; i++)
+            try {
+                result[i] = array[i].ParseAsString(parentKey);
+            }
+            catch (ArgumentException exception) { throw new ArgumentException($"{exception.Message}, at array index {i}", exception); }
 
         return result;
     }
 
-    internal static DeclarationPath[] ParseDeclarationPath(this JsonNode node) {
-        switch (node) {
-            case JsonArray array:
-                DeclarationPath[] result = new DeclarationPath[array.Count];
+    internal static Dictionary<string, string>? ParseAsStringDictionary(this JsonNode parentNode, string parentKey) {
+        return parentNode[parentKey] switch {
+            JsonObject jsonObject => jsonObject.ParseAsStringDictionary(parentKey),
+            null => null,
+            _ => throw JsonException.UnexpectedType(parentKey)
+        };
+    }
+    internal static Dictionary<string, string> ParseAsStringDictionary(this JsonObject jsonObject, string parentKey) {
+        Dictionary<string, string> result = new(jsonObject.Count);
 
-                for (int i = 0; i < array.Count; i++)
-                    if (array[i] is JsonObject jsonObject)
-                        result[i] = ParseJsonObject(jsonObject);
-                    else
-                        result[i] = new DeclarationPath(GetPath(array[i]));
+        foreach (KeyValuePair<string, JsonNode?> item in jsonObject)
+            try {
+                result.Add(item.Key, item.Value.ParseAsString(parentKey));
+            }
+            catch (ArgumentException exception) { throw new ArgumentException($"error at key element {item.Key}: {exception.Message}", exception); }
 
-                return result;
-
-            case JsonObject jsonObject:
-                return new DeclarationPath[1] { ParseJsonObject(jsonObject) };
-
-            default:
-                return new DeclarationPath[1] { new(GetPath(node)) };
-        }
-
-
-        static DeclarationPath ParseJsonObject(JsonObject jsonObject) {
-            string? fileModulePath = (string?)jsonObject["file module path"];
-            if (fileModulePath != null)
-                fileModulePath = Normalize(fileModulePath);
-
-
-            if (!jsonObject.TryGetPropertyValue("include", out JsonNode? includeNode))
-                throw new ArgumentException("Key \"include\" not found in a DeclarationPath object.");
-
-            string include = GetPath(includeNode);
-
-
-            if (!jsonObject.TryGetPropertyValue("excludes", out JsonNode? excludeNode))
-                return new DeclarationPath(include, fileModulePath);
-
-            string[] excludes = excludeNode!.ToStringArray();
-            for (int i = 0; i < excludes.Length; i++)
-                excludes[i] = Normalize(excludes[i]);
-
-
-            return new DeclarationPath(include, excludes, fileModulePath); 
-        }
-
-        static string GetPath(JsonNode? node) {
-            string path = (string?)node ?? throw NullNotAllowed;
-            return Normalize(path);
-        }
-
-        // replaces '\' with '/' and removes trailing slash
-        static string Normalize(string path) {
-            path = path.Replace('\\', '/');
-
-            if (path is [.., '/'])
-                path = path[..^1];
-
-            return path;
-        }
+        return result;
     }
 
+    internal static string ParseAsString(this JsonNode? node, string key) => ParseAsString(node as JsonValue ?? throw JsonException.UnexpectedType(key), key);
+    internal static string ParseAsString(this JsonValue value, string key) => (string?)value ?? throw new ArgumentException($"""'{key}': must be a string. If you want to have null, use string literal "null" instead""");
 
-    private static ArgumentException NullNotAllowed => new("non-string literals and null is not allowed - use string literal \"null\" instead");
+    internal static bool ParseAsBool(this JsonNode? node, string key) => ParseAsBool(node as JsonValue ?? throw JsonException.UnexpectedType(key), key);
+    internal static bool ParseAsBool(this JsonValue value, string key) => (bool?)value ?? throw new ArgumentException($@"'{key}': must be either ""true"" or ""false""");
+
+    internal static NameTransform ParseAsNameTransform(this JsonNode? node, string key) => ParseAsNameTransform(node as JsonValue ?? throw JsonException.UnexpectedType(key), key);
+    internal static NameTransform ParseAsNameTransform(this JsonValue value, string key) {
+        const string errorMessage = @"must be either ""none"", ""first upper case"", ""first lower case"", ""upper case"" or ""lower case""";
+
+        string str = (string?)value ?? throw new ArgumentException($"'{key}': {errorMessage}");
+        string normaliezedStr = str.Replace(" ", "");
+
+        bool success = Enum.TryParse(normaliezedStr, ignoreCase: true, out NameTransform nameTransform);
+        if (!success)
+            throw new ArgumentException($"'{key}': {errorMessage}");
+
+        return nameTransform;
+    }
+}
+
+file static class JsonException {
+    internal static ArgumentException UnexpectedType(string key) => new($"'{key}': unexpected type");
+
+    internal static ArgumentException KeyNotFound(string key) => new($"'{key}': not found");
 }
