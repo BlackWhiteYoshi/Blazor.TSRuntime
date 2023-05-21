@@ -242,7 +242,12 @@ All available config keys with its default value:
       "pattern": "#function#",
       "module transform": "first upper case",
       "function transform": "first upper case",
-      "action transform": "none"
+      "action transform": "none",
+      "action name": {
+        "sync": "Invoke",
+        "trysync": "InvokeTrySync",
+        "async": "InvokeAsync"
+      }
     },
     "promise": {
       "only async enabled": true,
@@ -290,6 +295,9 @@ All available config keys with its default value:
 - **[\[invoke function\].\[name pattern\].\[module transform\]](#name-pattern)**: Lower/Upper case transform for the variable #module#.
 - **[\[invoke function\].\[name pattern\].\[function transform\]](#name-pattern)**: Lower/Upper case transform for the variable #function#.
 - **[\[invoke function\].\[name pattern\].\[action transform\]](#name-pattern)**: Lower/Upper case transform for the variable #action#.. 
+- **[\[invoke function\].\[name pattern\].\[action name\]\[sync\]](#name-pattern)**: Naming of the #action# variable for the invoke module functions name pattern when the action is synchronous.
+- **[\[invoke function\].\[name pattern\].\[action name\]\[trysync\]](#name-pattern)**: Naming of the #action# variable for the invoke module functions name pattern when the action is try synchronous.
+- **[\[invoke function\].\[name pattern\].\[action name\]\[async\]](#name-pattern)**: Naming of the #action# variable for the invoke module functions name pattern when the action is asynchronous.
 - **[\[invoke function\].\[promise\].\[only async enabled\]](#promise-function)**: Generates only async invoke method when return-type is promise.
 - **[\[invoke function\].\[promise\].\[append Async\]](#promise-function)**: Appends to the name 'Async' when return-type is promise.
 - **[\[invoke function\].\[type map\]](#type-map)**: Mapping of typescript-types (key) to C#-types (value). Not listed types are mapped unchanged (Identity function).
@@ -529,4 +537,4 @@ There are some features planned (no guarantees whatsoever):
   Optional parameters and default parameter values are now supported.
 - 0.3  
   Breaking changes: changed config keys, defaults and properties in Config, changed Config.FromJson(string json) to new Config(string json).  
-  Added key "generate on save" to config.
+  Added key "generate on save" and "action name" keys to config.

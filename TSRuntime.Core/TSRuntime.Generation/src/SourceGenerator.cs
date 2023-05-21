@@ -182,7 +182,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 /// </summary>
             {{SUMMARY_PARAMETERS}}
                 /// <returns>result of the JS-function</returns>
-                public `returnType``returnModifiers` {{GetFunctionNamePattern("Invoke")}}({{PARAMETERS_JOIN}})
+                public `returnType``returnModifiers` {{GetFunctionNamePattern("config.InvokeFunctionActionNameSync")}}({{PARAMETERS_JOIN}})
                     => Invoke<{{MAPPED_IJS_VOID_RESULT}}>(`index`, "`module.ModulePath`", "`function.Name`"{{ARGUMENTS}});
             ``
             }
@@ -223,13 +223,16 @@ public sealed class SourceGenerator : IIncrementalGenerator {
     private static string Get_TrySync_Async(bool trySync) {
         string summaryDescription;
         string methodName;
+        string methodAction;
         if (trySync) {
             summaryDescription = "synchronously when supported, otherwise asynchronously";
-            methodName = "InvokeTrySync";
+            methodName = "config.InvokeFunctionActionNameTrySync";
+            methodAction = "InvokeTrySync";
         }
         else {
             summaryDescription = "asynchronously";
-            methodName = "InvokeAsync";
+            methodName = "config.InvokeFunctionActionNameAsync";
+            methodAction = "InvokeAsync";
         }
 
         return $$"""
@@ -249,7 +252,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             if (returnType == "void") {
             `+
                 public Task {{GetFunctionNamePattern(methodName)}}({{PARAMETERS}}CancellationToken cancellationToken = default) {
-                    ValueTask<IJSVoidResult> task = {{methodName}}<IJSVoidResult>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
+                    ValueTask<IJSVoidResult> task = {{methodAction}}<IJSVoidResult>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
                     return task.IsCompleted ? Task.CompletedTask : task.AsTask();
                 }
             ``
@@ -259,7 +262,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             else {
             `+
                 public ValueTask<`returnType``returnModifiers`> {{GetFunctionNamePattern(methodName)}}({{PARAMETERS}}CancellationToken cancellationToken = default)
-                    => {{methodName}}<`returnType``returnModifiers`>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
+                    => {{methodAction}}<`returnType``returnModifiers`>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
             ``
             }
             `-
@@ -273,7 +276,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
     private static string GetFunctionNamePattern(string action) {
         return $"""
             ``
-            foreach (string str in config.InvokeFunctionNamePattern.GetNaming(module.ModuleName, function.Name, "{action}"))
+            foreach (string str in config.InvokeFunctionNamePattern.GetNaming(module.ModuleName, function.Name, {action}))
                 yield return str;
             if (config.PromiseAppendAsync && function.ReturnPromise)
                 yield return "Async";

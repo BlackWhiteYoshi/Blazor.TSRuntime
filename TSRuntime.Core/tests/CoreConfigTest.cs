@@ -39,12 +39,26 @@ public sealed class CoreConfigTest {
         JsonNode root = JsonNode.Parse(configAsJson)!;
         JsonObject jsonObject = root.AsObject();
 
-        // maps to one property but has leaf nodes
+        #region maps to one property but has leaf nodes
+
+        int numberOfLeafNodes = 0;
+
         jsonObject.Remove("declaration path");
+        numberOfLeafNodes++;
+
+        jsonObject["invoke function"]!["name pattern"]!.AsObject().Remove("pattern");
+        jsonObject["invoke function"]!["name pattern"]!.AsObject().Remove("module transform");
+        jsonObject["invoke function"]!["name pattern"]!.AsObject().Remove("function transform");
+        jsonObject["invoke function"]!["name pattern"]!.AsObject().Remove("action transform");
+        numberOfLeafNodes++;
+
         jsonObject["invoke function"]!.AsObject().Remove("type map");
-        jsonObject["invoke function"]!.AsObject().Remove("name pattern");
+        numberOfLeafNodes++;
+
         jsonObject["preload function"]!.AsObject().Remove("name pattern");
-        int numberOfLeafNodes = 4;
+        numberOfLeafNodes++;
+
+        #endregion
 
         foreach (KeyValuePair<string, JsonNode?> node in jsonObject)
             numberOfLeafNodes += NumberOfLeafNodes(node.Value!);

@@ -15,6 +15,7 @@ public sealed record class Config {
     public DeclarationPath[] DeclarationPath { get; init; } = DeclarationPathDefault;
     private static readonly DeclarationPath[] DeclarationPathDefault = new DeclarationPath[1] { new(string.Empty) };
 
+
     /// <summary>
     /// <para>File-path of TSRuntime.</para>
     /// <para>Path relative to json-file and no starting slash.</para>
@@ -22,6 +23,7 @@ public sealed record class Config {
     /// </summary>
     public string FileOutputClass { get; init; } = FILE_OUTPUT_CLASS;
     private const string FILE_OUTPUT_CLASS = "TSRuntime/TSRuntime.cs";
+    
     /// <summary>
     /// <para>File-path of ITSRuntime.</para>
     /// <para>Path relative to json-file and no starting slash.</para>
@@ -30,12 +32,14 @@ public sealed record class Config {
     public string FileOutputinterface { get; init; } = FILE_OUTPUT_INTERFACE;
     private const string FILE_OUTPUT_INTERFACE = "TSRuntime/ITSRuntime.cs";
 
+
     /// <summary>
     /// <para>If true, every time a .d.ts-file is changed, ITSRuntime is generated.</para>
     /// <para>Not used in source generator.</para>
     /// </summary>
     public bool GenerateOnSave { get; init; } = GENERATE_ON_SAVE;
     private const bool GENERATE_ON_SAVE = true;
+
 
     /// <summary>
     /// List of generated using statements at the top of ITSRuntime.
@@ -51,11 +55,13 @@ public sealed record class Config {
     /// </summary>
     public bool InvokeFunctionSyncEnabled { get; init; } = INVOKE_FUNCTION_SYNC_ENABLED;
     private const bool INVOKE_FUNCTION_SYNC_ENABLED = false;
+    
     /// <summary>
     /// Toggles whether try-sync invoke methods should be generated for modules.
     /// </summary>
     public bool InvokeFunctionTrySyncEnabled { get; init; } = INVOKE_FUNCTION_TRYSYNC_ENABLED;
     private const bool INVOKE_FUNCTION_TRYSYNC_ENABLED = true;
+    
     /// <summary>
     /// Toggles whether async invoke methods should be generated for modules.
     /// </summary>
@@ -72,6 +78,24 @@ public sealed record class Config {
     private const NameTransform INVOKE_FUNCTION_FUNCTION_TRANSFORM = NameTransform.FirstUpperCase;
     private const NameTransform INVOKE_FUNCTION_ACTION_TRANSFORM = NameTransform.None;
 
+    /// <summary>
+    /// Naming of the #action# variable for the invoke module functions name pattern when the action is synchronous.
+    /// </summary>
+    public string InvokeFunctionActionNameSync { get; init; } = INVOKE_FUNCTION_ACTION_NAME_SYNC;
+    private const string INVOKE_FUNCTION_ACTION_NAME_SYNC = "Invoke";
+    
+    /// <summary>
+    /// Naming of the #action# variable for the invoke module functions name pattern when the action is try synchronous.
+    /// </summary>
+    public string InvokeFunctionActionNameTrySync { get; init; } = INVOKE_FUNCTION_ACTION_NAME_TRYSYNC;
+    private const string INVOKE_FUNCTION_ACTION_NAME_TRYSYNC = "InvokeTrySync";
+    
+    /// <summary>
+    /// Naming of the #action# variable for the invoke module functions name pattern when the action is asynchronous.
+    /// </summary>
+    public string InvokeFunctionActionNameAsync { get; init; } = INVOKE_FUNCTION_ACTION_NAME_ASYNC;
+    private const string INVOKE_FUNCTION_ACTION_NAME_ASYNC = "InvokeAsync";
+
 
     /// <summary>
     /// <para>If true, whenever a module function returns a promise, the <see cref="InvokeFunctionSyncEnabled" />, <see cref="InvokeFunctionTrySyncEnabled" /> and <see cref="InvokeFunctionAsyncEnabled" /> flags will be ignored<br />
@@ -80,6 +104,7 @@ public sealed record class Config {
     /// </summary>
     public bool PromiseOnlyAsync { get; init; } = PROMISE_ONLY_ASYNC;
     private const bool PROMISE_ONLY_ASYNC = true;
+    
     /// <summary>
     /// <para>If true, whenever a module function returns a promise, the string "Async" is appended.</para>
     /// <para>If your pattern ends already with "Async", for example with the #action# variable, this will result in a double: "AsyncAsync"</para>
@@ -128,11 +153,13 @@ public sealed record class Config {
     /// </summary>
     public bool JSRuntimeSyncEnabled { get; init; } = JSRUNTIME_SYNC_ENABLED;
     private const bool JSRUNTIME_SYNC_ENABLED = false;
+    
     /// <summary>
     /// Toggles whether generic JSRuntime try-sync invoke method should be generated.
     /// </summary>
     public bool JSRuntimeTrySyncEnabled { get; init; } = JSRUNTIME_TRYSYNC_ENABLED;
     private const bool JSRUNTIME_TRYSYNC_ENABLED = false;
+    
     /// <summary>
     /// Toggles whether generic JSRuntime async invoke method should be generated.
     /// </summary>
@@ -246,9 +273,25 @@ public sealed record class Config {
                     NameTransform functionTransform = namePatternJsonObject["function transform"]?.ParseAsNameTransform("[invoke function],[name pattern].[function transform]") ?? INVOKE_FUNCTION_FUNCTION_TRANSFORM;
                     NameTransform actionTransform = namePatternJsonObject["action transform"]?.ParseAsNameTransform("[invoke function],[name pattern].[action transform]") ?? INVOKE_FUNCTION_ACTION_TRANSFORM;
                     InvokeFunctionNamePattern = new FunctionNamePattern(namePattern, moduleTransform, functionTransform, actionTransform);
+
+                    if (namePatternJsonObject.AsJsonObjectOrNull("action name", "[invoke function],[name pattern].[action name]") is JsonObject actionNameJsonObject) {
+                        InvokeFunctionActionNameSync = actionNameJsonObject["sync"]?.ParseAsString("[invoke function].[name pattern].sync") ?? INVOKE_FUNCTION_ACTION_NAME_SYNC;
+                        InvokeFunctionActionNameTrySync = actionNameJsonObject["trysync"]?.ParseAsString("[invoke function].[name pattern].trysync") ?? INVOKE_FUNCTION_ACTION_NAME_TRYSYNC;
+                        InvokeFunctionActionNameAsync = actionNameJsonObject["async"]?.ParseAsString("[invoke function].[name pattern].async") ?? INVOKE_FUNCTION_ACTION_NAME_ASYNC;
+                    }
+                    else {
+                        InvokeFunctionActionNameSync = INVOKE_FUNCTION_ACTION_NAME_SYNC;
+                        InvokeFunctionActionNameTrySync = INVOKE_FUNCTION_ACTION_NAME_TRYSYNC;
+                        InvokeFunctionActionNameAsync = INVOKE_FUNCTION_ACTION_NAME_ASYNC;
+                    }
                 }
-                else
+                else {
                     InvokeFunctionNamePattern = new FunctionNamePattern(INVOKE_FUNCTION_NAME_PATTERN, INVOKE_FUNCTION_MODULE_TRANSFORM, INVOKE_FUNCTION_FUNCTION_TRANSFORM, INVOKE_FUNCTION_ACTION_TRANSFORM);
+
+                    InvokeFunctionActionNameSync = INVOKE_FUNCTION_ACTION_NAME_SYNC;
+                    InvokeFunctionActionNameTrySync = INVOKE_FUNCTION_ACTION_NAME_TRYSYNC;
+                    InvokeFunctionActionNameAsync = INVOKE_FUNCTION_ACTION_NAME_ASYNC;
+                }
 
                 if (jsonObject.AsJsonObjectOrNull("promise") is JsonObject promiseJsonObject) {
                     PromiseOnlyAsync = promiseJsonObject["only async enabled"]?.ParseAsBool("[invoke function].[promise].[only async enabled]") ?? PROMISE_ONLY_ASYNC;
@@ -267,6 +310,10 @@ public sealed record class Config {
                 InvokeFunctionAsyncEnabled = INVOKE_FUNCTION_ASYNC_ENABLED;
 
                 InvokeFunctionNamePattern = new FunctionNamePattern(INVOKE_FUNCTION_NAME_PATTERN, INVOKE_FUNCTION_MODULE_TRANSFORM, INVOKE_FUNCTION_FUNCTION_TRANSFORM, INVOKE_FUNCTION_ACTION_TRANSFORM);
+
+                InvokeFunctionActionNameSync = INVOKE_FUNCTION_ACTION_NAME_SYNC;
+                InvokeFunctionActionNameTrySync = INVOKE_FUNCTION_ACTION_NAME_TRYSYNC;
+                InvokeFunctionActionNameAsync = INVOKE_FUNCTION_ACTION_NAME_ASYNC;
                 
                 PromiseOnlyAsync = PROMISE_ONLY_ASYNC;
                 PromiseAppendAsync = PROMISE_APPEND_ASYNC;
@@ -408,7 +455,12 @@ public sealed record class Config {
                   "pattern": "{{InvokeFunctionNamePattern.NamePattern}}",
                   "module transform": "{{InvokeFunctionNamePattern.ModuleTransform}}",
                   "function transform": "{{InvokeFunctionNamePattern.FunctionTransform}}",
-                  "action transform": "{{InvokeFunctionNamePattern.ActionTransform}}"
+                  "action transform": "{{InvokeFunctionNamePattern.ActionTransform}}",
+                  "action name": {
+                    "sync": "{{InvokeFunctionActionNameSync}}",
+                    "trysync": "{{InvokeFunctionActionNameTrySync}}",
+                    "async": "{{InvokeFunctionActionNameAsync}}"
+                  }
                 },
                 "promise": {
                   "only async enabled": {{(PromiseOnlyAsync ? "true" : "false")}},
@@ -452,6 +504,13 @@ public sealed record class Config {
             return false;
 
         if (InvokeFunctionNamePattern != other.InvokeFunctionNamePattern)
+            return false;
+
+        if (InvokeFunctionActionNameSync != other.InvokeFunctionActionNameSync)
+            return false;
+        if (InvokeFunctionActionNameTrySync != other.InvokeFunctionActionNameTrySync)
+            return false;
+        if (InvokeFunctionActionNameAsync != other.InvokeFunctionActionNameAsync)
             return false;
 
         if (PromiseOnlyAsync != other.PromiseOnlyAsync)

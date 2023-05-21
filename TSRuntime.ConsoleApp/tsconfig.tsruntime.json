@@ -14,7 +14,12 @@
       "pattern": "#function#_#module#_#action#",
       "module transform": "first upper case",
       "function transform": "first upper case",
-      "action transform": "none"
+      "action transform": "none",
+      "action name": {
+        "sync": "Invoke",
+        "trysync": "InvokeTrySync",
+        "async": "InvokeAsync"
+      }
     },
     "promise": {
       "only async enabled": true,
