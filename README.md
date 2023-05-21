@@ -133,7 +133,7 @@ Your .csproj-file, tsconfig.json, tsconfig.tsruntime.json should be all in the s
     "type map": {
       "number": "double",
       "boolean": "bool",
-      "bigint": "long",
+      "Uint8Array": "byte[]",
       "HTMLObjectElement": "ElementReference"
     }
   }
@@ -250,7 +250,7 @@ All available config keys with its default value:
     "type map": {
       "number": "double",
       "boolean": "bool",
-      "bigint": "long",
+      "Uint8Array": "byte[]",
       "HTMLObjectElement": "ElementReference"
     }
   },
@@ -504,8 +504,6 @@ This package is in preview and breaking changes may occur.
 
 There are some features planned (no guarantees whatsoever):
 
-* option in config: generate on save (not used in source generator)
-* TypeMapDefault more default types (e.g. Uint8Array -> byte[], DotNetStreamReference -> DotNetStreamReference)
 * module grouping in seperate interfaces
 * Generic type-mapping (INumber&lt;T&gt; instead of double)
 * Generic TS-Functions
@@ -528,4 +526,4 @@ There are some features planned (no guarantees whatsoever):
 - 0.2  
   Optional parameters and default parameter values are now supported.
 - 0.3  
-  Breaking changes: changed config keys and properties in Config, changed Config.FromJson(string json) to new Config(string json.
+  Breaking changes: changed config keys, defaults and properties in Config, changed Config.FromJson(string json) to new Config(string json).

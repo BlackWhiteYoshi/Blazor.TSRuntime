@@ -22,7 +22,7 @@
     "type map": {
       "number": "double",
       "boolean": "bool",
-      "bigint": "long",
+      "Uint8Array": "byte[]",
       "HTMLObjectElement": "ElementReference"
     }
   },

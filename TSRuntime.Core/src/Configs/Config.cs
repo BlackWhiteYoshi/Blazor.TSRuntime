@@ -89,7 +89,7 @@ public sealed record class Config {
     private static Dictionary<string, string> TypeMapDefault => new() {
         ["number"] = "double",
         ["boolean"] = "bool",
-        ["bigint"] = "long",
+        ["Uint8Array"] = "byte[]",
         ["HTMLObjectElement"] = "ElementReference"
     };
 
