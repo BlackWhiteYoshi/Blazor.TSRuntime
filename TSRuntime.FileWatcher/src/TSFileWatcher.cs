@@ -21,10 +21,11 @@ public sealed class TSFileWatcher : IDisposable {
     private readonly string basePath;
 
     private readonly FileSystemWatcher configWatcher;
-    private FileSystemWatcher[] moduleWatcherList;
+    private FileSystemWatcher[]? moduleWatcherList;
 
     public event Action<Config>? TSRuntimeLocationChanged;
     public event Action<Config>? ITSRuntimeLocationChanged;
+    public event Action<Config>? GenerateOnSaveChanged;
     public event Action<TSStructureTree, Config>? StructureTreeChanged;
 
 
@@ -65,36 +66,21 @@ public sealed class TSFileWatcher : IDisposable {
     #region Construction
 
     /// <summary>
-    /// Creates an instance of <see cref="TSFileWatcher"/> and initializes the structureTree.
+    /// <para>Creates an instance of <see cref="TSFileWatcher"/> without initializing the structureTree (inactive).</para>
+    /// <para>To activate and initialize the structureTree, call <see cref="CreateModuleWatcher()"/>.</para>
     /// </summary>
     /// <param name="config">config</param>
     /// <param name="basePath">Directory where tsconfig.tsruntime.json file is located.<br />It's also the starting point for relative paths.</param>
     /// <param name="structureTreeChanged">It is set to <see cref="StructureTreeChanged"/> before initialization of the structureTree, so it gets invoked the first time ITSRuntimeContent is build.</param>
-    /// <returns></returns>
-    public static async Task<TSFileWatcher> CreateTSFileWatcher(Config config, string basePath, Action<TSStructureTree, Config>? structureTreeChanged = null) {
-        DeclarationPath[] declarationPathList = ConvertToAbsolutePath(config.DeclarationPath, basePath);
-        TSFileWatcher tsFileWatcher = new(config, basePath, declarationPathList, structureTreeChanged);
-        await tsFileWatcher.CreateStructureTree(declarationPathList);
-        return tsFileWatcher;
-    }
-
-
-    private TSFileWatcher(Config config, string basePath, DeclarationPath[] declarationPathList, Action<TSStructureTree, Config>? structureTreeChanged = null) {
+    public TSFileWatcher(Config config, string basePath) {
         Config = config;
         this.basePath = basePath;
-        StructureTreeChanged += structureTreeChanged;
-
         configWatcher = CreateConfigWatcher(basePath);
-
-        moduleWatcherList = new FileSystemWatcher[Config.DeclarationPath.Length];
-        for (int i = 0; i < Config.DeclarationPath.Length; i++)
-            moduleWatcherList[i] = CreateModuleWatcher(declarationPathList[i]);
     }
 
     public void Dispose() {
         configWatcher.Dispose();
-        foreach (FileSystemWatcher moduleWatcher in moduleWatcherList)
-            moduleWatcher.Dispose();
+        DisposeModuleWatcher();
     }
 
     #endregion
@@ -222,16 +208,17 @@ public sealed class TSFileWatcher : IDisposable {
 
         if (Config.FileOutputinterface != oldConfig.FileOutputinterface)
             ITSRuntimeLocationChanged?.Invoke(Config);
-        
-        if (Config.DeclarationPath != oldConfig.DeclarationPath) {
-            foreach (FileSystemWatcher moduleWatcher in moduleWatcherList)
-                moduleWatcher.Dispose();
 
-            DeclarationPath[] declarationPathList = ConvertToAbsolutePath(config.DeclarationPath, basePath);
-            moduleWatcherList = new FileSystemWatcher[Config.DeclarationPath.Length];
-            for (int i = 0; i < Config.DeclarationPath.Length; i++)
-                moduleWatcherList[i] = CreateModuleWatcher(declarationPathList[i]);
-            return CreateStructureTree(declarationPathList);
+        if (Config.GenerateOnSave != oldConfig.GenerateOnSave)
+            GenerateOnSaveChanged?.Invoke(Config);
+        
+        if (moduleWatcherList == null)
+            return Task.CompletedTask;
+
+
+        if (Config.DeclarationPath != oldConfig.DeclarationPath) {
+            DisposeModuleWatcher();
+            return CreateModuleWatcher();
         }
 
         if (!Config.StructureTreeEquals(oldConfig))
@@ -244,6 +231,35 @@ public sealed class TSFileWatcher : IDisposable {
 
 
     #region module watcher
+
+    /// <summary>
+    /// Activates the fileWatcher: Creates a <see cref="FileSystemWatcher"/> for every declaraionPath and initializes the structureTree.
+    /// </summary>
+    /// <returns></returns>
+    public Task CreateModuleWatcher() {
+        if (moduleWatcherList != null)
+            return Task.CompletedTask;
+
+        DeclarationPath[] declarationPathList = ConvertToAbsolutePath(Config.DeclarationPath, basePath);
+
+        moduleWatcherList = new FileSystemWatcher[Config.DeclarationPath.Length];
+        for (int i = 0; i < Config.DeclarationPath.Length; i++)
+            moduleWatcherList[i] = CreateModuleWatcher(declarationPathList[i]);
+
+        return CreateStructureTree(declarationPathList);
+    }
+
+    /// <summary>
+    /// Deactivates the fileWatcher: Disposes all declarationPath <see cref="FileSystemWatcher"/>.
+    /// </summary>
+    public void DisposeModuleWatcher() {
+        if (moduleWatcherList == null)
+            return;
+
+        foreach (FileSystemWatcher moduleWatcher in moduleWatcherList)
+            moduleWatcher.Dispose();
+        moduleWatcherList = null;
+    }
 
     private FileSystemWatcher CreateModuleWatcher(DeclarationPath path) {
         FileSystemWatcher watcher = path.FileModulePath switch {

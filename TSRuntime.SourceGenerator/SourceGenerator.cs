@@ -64,9 +64,11 @@ public sealed class SourceGenerator : ISourceGenerator, IDisposable {
                 structureTree.ParseModules(declarationPath).GetAwaiter().GetResult();
                 CreateITSRuntimeContentString(structureTree, config);
             }
-            else
-                TSFileWatcher.CreateTSFileWatcher(config, basePath, CreateITSRuntimeContentString)
-                    .ContinueWith((Task<TSFileWatcher> fileWatcherTask) => fileWatcher = fileWatcherTask.Result);
+            else {
+                fileWatcher = new TSFileWatcher(config, basePath);
+                fileWatcher.StructureTreeChanged += CreateITSRuntimeContentString;
+                _ = fileWatcher.CreateModuleWatcher();
+            }
         }
 
         context.AddSource("TSRuntime.g.cs", Generator.TSRuntimeContent);

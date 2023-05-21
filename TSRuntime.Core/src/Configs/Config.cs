@@ -31,6 +31,13 @@ public sealed record class Config {
     private const string FILE_OUTPUT_INTERFACE = "TSRuntime/ITSRuntime.cs";
 
     /// <summary>
+    /// <para>If true, every time a .d.ts-file is changed, ITSRuntime is generated.</para>
+    /// <para>Not used in source generator.</para>
+    /// </summary>
+    public bool GenerateOnSave { get; init; } = GENERATE_ON_SAVE;
+    private const bool GENERATE_ON_SAVE = true;
+
+    /// <summary>
     /// List of generated using statements at the top of ITSRuntime.
     /// </summary>
     public string[] UsingStatements { get; init; } = new string[1] { USING_STATEMENT };
@@ -208,6 +215,7 @@ public sealed record class Config {
             }
         }
 
+
         // FileOutputClass, FileOutputinterface;
         {
             if (root.AsJsonObjectOrNull("file output") is JsonObject jsonObject) {
@@ -219,6 +227,8 @@ public sealed record class Config {
                 FileOutputinterface = FILE_OUTPUT_INTERFACE;
             }
         }
+
+        GenerateOnSave = root["generate on save"]?.ParseAsBool("generate on save") ?? GENERATE_ON_SAVE;
 
         UsingStatements = root.ParseAsStringArray("using statements") ?? new string[1] { USING_STATEMENT };
 
@@ -388,6 +398,7 @@ public sealed record class Config {
                 "class": "{{FileOutputClass}}",
                 "interface": "{{FileOutputinterface}}"
               },
+              "generate on save": {{(GenerateOnSave ? "true" : "false")}},
               "using statements": [{{usingStatements}}],
               "invoke function": {
                 "sync enabled": {{(InvokeFunctionSyncEnabled ? "true" : "false")}},

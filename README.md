@@ -232,6 +232,7 @@ All available config keys with its default value:
     "class": "TSRuntime/TSRuntime.cs",
     "interface": "TSRuntime/ITSRuntime.cs"
   },
+  "generate on save": true,
   "using statements": ["Microsoft.AspNetCore.Components"],
   "invoke function": {
     "sync enabled": false,
@@ -280,6 +281,7 @@ All available config keys with its default value:
 - **[\[declaration path\]](#configure-declaration-files-dts-directory)**: Folder where to locate the d.ts declaration files. Path relative to this file and no starting or ending slash.
 - **[file output].[class]**: File-path of TSRuntime. Path relative to json-file and no starting slash. Not used in source generator.
 - **[file output].[interface]**: File-path of ITSRuntime. Path relative to json-file and no starting slash. Not used in source generator.
+- **[generate on save]**: If true, every time a .d.ts-file is changed, ITSRuntime is generated. Not used in source generator.
 - **[\[using statements\]](#using-statements)**: List of generated using statements at the top of ITSRuntime.
 - **[invoke function].[sync enabled]**: Toggles whether sync invoke methods should be generated for modules.
 - **[invoke function].[trysync enabled]**: Toggles whether try-sync invoke methods should be generated for modules.
@@ -526,4 +528,5 @@ There are some features planned (no guarantees whatsoever):
 - 0.2  
   Optional parameters and default parameter values are now supported.
 - 0.3  
-  Breaking changes: changed config keys, defaults and properties in Config, changed Config.FromJson(string json) to new Config(string json).
+  Breaking changes: changed config keys, defaults and properties in Config, changed Config.FromJson(string json) to new Config(string json).  
+  Added key "generate on save" to config.

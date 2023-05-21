@@ -4,6 +4,7 @@
     "class": "TSRuntime.cs",
     "interface": "ITSRuntime.cs"
   },
+  "generate on save": true,
   "using statements": [ "Microsoft.AspNetCore.Components" ],
   "invoke function": {
     "sync enabled": true,

@@ -35,7 +35,8 @@ public sealed class TSFileWatcherUpdateTests : IAsyncLifetime {
             DeclarationPath = new DeclarationPath[1] { new(DECLARATION_FOLDER) }
         };
 
-        fileWatcher = await TSFileWatcher.CreateTSFileWatcher(config, rootFolderPath);
+        fileWatcher = new TSFileWatcher(config, rootFolderPath);
+        await fileWatcher.CreateModuleWatcher();
     }
 
     public Task DisposeAsync() {
