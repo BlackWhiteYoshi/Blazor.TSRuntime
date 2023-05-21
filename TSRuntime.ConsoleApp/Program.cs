@@ -8,7 +8,7 @@ namespace TSRuntime.ConsoleApp;
 public static class Program {
     public static async Task Main() {
         string json = File.ReadAllText("tsconfig.tsruntime.json");
-        Config config = Config.FromJson(json);
+        Config config = new(json);
 
         TSStructureTree structureTree = new();
         await structureTree.ParseModules(config.DeclarationPath);

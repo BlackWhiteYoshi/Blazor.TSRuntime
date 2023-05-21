@@ -23,7 +23,7 @@ public sealed class CoreConfigTest {
 
     [Fact]
     public void Config_EmptyJsonHaveDefaultValues() {
-        Config config = Config.FromJson("{}");
+        Config config = new("{}");
 
         foreach (PropertyInfo property in typeof(Config).GetProperties()) {
             object? value = property.GetValue(config);
@@ -41,9 +41,9 @@ public sealed class CoreConfigTest {
 
         // maps to one property but has leaf nodes
         jsonObject.Remove("declaration path");
-        jsonObject.Remove("type map");
-        jsonObject.Remove("function name pattern");
-        jsonObject.Remove("preload name pattern");
+        jsonObject["invoke function"]!.AsObject().Remove("type map");
+        jsonObject["invoke function"]!.AsObject().Remove("name pattern");
+        jsonObject["preload function"]!.AsObject().Remove("name pattern");
         int numberOfLeafNodes = 4;
 
         foreach (KeyValuePair<string, JsonNode?> node in jsonObject)
@@ -75,7 +75,7 @@ public sealed class CoreConfigTest {
                 "declaration path": ""
             }
             """;
-        Config config = Config.FromJson(json);
+        Config config = new(json);
         
         Assert.Equal(string.Empty, config.DeclarationPath[0].Include);
     }
@@ -92,7 +92,7 @@ public sealed class CoreConfigTest {
     [InlineData("""{ "declaration path": { "include": "\\test", "excludes": "as\\df", "file module path": "yx\\cv" } }""", new string?[3] { "/test", "as/df", "yx/cv" })]
     [InlineData("""{ "declaration path": [{ "include": "\\test", "excludes": "as\\df", "file module path": "yx\\cv" }, { "include": "q", "excludes": ["w", "ww" ] } ] }""", new string?[6] { "/test", "as/df", "yx/cv", "q", "w,ww", null })]
     public void Config_FromJson_DeclarationPathWorks(string json, string?[] expected) {
-        Config config = Config.FromJson(json);
+        Config config = new(json);
 
         string?[] result = new string[config.DeclarationPath.Length * 3];
         for (int i = 0; i < config.DeclarationPath.Length; i++) {
@@ -205,7 +205,7 @@ public sealed class CoreConfigTest {
                 "using statements": {{usingStatementsValue}}
             }
             """;
-        Config config = Config.FromJson(json);
+        Config config = new(json);
 
         for (int i = 0; i < config.UsingStatements.Length; i++)
             Assert.Equal(expected[i], config.UsingStatements[i]);
@@ -235,15 +235,15 @@ public sealed class CoreConfigTest {
     [InlineData(new string[] { }, """{ }""")]
     [InlineData(new string[] { "key", "value" }, """
                                                 {
-                                                    "key": "value"
-                                                  }
+                                                      "key": "value"
+                                                    }
                                                 """)]
     [InlineData(new string[] { "a", "b", "c", "d", "e", "f" }, """
                                                             {
-                                                                "a": "b",
-                                                                "c": "d",
-                                                                "e": "f"
-                                                              }
+                                                                  "a": "b",
+                                                                  "c": "d",
+                                                                  "e": "f"
+                                                                }
                                                             """)]
     public void Config_ToJson_TypeMapWorks(string[] types , string expected) {
         Dictionary<string, string> map = new(types.Length / 2);
@@ -256,6 +256,60 @@ public sealed class CoreConfigTest {
         string json = config.ToJson();
 
         Assert.Contains($""" "type map": {expected}""", json);
+    }
+
+    [Fact]
+    public void StructureTreeEquals() {
+        Config configA = new Config();
+        Config configB = new Config();
+
+        Assert.True(configA.StructureTreeEquals(configB));
+
+
+        configB = configA with { UsingStatements = Array.Empty<string>() };
+        Assert.False(configA.StructureTreeEquals(configB));
+
+
+        configB = configA with { InvokeFunctionSyncEnabled = true };
+        Assert.False(configA.StructureTreeEquals(configB));
+
+        configB = configA with { InvokeFunctionTrySyncEnabled = false };
+        Assert.False(configA.StructureTreeEquals(configB));
+
+        configB = configA with { InvokeFunctionAsyncEnabled = true };
+        Assert.False(configA.StructureTreeEquals(configB));
+
+
+        configB = configA with { InvokeFunctionNamePattern = new FunctionNamePattern("test", NameTransform.None, NameTransform.None, NameTransform.None) };
+        Assert.False(configA.StructureTreeEquals(configB));
+
+
+        configB = configA with { PromiseOnlyAsync = false };
+        Assert.False(configA.StructureTreeEquals(configB));
+
+        configB = configA with { PromiseAppendAsync = true };
+        Assert.False(configA.StructureTreeEquals(configB));
+
+
+        configB = configA with { TypeMap = new Dictionary<string, string>() };
+        Assert.False(configA.StructureTreeEquals(configB));
+
+
+        configB = configA with { PreloadNamePattern = new ModuleNamePattern("test", NameTransform.None) };
+        Assert.False(configA.StructureTreeEquals(configB));
+
+        configB = configA with { PreloadAllModulesName = "test" };
+        Assert.False(configA.StructureTreeEquals(configB));
+
+
+        configB = configA with { JSRuntimeSyncEnabled = true };
+        Assert.False(configA.StructureTreeEquals(configB));
+
+        configB = configA with { JSRuntimeTrySyncEnabled = true };
+        Assert.False(configA.StructureTreeEquals(configB));
+
+        configB = configA with { JSRuntimeAsyncEnabled = true };
+        Assert.False(configA.StructureTreeEquals(configB));
     }
 
 

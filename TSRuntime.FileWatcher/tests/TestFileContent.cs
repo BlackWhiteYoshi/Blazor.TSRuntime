@@ -3,38 +3,16 @@
 public static class TestFileContent {
     public const string CONFIG_JSON = """
         {
-          "declaration path": ".typescript-declarations/",
-          "file output": {
-            "class": "TSRuntime.cs",
-            "interface": "ITSRuntime.cs"
-          },
-          "module": {
-            "invoke enabled": true,
+          "invoke function": {
+            "sync enabled": false,
             "trysync enabled": true,
-            "async enabled": true
-          },
-          "js runtime": {
-            "invoke enabled": true,
-            "trysync enabled": true,
-            "async enabled": true
-          },
-          "function name pattern": {
-            "pattern": "#function#_#module#_#action#",
-            "function transform": "first upper case",
-            "module transform": "none",
-            "action transform": "none"
-          },
-          "preload name pattern": {
-            "pattern": "Preload#module#",
-            "module transform": "none"
-          },
-          "preload all modules name": "PreloadAllModules",
-          "using statements": [ "Microsoft.AspNetCore.Components" ],
-          "type map": {
-            "number": "double",
-            "boolean": "bool",
-            "bigint": "long",
-            "HTMLObjectElement": "ElementReference"
+            "async enabled": false,
+            "name pattern": {
+              "pattern": "#module#",
+              "module transform": "first upper case",
+              "function transform": "first upper case",
+              "action transform": "none"
+            }
           }
         }
 
@@ -50,8 +28,6 @@ public static class TestFileContent {
         export declare function setCookie(key: string, value: string, days: number): void;
 
         export declare function scrollIntoView(elementId: string): void;
-
-        export declare function mathJaxRender(): void;
 
         """;
 }

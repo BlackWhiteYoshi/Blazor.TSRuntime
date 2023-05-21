@@ -91,7 +91,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
         fileWatcher = await TSFileWatcher.CreateTSFileWatcher(config, rootFolderPath);
 
         Assert.Single(fileWatcher.StructureTree.ModuleList);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
         Assert.Equal(testPath, fileWatcher.StructureTree.ModuleList[0].ModuleName);
         Assert.Equal($"/{testPath}.js", fileWatcher.StructureTree.ModuleList[0].ModulePath);
     }
@@ -112,7 +112,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
         fileWatcher = await TSFileWatcher.CreateTSFileWatcher(config, rootFolderPath);
 
         Assert.Single(fileWatcher.StructureTree.ModuleList);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
         Assert.Equal("updateTest1", fileWatcher.StructureTree.ModuleList[0].ModuleName);
         Assert.Equal($"/{DECLARATION_FOLDER}/updateTest1.js", fileWatcher.StructureTree.ModuleList[0].ModulePath);
     }
@@ -136,8 +136,8 @@ public sealed class TSFileWatcherPathTests : IDisposable {
         fileWatcher = await TSFileWatcher.CreateTSFileWatcher(config, rootFolderPath);
 
         Assert.Equal(2, fileWatcher.StructureTree.ModuleList.Count);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[1].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[1].FunctionList.Count);
     }
 
     [Fact]
@@ -162,8 +162,8 @@ public sealed class TSFileWatcherPathTests : IDisposable {
         fileWatcher = await TSFileWatcher.CreateTSFileWatcher(config, rootFolderPath);
 
         Assert.Equal(2, fileWatcher.StructureTree.ModuleList.Count);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[1].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[1].FunctionList.Count);
     }
 
     #endregion
@@ -196,7 +196,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
 
         Assert.Equal(1, iTsRuntimeChangedCounter);
         Assert.Single(fileWatcher.StructureTree.ModuleList);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
     }
 
     [Fact]
@@ -225,7 +225,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
 
         Assert.Equal(1, iTsRuntimeChangedCounter);
         Assert.Single(fileWatcher.StructureTree.ModuleList);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
     }
 
     [Fact]
@@ -256,7 +256,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
 
         Assert.Equal(1, iTsRuntimeChangedCounter);
         Assert.Single(fileWatcher.StructureTree.ModuleList);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
     }
 
     [Fact]
@@ -286,7 +286,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
 
         Assert.Equal(1, iTsRuntimeChangedCounter);
         Assert.Single(fileWatcher.StructureTree.ModuleList);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
     }
 
     [Fact]
@@ -316,7 +316,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
 
         Assert.Equal(1, iTsRuntimeChangedCounter);
         Assert.Single(fileWatcher.StructureTree.ModuleList);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
     }
 
     [Fact]
@@ -337,21 +337,21 @@ public sealed class TSFileWatcherPathTests : IDisposable {
         fileWatcher.StructureTreeChanged += (_, _) => iTsRuntimeChangedCounter++;
         Assert.Equal(0, iTsRuntimeChangedCounter);
         Assert.Single(fileWatcher.StructureTree.ModuleList);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
 
         string moduleFilePath1 = Path.Combine(declarationPath, "updateTest1.d.ts");
         await File.WriteAllTextAsync(moduleFilePath1, TestFileContent.TS_DECLARATION);
         Assert.True(await WaitForCondition(() => iTsRuntimeChangedCounter == 1));
         Assert.Equal(2, fileWatcher.StructureTree.ModuleList.Count);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[1].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[1].FunctionList.Count);
 
         File.Move(moduleFilePath2, Path.Combine(nestedDeclarationPath, "updateTest2.d.ts"));
         await Task.Delay(FILE_WRITE_DELAY);
 
         Assert.Equal(2, iTsRuntimeChangedCounter);
         Assert.Single(fileWatcher.StructureTree.ModuleList);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
     }
 
     [Fact]
@@ -377,15 +377,15 @@ public sealed class TSFileWatcherPathTests : IDisposable {
         await File.WriteAllTextAsync(moduleFilePath1, TestFileContent.TS_DECLARATION);
         Assert.True(await WaitForCondition(() => iTsRuntimeChangedCounter == 1));
         Assert.Single(fileWatcher.StructureTree.ModuleList);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
         
         File.Move(moduleFilePath2, Path.Combine(declarationPath, "updateTest2.d.ts"));
         await Task.Delay(FILE_WRITE_DELAY);
 
         Assert.Equal(2, iTsRuntimeChangedCounter);
         Assert.Equal(2, fileWatcher.StructureTree.ModuleList.Count);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[1].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[1].FunctionList.Count);
     }
 
     
@@ -441,7 +441,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
         await File.WriteAllTextAsync(moduleFilePath1, TestFileContent.TS_DECLARATION);
         Assert.True(await WaitForCondition(() => iTsRuntimeChangedCounter == 1));
         Assert.Single(fileWatcher.StructureTree.ModuleList);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
 
         string moduleFilePath2 = Path.Combine(declarationPath, excludeFileName);
         await File.WriteAllTextAsync(moduleFilePath2, TestFileContent.TS_DECLARATION);
@@ -449,7 +449,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
 
         Assert.Equal(1, iTsRuntimeChangedCounter);
         Assert.Single(fileWatcher.StructureTree.ModuleList);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
     }
 
     [Fact]
@@ -473,7 +473,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
 
         fileWatcher = await TSFileWatcher.CreateTSFileWatcher(config, rootFolderPath);
         Assert.Single(fileWatcher.StructureTree.ModuleList);
-        Assert.Equal(6, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
+        Assert.Equal(5, fileWatcher.StructureTree.ModuleList[0].FunctionList.Count);
     }
 
     #endregion

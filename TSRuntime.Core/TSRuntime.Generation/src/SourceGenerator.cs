@@ -157,7 +157,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 };
             `+
             ``
-            if (config.PromiseFunctionOnlyAsync && function.ReturnPromise) {
+            if (config.PromiseOnlyAsync && function.ReturnPromise) {
             `+
             {{Get_TrySync_Async(trySync: false)}}
 
@@ -168,7 +168,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             else {
             `+
             ``
-            if (config.ModuleInvokeEnabled) {
+            if (config.InvokeFunctionSyncEnabled) {
             `+
              ``
             int lastIndex = function.ParameterList.Count;
@@ -192,7 +192,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             }
             `-
             ``
-            if (config.ModuleTrySyncEnabled) {
+            if (config.InvokeFunctionTrySyncEnabled) {
             `+
 
             {{Get_TrySync_Async(trySync: true)}}
@@ -200,7 +200,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             }
             `-
             ``
-            if (config.ModuleAsyncEnabled) {
+            if (config.InvokeFunctionAsyncEnabled) {
             `+
 
             {{Get_TrySync_Async(trySync: false)}}
@@ -273,9 +273,9 @@ public sealed class SourceGenerator : IIncrementalGenerator {
     private static string GetFunctionNamePattern(string action) {
         return $"""
             ``
-            foreach (string str in config.FunctionNamePattern.GetNaming(module.ModuleName, function.Name, "{action}"))
+            foreach (string str in config.InvokeFunctionNamePattern.GetNaming(module.ModuleName, function.Name, "{action}"))
                 yield return str;
-            if (config.PromiseFunctionAppendAsync && function.ReturnPromise)
+            if (config.PromiseAppendAsync && function.ReturnPromise)
                 yield return "Async";
             ``
             """;
@@ -349,7 +349,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         
             #region JSRuntime methods
         ``
-        if (config.JSRuntimeInvokeEnabled) {
+        if (config.JSRuntimeSyncEnabled) {
         `+
 
             /// <summary>

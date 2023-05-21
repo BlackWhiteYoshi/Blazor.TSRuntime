@@ -8,6 +8,12 @@ namespace TSRuntime.FileWatching;
 /// <para>When a change is detected, <see cref="StructureTree"/> / <see cref="Config"/> is updated accordingly.</para>
 /// </summary>
 public sealed class TSFileWatcher : IDisposable {
+    /// <summary>
+    /// The name/path of the json-config file which is a representation of an instance of this class.
+    /// </summary>
+    public const string JSON_FILE_NAME = "tsconfig.tsruntime.json";
+
+
     public TSStructureTree StructureTree { get; } = new();
     private readonly Dictionary<string, int> moduleMap = new();
 
@@ -150,7 +156,7 @@ public sealed class TSFileWatcher : IDisposable {
     #region config watcher
 
     private FileSystemWatcher CreateConfigWatcher(string path) {
-        FileSystemWatcher watcher = new(path, Config.JSON_FILE_NAME);
+        FileSystemWatcher watcher = new(path, JSON_FILE_NAME);
 
         watcher.Changed += OnConfigChanged;
         watcher.Created += OnConfigCreated;
@@ -172,7 +178,7 @@ public sealed class TSFileWatcher : IDisposable {
         void OnConfigDeleted(object sender, FileSystemEventArgs e) => _ = UpdateConfig(new Config());
 
         void OnConfigRenamed(object sender, RenamedEventArgs e) {
-            if (e.Name == Config.JSON_FILE_NAME)
+            if (e.Name == JSON_FILE_NAME)
                 UpdateConfig(e.FullPath.Replace('\\', '/'));
             else
                 _ = UpdateConfig(new Config());
@@ -203,7 +209,7 @@ public sealed class TSFileWatcher : IDisposable {
                 }
             }
 
-            await me.UpdateConfig(Config.FromJson(json));
+            await me.UpdateConfig(new Config(json));
         }
     }
 

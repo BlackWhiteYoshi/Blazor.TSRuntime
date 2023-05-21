@@ -120,16 +120,22 @@ Your .csproj-file, tsconfig.json, tsconfig.tsruntime.json should be all in the s
 
 ```json
 {
-  "module": {
-    "invoke enabled": false,
+  "invoke function": {
+    "sync enabled": false,
     "trysync enabled": true,
-    "async enabled": false
-  },
-  "function name pattern": {
-    "pattern": "#function#",
-    "function transform": "first upper case",
-    "module transform": "none",
-    "action transform": "none"
+    "async enabled": false,
+    "name pattern": {
+      "pattern": "#function#",
+      "module transform": "first upper case",
+      "function transform": "first upper case",
+      "action transform": "none"
+    },
+    "type map": {
+      "number": "double",
+      "boolean": "bool",
+      "bigint": "long",
+      "HTMLObjectElement": "ElementReference"
+    }
   }
 }
 ```
@@ -192,7 +198,7 @@ using TSRuntime.Core.Generation;
 
 // create a config-object
 string json = File.ReadAllText("tsconfig.tsruntime.json");
-Config config = Config.FromJson(json);
+Config config = new(json);
 
 // parse the .d.ts-files
 TSStructureTree structureTree = new();
@@ -226,37 +232,47 @@ All available config keys with its default value:
     "class": "TSRuntime/TSRuntime.cs",
     "interface": "TSRuntime/ITSRuntime.cs"
   },
-  "module": {
-    "invoke enabled": false,
+  "using statements": ["Microsoft.AspNetCore.Components"],
+  "invoke function": {
+    "sync enabled": false,
     "trysync enabled": true,
-    "async enabled": false
+    "async enabled": false,
+    "name pattern": {
+      "pattern": "#function#",
+      "module transform": "first upper case",
+      "function transform": "first upper case",
+      "action transform": "none"
+    },
+    "promise": {
+      "only async enabled": true,
+      "append Async": false
+    },
+    "type map": {
+      "number": "double",
+      "boolean": "bool",
+      "bigint": "long",
+      "HTMLObjectElement": "ElementReference"
+    }
+  },
+  "preload function": {
+    "name pattern": {
+      "pattern": "Preload#module#",
+      "module transform": "first upper case"
+    },
+    "all modules name": "PreloadAllModules",
+  },
+  "module grouping": {
+    "enabled": false,
+    "service extension": true,
+    "interface name pattern": {
+      "pattern": "I#module#Module",
+      "module transform": "first upper case"
+    }
   },
   "js runtime": {
-    "invoke enabled": false,
+    "sync enabled": false,
     "trysync enabled": false,
     "async enabled": false
-  },
-  "promise function": {
-    "only async enabled": true,
-    "append Async": false
-  },
-  "function name pattern": {
-    "pattern": "#function#",
-    "module transform": "first upper case",
-    "function transform": "first upper case",
-    "action transform": "none"
-  },
-  "preload name pattern": {
-    "pattern": "Preload#module#",
-    "module transform": "first upper case"
-  },
-  "preload all modules name": "PreloadAllModules",
-  "using statements": ["Microsoft.AspNetCore.Components"],
-  "type map": {
-    "number": "double",
-    "boolean": "bool",
-    "bigint": "long",
-    "HTMLObjectElement": "ElementReference"
   }
 }
 ```
@@ -264,45 +280,45 @@ All available config keys with its default value:
 - **[\[declaration path\]](#configure-declaration-files-dts-directory)**: Folder where to locate the d.ts declaration files. Path relative to this file and no starting or ending slash.
 - **[file output].[class]**: File-path of TSRuntime. Path relative to json-file and no starting slash. Not used in source generator.
 - **[file output].[interface]**: File-path of ITSRuntime. Path relative to json-file and no starting slash. Not used in source generator.
-- **[module].[invoke enabled]**: Toggles whether sync invoke methods should be generated for modules.
-- **[module].[trysync enabled]**: Toggles whether try-sync invoke methods should be generated for modules.
-- **[module].[async enabled]**: Toggles whether async invoke methods should be generated for modules.
-- **[js runtime].[invoke enabled]**: Toggles whether generic JSRuntime sync invoke method should be generated.
+- **[\[using statements\]](#using-statements)**: List of generated using statements at the top of ITSRuntime.
+- **[invoke function].[sync enabled]**: Toggles whether sync invoke methods should be generated for modules.
+- **[invoke function].[trysync enabled]**: Toggles whether try-sync invoke methods should be generated for modules.
+- **[invoke function].[async enabled]**: Toggles whether async invoke methods should be generated for modules.
+- **[\[invoke function\].\[name pattern\].\[pattern\]](#name-pattern)**: Naming of the generated methods that invoke module functions.
+- **[\[invoke function\].\[name pattern\].\[module transform\]](#name-pattern)**: Lower/Upper case transform for the variable #module#.
+- **[\[invoke function\].\[name pattern\].\[function transform\]](#name-pattern)**: Lower/Upper case transform for the variable #function#.
+- **[\[invoke function\].\[name pattern\].\[action transform\]](#name-pattern)**: Lower/Upper case transform for the variable #action#.. 
+- **[\[invoke function\].\[promise\].\[only async enabled\]](#promise-function)**: Generates only async invoke method when return-type is promise.
+- **[\[invoke function\].\[promise\].\[append Async\]](#promise-function)**: Appends to the name 'Async' when return-type is promise.
+- **[\[invoke function\].\[type map\]](#type-map)**: Mapping of typescript-types (key) to C#-types (value). Not listed types are mapped unchanged (Identity function).
+- **[\[preload function\].\[name pattern\].\[pattern\]](#name-pattern)**: Naming of the generated methods that preloads a specific module.
+- **[\[preload function\].\[name pattern\].\[module transform\]](#name-pattern)**: Lower/Upper case transform for the variable #module#.
+- **[\[preload function\].\[all modules name\]](#name-pattern)**: Naming of the method that preloads all modules.
+- **[js runtime].[sync enabled]**: Toggles whether generic JSRuntime sync invoke method should be generated.
 - **[js runtime].[trysync enabled]**: Toggles whether generic JSRuntime try-sync invoke method should be generated.
 - **[js runtime].[async enabled]**: Toggles whether generic JSRuntime async invoke method should be generated.
-- **[\[promise function\].\[only async enabled\]](#promise-function)**: Generates only async invoke method when return-type is promise.
-- **[\[promise function\].\[append Async\]](#promise-function)**: Appends to the name 'Async' when return-type is promise.
-- **[\[function name pattern\].\[pattern\]](#name-pattern)**: Naming of the generated methods that invoke module functions.
-- **[\[function name pattern\].\[function transform\]](#name-pattern)**: Lower/Upper case transform for the variable #function#.
-- **[\[function name pattern\].\[module transform\]](#name-pattern)**: Lower/Upper case transform for the variable #module#.
-- **[\[function name pattern\].\[action transform\]](#name-pattern)**: Lower/Upper case transform for the variable #action#.. 
-- **[\[preload name pattern\].\[pattern\]](#name-pattern)**: Naming of the generated methods that preloads a specific module.
-- **[\[preload name pattern\].\[module transform\]](#name-pattern)**: Lower/Upper case transform for the variable #module#.
-- **[\[preload all modules name\]](#name-pattern)**: Naming of the method that preloads all modules.
-- **[\[using statements\]](#using-statements)**: List of generated using statements at the top of ITSRuntime.
-- **[\[type map\]](#type-map)**: Mapping of typescript-types (key) to C#-types (value). Not listed types are mapped unchanged (Identity function).
 
 
-### Promise Function
+### Using Statements
 
+The following using statements are always included
 
-**[only async enabled]**: If true, whenever a module function returns a promise, the *[module].[invoke enabled]*, *[module].[trysync enabled]* and *[module].[async enabled]* flags will be ignored
-and instead, only the async invoke method will be generated.  
-Asynchronous JS-functions will only be awaited with the async invoke method, so this value should always be true.
-Set it only to false when you know what you are doing.
+- using Microsoft.JSInterop.Infrastructure;
+- using System.Diagnostics.CodeAnalysis;
+- using System.Threading;
+- using System.Threading.Tasks;
 
-**[append Async]**: Whenever a module function returns a promise, the string "Async" is appended.  
-If your pattern ends already with "Async", for example with the #action# variable, this will result in a double: "AsyncAsync".
+The values given in \[using statements] will add additional using statements.
 
 
 ### Name Pattern
 
-[function name pattern] describes the naming of the generated invoke methods.
+\[name pattern\] describes the naming of the generated methods.
 For example, if you provide for the key [pattern] the value "MyMethod", all generated methods will have the name "MyMethod", which will result in a compile error.
-That is why there are 3 variables provided to customize your method-naming:
+That is why there are variables provided to customize your method-naming. For the invoke methods there are 3 variables:
 
-- #function#
 - #module#
+- #function#
 - #action#
 
 Let's say we have a module named "Example" and a function "saveNumber":
@@ -339,21 +355,21 @@ With [function transform] set to "first upper case" you get:
   -> InvokeTrySync_textSaveNumber(...)  
   -> InvokeAsync_textSaveNumber(...)
 
-[preload name pattern] works pretty much the same, except there is only 1 variable:
+\[name pattern\] for preload works pretty much the same, except there is only 1 variable:
 
 - #module#
 
 
-### Using Statements
+### Promise Function
 
-The following using statements are always included
 
-- using Microsoft.JSInterop.Infrastructure;
-- using System.Diagnostics.CodeAnalysis;
-- using System.Threading;
-- using System.Threading.Tasks;
+**[only async enabled]**: If true, whenever a module function returns a promise, the *[invoke function].[sync enabled]*, *[invoke function].[trysync enabled]* and *[invoke function].[async enabled]* flags will be ignored
+and instead, only the async invoke method will be generated.  
+Asynchronous JS-functions will only be awaited with the async invoke method, so this value should always be true.
+Set it only to false when you know what you are doing.
 
-The values given in \[using statements] will add additional using statements.
+**[append Async]**: Whenever a module function returns a promise, the string "Async" is appended.  
+If your pattern ends already with "Async", for example with the #action# variable, this will result in a double: "AsyncAsync".
 
 
 ### Type Map
@@ -363,23 +379,23 @@ If a TS-variable is nullable, it is also nullable in C#.
 If a TS-variable is optional/undefined, it is also optional in C# by creating overload methods, but only if the last parameters are optional/undefined.
 If an array item is undefined, it is treated like nullable.
 
-e.g. Assuming *bigint* is mapped to *long*
+Here are some examples:
 
-| TypeScript                                               | C#                             |
-| -------------------------------------------------------- | ------------------------------ |
-| do(myParameter: bigint)                                  | Do(long myParameter)           |
-| do(myParameter: bigint \| null)                          | Do(long? myParameter)          |
-| do(myParameter?: bigint)                                 | Do(), Do(long myParameter)     |
-| do(myParameter: bigint \| undefined)                     | Do(), Do(long myParameter)     |
-| do(myParameter?: bigint \| undefined)                    | Do(), Do(long myParameter)     |
-| do(myParameter?: bigint \| null)                         | Do(), Do(long? myParameter)    |
-| do(myParameter: bigint \| null \| undefined)             | Do(), Do(long? myParameter)    |
-| do(myParameter: (bigint \| null)[])                      | Do(long?[] myParameter)        |
-| do(myParameter: (bigint \| undefined)[])                 | Do(long?[] myParameter)        |
-| do(myParameter: (bigint \| null \| undefined)[])         | Do(long?[] myParameter)        |
-| do(myParameter: (bigint \| null)[] \| null)              | Do(), Do(long?[]? myParameter) |
-| do(myParameter: (bigint \| null)[] \| undefined)         | Do(), Do(long?[] myParameter)  |
-| do(myParameter: (bigint \| null)[] \| null \| undefined) | Do(), Do(long?[]? myParameter) |
+| TypeScript                                               | C#                               |
+| -------------------------------------------------------- | -------------------------------- |
+| do(myParameter: string)                                  | Do(string myParameter)           |
+| do(myParameter: string \| null)                          | Do(string? myParameter)          |
+| do(myParameter?: string)                                 | Do(), Do(string myParameter)     |
+| do(myParameter: string \| undefined)                     | Do(), Do(string myParameter)     |
+| do(myParameter?: string \| undefined)                    | Do(), Do(string myParameter)     |
+| do(myParameter?: string \| null)                         | Do(), Do(string? myParameter)    |
+| do(myParameter: string \| null \| undefined)             | Do(), Do(string? myParameter)    |
+| do(myParameter: (string \| null)[])                      | Do(string?[] myParameter)        |
+| do(myParameter: (string \| undefined)[])                 | Do(string?[] myParameter)        |
+| do(myParameter: (string \| null \| undefined)[])         | Do(string?[] myParameter)        |
+| do(myParameter: (string \| null)[] \| null)              | Do(), Do(string?[]? myParameter) |
+| do(myParameter: (string \| null)[] \| undefined)         | Do(), Do(string?[] myParameter)  |
+| do(myParameter: (string \| null)[] \| null \| undefined) | Do(), Do(string?[]? myParameter) |
 
 **Note**: default value parameters (e.g. do(myParameter = 5)) are automatically mapped to optional parameters in .d.ts-files, so they will work as expected.
 
@@ -488,9 +504,9 @@ This package is in preview and breaking changes may occur.
 
 There are some features planned (no guarantees whatsoever):
 
-* module grouping in seperate interfaces
 * option in config: generate on save (not used in source generator)
 * TypeMapDefault more default types (e.g. Uint8Array -> byte[], DotNetStreamReference -> DotNetStreamReference)
+* module grouping in seperate interfaces
 * Generic type-mapping (INumber&lt;T&gt; instead of double)
 * Generic TS-Functions
 
@@ -511,3 +527,5 @@ There are some features planned (no guarantees whatsoever):
   Improved declaration path: Instead of one include string, an array of objects { "include": string, "excludes": string[], "file module path": string } is now supported.
 - 0.2  
   Optional parameters and default parameter values are now supported.
+- 0.3  
+  Breaking changes: changed config keys and properties in Config, changed Config.FromJson(string json) to new Config(string json.

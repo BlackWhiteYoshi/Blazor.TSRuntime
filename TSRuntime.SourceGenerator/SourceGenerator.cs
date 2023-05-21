@@ -46,7 +46,7 @@ public sealed class SourceGenerator : ISourceGenerator, IDisposable {
 
     public void Execute(GeneratorExecutionContext context) {
         if (fileWatcher == null) {
-            AdditionalText? file = context.AdditionalFiles.FirstOrDefault((AdditionalText file) => Path.GetFileName(file.Path) == Config.JSON_FILE_NAME);
+            AdditionalText? file = context.AdditionalFiles.FirstOrDefault((AdditionalText file) => Path.GetFileName(file.Path) == TSFileWatcher.JSON_FILE_NAME);
             if (file == null)
                 return;
 
@@ -54,7 +54,7 @@ public sealed class SourceGenerator : ISourceGenerator, IDisposable {
             if (jsonSourceText == null)
                 return;
 
-            Config config = Config.FromJson(jsonSourceText.ToString());
+            Config config = new(jsonSourceText.ToString());
             string basePath = Path.GetDirectoryName(file.Path).Replace('\\', '/');
 
             // first time could be just one time compiling, so no need to instantiate fileWatcher

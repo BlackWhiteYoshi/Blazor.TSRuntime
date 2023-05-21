@@ -86,9 +86,9 @@ public sealed class CoreGeneratorTest {
     public void InvokeMethodExists_WhenModuleInvokeEnabled() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            ModuleInvokeEnabled = true,
-            ModuleTrySyncEnabled = false,
-            ModuleAsyncEnabled = false
+            InvokeFunctionSyncEnabled = true,
+            InvokeFunctionTrySyncEnabled = false,
+            InvokeFunctionAsyncEnabled = false
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -103,9 +103,9 @@ public sealed class CoreGeneratorTest {
     public void InvokeTrySyncMethodExists_WhenModuleInvokeTrySyncEnabled() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            ModuleInvokeEnabled = false,
-            ModuleTrySyncEnabled = true,
-            ModuleAsyncEnabled = false
+            InvokeFunctionSyncEnabled = false,
+            InvokeFunctionTrySyncEnabled = true,
+            InvokeFunctionAsyncEnabled = false
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -120,9 +120,9 @@ public sealed class CoreGeneratorTest {
     public void InvokeAsyncMethodExists_WhenModuleInvokeAsyncEnabled() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            ModuleInvokeEnabled = false,
-            ModuleTrySyncEnabled = false,
-            ModuleAsyncEnabled = true
+            InvokeFunctionSyncEnabled = false,
+            InvokeFunctionTrySyncEnabled = false,
+            InvokeFunctionAsyncEnabled = true
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -137,9 +137,9 @@ public sealed class CoreGeneratorTest {
     public void NoInvokeMethodExists_WhenAllDisabled() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            ModuleInvokeEnabled = false,
-            ModuleTrySyncEnabled = false,
-            ModuleAsyncEnabled = false
+            InvokeFunctionSyncEnabled = false,
+            InvokeFunctionTrySyncEnabled = false,
+            InvokeFunctionAsyncEnabled = false
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -154,9 +154,9 @@ public sealed class CoreGeneratorTest {
     public void AllInvokeMethodExists_WhenModuleAllEnabled() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            ModuleInvokeEnabled = true,
-            ModuleTrySyncEnabled = true,
-            ModuleAsyncEnabled = true
+            InvokeFunctionSyncEnabled = true,
+            InvokeFunctionTrySyncEnabled = true,
+            InvokeFunctionAsyncEnabled = true
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -195,7 +195,7 @@ public sealed class CoreGeneratorTest {
     public void InvokeMethodExists_WhenJSRuntimeInvokeEnabled() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            JSRuntimeInvokeEnabled = true,
+            JSRuntimeSyncEnabled = true,
             JSRuntimeTrySyncEnabled = false,
             JSRuntimeAsyncEnabled = false
         };
@@ -212,7 +212,7 @@ public sealed class CoreGeneratorTest {
     public void InvokeTrySyncMethodExists_WhenJSRuntimeInvokeTrySyncEnabled() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            JSRuntimeInvokeEnabled = false,
+            JSRuntimeSyncEnabled = false,
             JSRuntimeTrySyncEnabled = true,
             JSRuntimeAsyncEnabled = false
         };
@@ -229,7 +229,7 @@ public sealed class CoreGeneratorTest {
     public void InvokeAsyncMethodExists_WhenJSRuntimeInvokeAsyncEnabled() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            JSRuntimeInvokeEnabled = false,
+            JSRuntimeSyncEnabled = false,
             JSRuntimeTrySyncEnabled = false,
             JSRuntimeAsyncEnabled = true
         };
@@ -246,7 +246,7 @@ public sealed class CoreGeneratorTest {
     public void NoInvokeMethodExists_WhenJSRuntimeAllDisabled() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            JSRuntimeInvokeEnabled = false,
+            JSRuntimeSyncEnabled = false,
             JSRuntimeTrySyncEnabled = false,
             JSRuntimeAsyncEnabled = false
         };
@@ -263,7 +263,7 @@ public sealed class CoreGeneratorTest {
     public void AllInvokeMethodExists_WhenJSRuntimeAllEnabled() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            JSRuntimeInvokeEnabled = true,
+            JSRuntimeSyncEnabled = true,
             JSRuntimeTrySyncEnabled = true,
             JSRuntimeAsyncEnabled = true
         };
@@ -286,10 +286,10 @@ public sealed class CoreGeneratorTest {
         TSStructureTree structureTree = CreateExampleStructureTree();
         structureTree.ModuleList[0].FunctionList[0].ReturnPromise = true;
         Config config = new() {
-            ModuleInvokeEnabled = true,
-            ModuleTrySyncEnabled = true,
-            ModuleAsyncEnabled = true,
-            PromiseFunctionOnlyAsync = true
+            InvokeFunctionSyncEnabled = true,
+            InvokeFunctionTrySyncEnabled = true,
+            InvokeFunctionAsyncEnabled = true,
+            PromiseOnlyAsync = true
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -305,11 +305,11 @@ public sealed class CoreGeneratorTest {
         TSStructureTree structureTree = CreateExampleStructureTree();
         structureTree.ModuleList[0].FunctionList[0].ReturnPromise = true;
         Config config = new() {
-            ModuleInvokeEnabled = true,
-            ModuleTrySyncEnabled = true,
-            ModuleAsyncEnabled = true,
-            PromiseFunctionOnlyAsync = true,
-            PromiseFunctionAppendAsync = true
+            InvokeFunctionSyncEnabled = true,
+            InvokeFunctionTrySyncEnabled = true,
+            InvokeFunctionAsyncEnabled = true,
+            PromiseOnlyAsync = true,
+            PromiseAppendAsync = true
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -335,8 +335,8 @@ public sealed class CoreGeneratorTest {
     public void FunctionNmaePattern_Constant(string name) {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            ModuleTrySyncEnabled = true,
-            FunctionNamePattern = new(name, NameTransform.None, NameTransform.None, NameTransform.None)
+            InvokeFunctionTrySyncEnabled = true,
+            InvokeFunctionNamePattern = new(name, NameTransform.None, NameTransform.None, NameTransform.None)
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -353,8 +353,8 @@ public sealed class CoreGeneratorTest {
     public void FunctionNmaePattern_Variable() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            ModuleTrySyncEnabled = true,
-            FunctionNamePattern = new("My#module##function##action#", NameTransform.None, NameTransform.None, NameTransform.None)
+            InvokeFunctionTrySyncEnabled = true,
+            InvokeFunctionNamePattern = new("My#module##function##action#", NameTransform.None, NameTransform.None, NameTransform.None)
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -371,8 +371,8 @@ public sealed class CoreGeneratorTest {
     public void FunctionNmaePattern_NameTransform() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            ModuleTrySyncEnabled = true,
-            FunctionNamePattern = new("My#module##function##action#", NameTransform.UpperCase, NameTransform.UpperCase, NameTransform.UpperCase)
+            InvokeFunctionTrySyncEnabled = true,
+            InvokeFunctionNamePattern = new("My#module##function##action#", NameTransform.UpperCase, NameTransform.UpperCase, NameTransform.UpperCase)
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -393,7 +393,7 @@ public sealed class CoreGeneratorTest {
     public void PreloadNmaePattern_Constant(string name) {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            ModuleTrySyncEnabled = true,
+            InvokeFunctionTrySyncEnabled = true,
             PreloadNamePattern = new(name, NameTransform.None)
         };
 
@@ -411,7 +411,7 @@ public sealed class CoreGeneratorTest {
     public void PreloadNmaePattern_Variable() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            ModuleTrySyncEnabled = true,
+            InvokeFunctionTrySyncEnabled = true,
             PreloadNamePattern = new("My#module#", NameTransform.None)
         };
 
@@ -429,7 +429,7 @@ public sealed class CoreGeneratorTest {
     public void PreloadNmaePattern_NameTransform() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            ModuleTrySyncEnabled = true,
+            InvokeFunctionTrySyncEnabled = true,
             PreloadNamePattern = new("My#module#", NameTransform.UpperCase)
         };
 
@@ -491,7 +491,7 @@ public sealed class CoreGeneratorTest {
     public void TypeMap_MapsIdentity_WhenEmpty() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            ModuleTrySyncEnabled = true,
+            InvokeFunctionTrySyncEnabled = true,
             TypeMap = new()
         };
 
@@ -511,7 +511,7 @@ public sealed class CoreGeneratorTest {
         TSStructureTree structureTree = CreateExampleStructureTree();
         structureTree.ModuleList[0].FunctionList[0].ReturnType.TypeNullable = true;
         Config config = new() {
-            ModuleTrySyncEnabled = true,
+            InvokeFunctionTrySyncEnabled = true,
             TypeMap = new()
         };
 
@@ -531,7 +531,7 @@ public sealed class CoreGeneratorTest {
         TSStructureTree structureTree = CreateExampleStructureTree();
         structureTree.ModuleList[0].FunctionList[0].ReturnType.Array = true;
         Config config = new() {
-            ModuleTrySyncEnabled = true,
+            InvokeFunctionTrySyncEnabled = true,
             TypeMap = new()
         };
 
@@ -552,7 +552,7 @@ public sealed class CoreGeneratorTest {
         structureTree.ModuleList[0].FunctionList[0].ReturnType.Array = true;
         structureTree.ModuleList[0].FunctionList[0].ReturnType.ArrayNullable = true;
         Config config = new() {
-            ModuleTrySyncEnabled = true,
+            InvokeFunctionTrySyncEnabled = true,
             TypeMap = new()
         };
 
@@ -574,7 +574,7 @@ public sealed class CoreGeneratorTest {
         structureTree.ModuleList[0].FunctionList[0].ReturnType.Array = true;
         structureTree.ModuleList[0].FunctionList[0].ReturnType.ArrayNullable = true;
         Config config = new() {
-            ModuleTrySyncEnabled = true,
+            InvokeFunctionTrySyncEnabled = true,
             TypeMap = new()
         };
 
@@ -593,7 +593,7 @@ public sealed class CoreGeneratorTest {
     public void TypeMap_MapsToCorrespondingString() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            ModuleTrySyncEnabled = true,
+            InvokeFunctionTrySyncEnabled = true,
             TypeMap = new() {
                 ["number"] = "A",
                 ["string"] = "B"
