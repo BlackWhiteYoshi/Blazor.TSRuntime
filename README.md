@@ -204,7 +204,7 @@ Config config = new(json);
 TSStructureTree structureTree = new();
 await structureTree.ParseModules(config.DeclarationPath);
 
-// generate ITSRuntime
+// generate ITSRuntime into file
 using FileStream fileStream = new(config.FileOutputinterface, FileMode.Create, FileAccess.Write);
 using StreamWriter streamWriter = new(fileStream);
 foreach (string fragment in Generator.GetITSRuntimeContent(structureTree, config))
