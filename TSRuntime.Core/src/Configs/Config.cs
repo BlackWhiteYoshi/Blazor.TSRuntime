@@ -246,8 +246,8 @@ public sealed record class Config {
         // FileOutputClass, FileOutputinterface;
         {
             if (root.AsJsonObjectOrNull("file output") is JsonObject jsonObject) {
-                FileOutputClass = jsonObject["class"]?.ParseAsString("[file output].class") ?? FILE_OUTPUT_CLASS;
-                FileOutputinterface = jsonObject["interface"]?.ParseAsString("[file output].interface") ?? FILE_OUTPUT_INTERFACE;
+                FileOutputClass = jsonObject["class"]?.ParseAsString("[file output].[class]") ?? FILE_OUTPUT_CLASS;
+                FileOutputinterface = jsonObject["interface"]?.ParseAsString("[file output].[interface]") ?? FILE_OUTPUT_INTERFACE;
             }
             else {
                 FileOutputClass = FILE_OUTPUT_CLASS;
@@ -268,16 +268,16 @@ public sealed record class Config {
                 InvokeFunctionAsyncEnabled = jsonObject["async enabled"]?.ParseAsBool("[invoke function].[async enabled]") ?? INVOKE_FUNCTION_ASYNC_ENABLED;
 
                 if (jsonObject.AsJsonObjectOrNull("name pattern", "[invoke function],[name pattern]") is JsonObject namePatternJsonObject) {
-                    string namePattern = namePatternJsonObject["pattern"]?.ParseAsString("[invoke function].[name pattern].pattern") ?? INVOKE_FUNCTION_NAME_PATTERN;
+                    string namePattern = namePatternJsonObject["pattern"]?.ParseAsString("[invoke function].[name pattern].[pattern]") ?? INVOKE_FUNCTION_NAME_PATTERN;
                     NameTransform moduleTransform = namePatternJsonObject["module transform"]?.ParseAsNameTransform("[invoke function],[name pattern].[module transform]") ?? INVOKE_FUNCTION_MODULE_TRANSFORM;
                     NameTransform functionTransform = namePatternJsonObject["function transform"]?.ParseAsNameTransform("[invoke function],[name pattern].[function transform]") ?? INVOKE_FUNCTION_FUNCTION_TRANSFORM;
                     NameTransform actionTransform = namePatternJsonObject["action transform"]?.ParseAsNameTransform("[invoke function],[name pattern].[action transform]") ?? INVOKE_FUNCTION_ACTION_TRANSFORM;
                     InvokeFunctionNamePattern = new FunctionNamePattern(namePattern, moduleTransform, functionTransform, actionTransform);
 
                     if (namePatternJsonObject.AsJsonObjectOrNull("action name", "[invoke function],[name pattern].[action name]") is JsonObject actionNameJsonObject) {
-                        InvokeFunctionActionNameSync = actionNameJsonObject["sync"]?.ParseAsString("[invoke function].[name pattern].sync") ?? INVOKE_FUNCTION_ACTION_NAME_SYNC;
-                        InvokeFunctionActionNameTrySync = actionNameJsonObject["trysync"]?.ParseAsString("[invoke function].[name pattern].trysync") ?? INVOKE_FUNCTION_ACTION_NAME_TRYSYNC;
-                        InvokeFunctionActionNameAsync = actionNameJsonObject["async"]?.ParseAsString("[invoke function].[name pattern].async") ?? INVOKE_FUNCTION_ACTION_NAME_ASYNC;
+                        InvokeFunctionActionNameSync = actionNameJsonObject["sync"]?.ParseAsString("[invoke function].[name pattern].[sync]") ?? INVOKE_FUNCTION_ACTION_NAME_SYNC;
+                        InvokeFunctionActionNameTrySync = actionNameJsonObject["trysync"]?.ParseAsString("[invoke function].[name pattern].[trysync]") ?? INVOKE_FUNCTION_ACTION_NAME_TRYSYNC;
+                        InvokeFunctionActionNameAsync = actionNameJsonObject["async"]?.ParseAsString("[invoke function].[name pattern].[async]") ?? INVOKE_FUNCTION_ACTION_NAME_ASYNC;
                     }
                     else {
                         InvokeFunctionActionNameSync = INVOKE_FUNCTION_ACTION_NAME_SYNC;
@@ -293,7 +293,7 @@ public sealed record class Config {
                     InvokeFunctionActionNameAsync = INVOKE_FUNCTION_ACTION_NAME_ASYNC;
                 }
 
-                if (jsonObject.AsJsonObjectOrNull("promise") is JsonObject promiseJsonObject) {
+                if (jsonObject.AsJsonObjectOrNull("promise", "[invoke function],[promise]") is JsonObject promiseJsonObject) {
                     PromiseOnlyAsync = promiseJsonObject["only async enabled"]?.ParseAsBool("[invoke function].[promise].[only async enabled]") ?? PROMISE_ONLY_ASYNC;
                     PromiseAppendAsync = promiseJsonObject["append Async"]?.ParseAsBool("[invoke function].[promise].[append Async]") ?? PROMISE_APPEND_ASYNC;
                 }
@@ -327,7 +327,7 @@ public sealed record class Config {
         {
             if (root.AsJsonObjectOrNull("preload function") is JsonObject jsonObject) {
                 if (jsonObject.AsJsonObjectOrNull("name pattern", "[preload function],[name pattern]") is JsonObject namePatternJsonObject) {
-                    string namePattern = namePatternJsonObject["pattern"]?.ParseAsString("[preload function],[name pattern].pattern") ?? PRELOAD_NAME_PATTERN;
+                    string namePattern = namePatternJsonObject["pattern"]?.ParseAsString("[preload function],[name pattern].[pattern]") ?? PRELOAD_NAME_PATTERN;
                     NameTransform moduleTransform = namePatternJsonObject["module transform"]?.ParseAsNameTransform("[preload function],[name pattern].[module transform]") ?? PRELOAD_MODULE_TRANSFORM;
                     PreloadNamePattern = new ModuleNamePattern(namePattern, moduleTransform);
                 }
@@ -564,14 +564,15 @@ public sealed record class Config {
     }
 }
 
+
 file static class JsonNodeExtension {
-    internal static JsonObject? AsJsonObjectOrNull(this JsonNode parentNode, string key, string? parentkey = null)
+    internal static JsonObject? AsJsonObjectOrNull(this JsonNode parentNode, string key, string? errorKey = null)
         => parentNode[key] switch {
             JsonObject jsonObject => jsonObject,
             null => null,
-            _ => throw JsonException.UnexpectedType(parentkey ?? key)
+            _ => throw JsonException.UnexpectedType(errorKey != null ? $"[{errorKey}]" : key)
         };
-    
+
     internal static string[]? ParseAsStringArray(this JsonNode parentNode, string parentKey)
         => parentNode[parentKey] switch {
             JsonArray array => array.ParseArrayAsStrings(parentKey),
@@ -599,7 +600,7 @@ file static class JsonNodeExtension {
             null => null,
             _ => throw JsonException.UnexpectedType(parentKey)
         };
-    
+
     internal static Dictionary<string, string> ParseObjectAsStringDictionary(this JsonObject jsonObject, string parentKey) {
         Dictionary<string, string> result = new(jsonObject.Count);
 
@@ -607,41 +608,43 @@ file static class JsonNodeExtension {
             try {
                 result.Add(item.Key, item.Value.ParseAsString(parentKey));
             }
-            catch (ArgumentException exception) { throw new ArgumentException($"error at key element {item.Key}: {exception.Message}", exception); }
+            catch (ArgumentException exception) { throw new ArgumentException($"error at key element '{item.Key}', {exception.Message}", exception); }
 
         return result;
     }
 
 
-    internal static string ParseAsString(this JsonNode? node, string key) => ParseAsString(node as JsonValue ?? throw JsonException.UnexpectedType(key), key);
-    
-    internal static string ParseAsString(this JsonValue value, string key) => (string?)value ?? throw new ArgumentException($"""'{key}': must be a string. If you want to have null, use string literal "null" instead""");
+    internal static string ParseAsString(this JsonNode? node, string errorKey) => ParseAsString(node as JsonValue ?? throw JsonException.UnexpectedType(errorKey), errorKey);
+
+    internal static string ParseAsString(this JsonValue value, string errorKey) => value.TryGetValue(out string? result) ? result : throw new ArgumentException($"""'{errorKey}': wrong type, must be a string. If you want to have null, use string literal "null" instead""");
 
 
 
-    internal static bool ParseAsBool(this JsonNode? node, string key) => ParseAsBool(node as JsonValue ?? throw JsonException.UnexpectedType(key), key);
-    
-    internal static bool ParseAsBool(this JsonValue value, string key) => (bool?)value ?? throw new ArgumentException($@"'{key}': must be either ""true"" or ""false""");
+    internal static bool ParseAsBool(this JsonNode? node, string errorKey) => ParseAsBool(node as JsonValue ?? throw JsonException.UnexpectedType(errorKey), errorKey);
+
+    internal static bool ParseAsBool(this JsonValue value, string errorKey) => value.TryGetValue(out bool result) ? result : throw new ArgumentException($@"'{errorKey}': wrong type, must be either ""true"" or ""false""");
 
 
-    internal static NameTransform ParseAsNameTransform(this JsonNode? node, string key) => ParseAsNameTransform(node as JsonValue ?? throw JsonException.UnexpectedType(key), key);
-    
-    internal static NameTransform ParseAsNameTransform(this JsonValue value, string key) {
-        const string errorMessage = @"must be either ""none"", ""first upper case"", ""first lower case"", ""upper case"" or ""lower case""";
+    internal static NameTransform ParseAsNameTransform(this JsonNode? node, string errorKey) => ParseAsNameTransform(node as JsonValue ?? throw JsonException.UnexpectedType(errorKey), errorKey);
 
-        string str = (string?)value ?? throw new ArgumentException($"'{key}': {errorMessage}");
+    internal static NameTransform ParseAsNameTransform(this JsonValue value, string errorKey) {
+        const string errorMessage = @"wrong type or wrong value, must be either ""first upper case"", ""first lower case"", ""upper case"", ""lower case"" or ""none""";
+
+        if (!value.TryGetValue(out string? str))
+            throw new ArgumentException($"'{errorKey}': {errorMessage}");
+
         string normaliezedStr = str.Replace(" ", "");
 
         bool success = Enum.TryParse(normaliezedStr, ignoreCase: true, out NameTransform nameTransform);
         if (!success)
-            throw new ArgumentException($"'{key}': {errorMessage}");
+            throw new ArgumentException($"'{errorKey}': {errorMessage}");
 
         return nameTransform;
     }
 }
 
 file static class JsonException {
-    internal static ArgumentException UnexpectedType(string key) => new($"'{key}': unexpected type");
+    internal static ArgumentException UnexpectedType(string errorKey) => new($"'{errorKey}': unexpected type");
 
-    internal static ArgumentException KeyNotFound(string key) => new($"'{key}': not found");
+    internal static ArgumentException KeyNotFound(string errorKey) => new($"key '{errorKey}' not found");
 }
