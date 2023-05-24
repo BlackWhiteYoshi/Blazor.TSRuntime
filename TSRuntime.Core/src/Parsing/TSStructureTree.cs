@@ -19,20 +19,37 @@ public sealed class TSStructureTree {
 
 
     /// <summary>
-    /// <para>Traverses recursively the given folder or read the given file and parses every "*.d.ts"-file as <see cref="TSModule"/> and adds it to <see cref="ModuleList"/>.</para>
-    /// <para>Before adding items, the <see cref="ModuleList"/> is cleared.</para>
+    /// Traverses recursively the given folder or read the given file and parses every "*.d.ts"-file as <see cref="TSModule"/> and adds it to <see cref="ModuleList"/>.
     /// </summary>
-    /// <param name="folder">root dictionary where the search begins.</param>
-    public Task ParseModules(string path) => ParseModules(new DeclarationPath[1] { new(path) });
+    /// <param name="path">dictionary or file to the source</param>
+    public static async Task<TSStructureTree> ParseFiles(string path) {
+        TSStructureTree structureTree = new();
+        await structureTree.Parse(path);
+        return structureTree;
+    }
 
     /// <summary>
-    /// <para>Traverses recursively the given folders or read the given files and parses every "*.d.ts"-file as <see cref="TSModule"/> and adds it to <see cref="ModuleList"/>.</para>
-    /// <para>Before adding items, the <see cref="ModuleList"/> is cleared.</para>
+    /// Traverses recursively the given folder or read the given file and parses every "*.d.ts"-file as <see cref="TSModule"/> and adds it to <see cref="ModuleList"/>.
     /// </summary>
-    /// <param name="folder">root dictionary where the search begins.</param>
-    public async Task ParseModules(DeclarationPath[] pathList) {
-        ModuleList.Clear();
+    /// <param name="path">dictionary or file to the source</param>
+    public static async Task<TSStructureTree> ParseFiles(DeclarationPath[] pathList) {
+        TSStructureTree structureTree = new();
+        await structureTree.Parse(pathList);
+        return structureTree;
+    }
 
+
+    /// <summary>
+    /// Traverses recursively the given folder or read the given file and parses every "*.d.ts"-file as <see cref="TSModule"/> and adds it to <see cref="ModuleList"/>.
+    /// </summary>
+    /// <param name="path">dictionary or file to the source</param>
+    public Task Parse(string path) => Parse(new DeclarationPath[1] { new(path) });
+
+    /// <summary>
+    /// Traverses recursively the given folders or read the given files and parses every "*.d.ts"-file as <see cref="TSModule"/> and adds it to <see cref="ModuleList"/>.
+    /// </summary>
+    /// <param name="pathList">TODO.</param>
+    public async Task Parse(DeclarationPath[] pathList) {
         foreach ((string include, string[] excludes, string? fileModulePath) in pathList) {
             if (File.Exists(include)) {
                 string modulePath = fileModulePath switch {
@@ -57,22 +74,5 @@ public sealed class TSStructureTree {
                     ModuleList.Add(await TSModule.ParseWithRootFolder(filePath, include));
             }
         }
-    }
-
-
-    /// <summary>
-    /// <para>Traverses recursively the given folder or read the given file and searches in every "*.d.ts"-file for js-functions that can be parsed to <see cref="TSFunction"/> and adds these to <see cref="FunctionList"/>.</para>
-    /// <para>Before adding items, the <see cref="FunctionList"/> is cleared.</para>
-    /// </summary>
-    /// <param name="path"></param>
-    public void ParseFunctions(string path) => ParseFunctions(new DeclarationPath[1] { new(path) });
-
-    /// <summary>
-    /// <para>Traverses recursively the given folders or read the given files and searches in every "*.d.ts"-file for js-functions that can be parsed to <see cref="TSFunction"/> and adds these to <see cref="FunctionList"/>.</para>
-    /// <para>Before adding items, the <see cref="FunctionList"/> is cleared.</para>
-    /// </summary>
-    /// <param name="path"></param>
-    public void ParseFunctions(DeclarationPath[] pathList) {
-        throw new NotImplementedException("not yet implemented");
     }
 }

@@ -10,8 +10,7 @@ public static class Program {
         string json = File.ReadAllText("tsconfig.tsruntime.json");
         Config config = new(json);
 
-        TSStructureTree structureTree = new();
-        await structureTree.ParseModules(config.DeclarationPath);
+        TSStructureTree structureTree = await TSStructureTree.ParseFiles(config.DeclarationPath);
 
         byte[] buffer = new byte[65536];
 

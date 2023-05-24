@@ -89,8 +89,7 @@ public sealed class TSFileWatcher : IDisposable {
     #region StructureTree
 
     private async Task CreateStructureTree(DeclarationPath[] declarationPathList) {
-        TSStructureTree localStructureTree = new();
-        await localStructureTree.ParseModules(declarationPathList);
+        TSStructureTree localStructureTree = await TSStructureTree.ParseFiles(declarationPathList);
 
         lock (StructureTree) {
             StructureTree.ModuleList.Clear();

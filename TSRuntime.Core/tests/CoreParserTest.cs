@@ -189,9 +189,7 @@ public sealed class CoreParserTest {
 
     [Fact]
     public async Task StructureTree_ParseModules_ParsesEvery_d_ts_File_WhenParameterIsFolderString() {
-        TSStructureTree structureTree = new();
-
-        await structureTree.ParseModules(RootFolder);
+        TSStructureTree structureTree = await TSStructureTree.ParseFiles(RootFolder);
 
         Assert.Equal(2, structureTree.ModuleList.Count);
         Assert.Empty(structureTree.FunctionList);
@@ -202,9 +200,8 @@ public sealed class CoreParserTest {
         DeclarationPath[] declarationPath = new DeclarationPath[1] {
             new DeclarationPath(RootFolder)
         };
-        TSStructureTree structureTree = new();
 
-        await structureTree.ParseModules(declarationPath);
+        TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
         Assert.Equal(2, structureTree.ModuleList.Count);
         Assert.Empty(structureTree.FunctionList);
@@ -217,9 +214,8 @@ public sealed class CoreParserTest {
                 Excludes = new string[1] { $"{RootFolder}/{NESTED_FOLDER}" }
             }
         };
-        TSStructureTree structureTree = new();
 
-        await structureTree.ParseModules(declarationPath);
+        TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
         Assert.Single(structureTree.ModuleList);
         Assert.Empty(structureTree.FunctionList);
@@ -232,9 +228,8 @@ public sealed class CoreParserTest {
                 Excludes = new string[1] { $"{RootFolder}/{NESTED_FOLDER}/{NESTED_MODULE}.d.ts" }
             }
         };
-        TSStructureTree structureTree = new();
 
-        await structureTree.ParseModules(declarationPath);
+        TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
         Assert.Single(structureTree.ModuleList);
         Assert.Empty(structureTree.FunctionList);
@@ -247,9 +242,8 @@ public sealed class CoreParserTest {
                 Excludes = new string[1] { $"{RootFolder}/{NESTED_FOLDER[..^1]}" }
             }
         };
-        TSStructureTree structureTree = new();
 
-        await structureTree.ParseModules(declarationPath);
+        TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
         Assert.Equal(2, structureTree.ModuleList.Count);
         Assert.Empty(structureTree.FunctionList);
@@ -262,9 +256,8 @@ public sealed class CoreParserTest {
                 Excludes = new string[2] { $"{RootFolder}/{NESTED_FOLDER}", $"{RootFolder}/{MODULE}.d.ts" }
             }
         };
-        TSStructureTree structureTree = new();
 
-        await structureTree.ParseModules(declarationPath);
+        TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
         Assert.Empty(structureTree.ModuleList);
         Assert.Empty(structureTree.FunctionList);
@@ -276,9 +269,8 @@ public sealed class CoreParserTest {
             new DeclarationPath(RootFolder),
             new DeclarationPath($"{RootFolder}/{NESTED_FOLDER}")
         };
-        TSStructureTree structureTree = new();
 
-        await structureTree.ParseModules(declarationPath);
+        TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
         Assert.Equal(3, structureTree.ModuleList.Count);
         Assert.Empty(structureTree.FunctionList);
@@ -292,9 +284,8 @@ public sealed class CoreParserTest {
                 FileModulePath = "somePath"
             }
         };
-        TSStructureTree structureTree = new();
 
-        await structureTree.ParseModules(declarationPath);
+        TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
         Assert.Single(structureTree.ModuleList);
         Assert.Empty(structureTree.FunctionList);
@@ -309,9 +300,8 @@ public sealed class CoreParserTest {
                 FileModulePath = "somePath"
             }
         };
-        TSStructureTree structureTree = new();
 
-        await structureTree.ParseModules(declarationPath);
+        TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
         Assert.Single(structureTree.ModuleList);
         Assert.Empty(structureTree.FunctionList);
@@ -320,9 +310,8 @@ public sealed class CoreParserTest {
     [Fact]
     public async Task StructureTree_ParseModules_ThrowsDirectoryNotFoundException_WhenWrongModulePath() {
         DeclarationPath[] declarationPath = new DeclarationPath[1] { new("somePath") };
-        TSStructureTree structureTree = new();
 
-        await Assert.ThrowsAsync<DirectoryNotFoundException>(async () => await structureTree.ParseModules(declarationPath));
+        await Assert.ThrowsAsync<DirectoryNotFoundException>(async () => await TSStructureTree.ParseFiles(declarationPath));
     }
 
     [Fact]
@@ -335,9 +324,8 @@ public sealed class CoreParserTest {
                 FileModulePath = "somePath"
             }
         };
-        TSStructureTree structureTree = new();
 
-        await structureTree.ParseModules(declarationPath);
+        TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
         Assert.Equal(2, structureTree.ModuleList.Count);
         Assert.Empty(structureTree.FunctionList);
@@ -352,9 +340,8 @@ public sealed class CoreParserTest {
                 FileModulePath = "somePath"
             }
         };
-        TSStructureTree structureTree = new();
 
-        await structureTree.ParseModules(declarationPath);
+        TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
         Assert.Equal(2, structureTree.ModuleList.Count);
         Assert.Empty(structureTree.FunctionList);
@@ -369,18 +356,11 @@ public sealed class CoreParserTest {
             },
             new DeclarationPath(nestedFolderPath)
         };
-        TSStructureTree structureTree = new();
 
-        await structureTree.ParseModules(declarationPath);
+        TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
         Assert.Equal(2, structureTree.ModuleList.Count);
         Assert.Empty(structureTree.FunctionList);
-    }
-
-
-    [Fact]
-    public void StructureTree_ParseFunctionsThrowsNotImplementedException() {
-        Assert.Throws<NotImplementedException>(() => new TSStructureTree().ParseFunctions(string.Empty));
     }
 
     #endregion

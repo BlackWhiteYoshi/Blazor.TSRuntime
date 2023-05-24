@@ -201,8 +201,7 @@ string json = File.ReadAllText("tsconfig.tsruntime.json");
 Config config = new(json);
 
 // parse the .d.ts-files
-TSStructureTree structureTree = new();
-await structureTree.ParseModules(config.DeclarationPath);
+TSStructureTree structureTree = await TSStructureTree.ParseFiles(config.DeclarationPath);
 
 // generate ITSRuntime into file
 using FileStream fileStream = new(config.FileOutputinterface, FileMode.Create, FileAccess.Write);

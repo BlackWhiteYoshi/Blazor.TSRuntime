@@ -60,8 +60,7 @@ public sealed class SourceGenerator : ISourceGenerator, IDisposable {
             // first time could be just one time compiling, so no need to instantiate fileWatcher
             if (source == string.Empty) {
                 DeclarationPath[] declarationPath = TSFileWatcher.ConvertToAbsolutePath(config.DeclarationPath, basePath);
-                TSStructureTree structureTree = new();
-                structureTree.ParseModules(declarationPath).GetAwaiter().GetResult();
+                TSStructureTree structureTree = TSStructureTree.ParseFiles(declarationPath).GetAwaiter().GetResult();
                 CreateITSRuntimeContentString(structureTree, config);
             }
             else {
