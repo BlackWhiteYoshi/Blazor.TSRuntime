@@ -17,17 +17,23 @@ public static partial class Generator {
         #nullable enable annotations
 
 
+        using System;
+        using System.Collections.Generic;
         using System.Threading;
         using System.Threading.Tasks;
 
         namespace Microsoft.JSInterop;
 
+        /// <summary>
+        /// <para>An implementation for <see cref="ITSRuntime"/>.</para>
+        /// <para>It manages JS-modules: It loads the modules, caches it in an array and disposing releases all modules.</para>
+        /// </summary>
         public sealed class TSRuntime : ITSRuntime, IDisposable, IAsyncDisposable
         {
             #region construction
 
             private readonly IJSRuntime _jsRuntime;
-            IJSRuntime ITSRuntime.JsRuntime => _jsRuntime;
+            IJSRuntime ITSBase.JsRuntime => _jsRuntime;
 
 
             public TSRuntime(IJSRuntime jsRuntime)
@@ -42,8 +48,14 @@ public static partial class Generator {
 
             private readonly CancellationTokenSource cancellationTokenSource = new();
 
+            /// <summary>
+            /// Releases all modules asynchronously in parallel per fire and forget.
+            /// </summary>
             public void Dispose()
             {
+                if (cancellationTokenSource.IsCancellationRequested)
+                    return;
+
                 cancellationTokenSource.Cancel();
                 cancellationTokenSource.Dispose();
 
@@ -58,8 +70,15 @@ public static partial class Generator {
                 }
             }
 
+            /// <summary>
+            /// Releases all modules asynchronously in parallel and returns a task that completes, when all module tasks complets.
+            /// </summary>
+            /// <returns></returns>
             public ValueTask DisposeAsync()
             {
+                if (cancellationTokenSource.IsCancellationRequested)
+                    return ValueTask.CompletedTask;
+
                 cancellationTokenSource.Cancel();
                 cancellationTokenSource.Dispose();
 
@@ -89,10 +108,17 @@ public static partial class Generator {
 
             #region moduleList
 
-            private readonly Task<IJSObjectReference>?[] modules = new Task<IJSObjectReference>?[ITSRuntime.MODULE_COUNT];
-            Task<IJSObjectReference>?[] ITSRuntime.Modules => modules;
+            private readonly Task<IJSObjectReference>?[] modules = new Task<IJSObjectReference>?[ITSBase.MODULE_COUNT];
+            Task<IJSObjectReference>?[] ITSBase.Modules => modules;
 
-            Task<IJSObjectReference> ITSRuntime.GetOrLoadModule(int index, string url) {
+            /// <summary>
+            /// <para>Loads and caches the module loading Tasks in an array.</para>
+            /// <para>The first time it creates the module loading Task with the given url and stores it at the given index, all subsequent calls return the stored Task.</para>
+            /// </summary>
+            /// <param name="index">index of the array element.</param>
+            /// <param name="url">URL to fetch if module is not loaded yet.</param>
+            /// <returns></returns>
+            Task<IJSObjectReference> ITSBase.GetOrLoadModule(int index, string url) {
                 if (modules[index]?.IsCompletedSuccessfully == true)
                     return modules[index]!;
 

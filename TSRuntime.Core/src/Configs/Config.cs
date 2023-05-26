@@ -9,8 +9,7 @@ namespace TSRuntime.Core.Configs;
 /// </summary>
 public sealed record class Config {
     /// <summary>
-    /// <para>Folder where to locate the d.ts declaration files.</para>
-    /// <para>Path relative to json-file and no starting or ending slash.</para>
+    /// Declares the input source. It contains folder and file paths where each paths can have some more properties.
     /// </summary>
     public DeclarationPath[] DeclarationPath { get; init; } = DeclarationPathDefault;
     private static readonly DeclarationPath[] DeclarationPathDefault = new DeclarationPath[1] { new(string.Empty) };
@@ -34,7 +33,7 @@ public sealed record class Config {
 
 
     /// <summary>
-    /// <para>If true, every time a .d.ts-file is changed, ITSRuntime is generated.</para>
+    /// <para>Every time a .d.ts-file is changed, ITSRuntime is generated.</para>
     /// <para>Not used in source generator.</para>
     /// </summary>
     public bool GenerateOnSave { get; init; } = GENERATE_ON_SAVE;
@@ -98,7 +97,7 @@ public sealed record class Config {
 
 
     /// <summary>
-    /// <para>If true, whenever a module function returns a promise, the <see cref="InvokeFunctionSyncEnabled" />, <see cref="InvokeFunctionTrySyncEnabled" /> and <see cref="InvokeFunctionAsyncEnabled" /> flags will be ignored<br />
+    /// <para>Whenever a module function returns a promise, the <see cref="InvokeFunctionSyncEnabled" />, <see cref="InvokeFunctionTrySyncEnabled" /> and <see cref="InvokeFunctionAsyncEnabled" /> flags will be ignored<br />
     /// and instead only the async invoke method will be generated.</para>
     /// <para>This value should always be true. Set it only to false when you know what you are doing.</para>
     /// </summary>
@@ -106,7 +105,7 @@ public sealed record class Config {
     private const bool PROMISE_ONLY_ASYNC = true;
     
     /// <summary>
-    /// <para>If true, whenever a module function returns a promise, the string "Async" is appended.</para>
+    /// <para>Whenever a module function returns a promise, the string "Async" is appended.</para>
     /// <para>If your pattern ends already with "Async", for example with the #action# variable, this will result in a double: "AsyncAsync"</para>
     /// </summary>
     public bool PromiseAppendAsync { get; init; } = PROMISE_APPEND_ASYNC;
@@ -142,6 +141,30 @@ public sealed record class Config {
     /// </summary>
     public string PreloadAllModulesName { get; init; } = PRELOAD_ALL_MODULES_NAME;
     private const string PRELOAD_ALL_MODULES_NAME = "PreloadAllModules";
+
+    #endregion
+
+
+    #region module grouping
+
+    /// <summary>
+    /// Each module gets it own interface and the functions of that module are only available in that interface.
+    /// </summary>
+    public bool ModuleGrouping { get; init; } = MODULE_GROUPING;
+    private const bool MODULE_GROUPING = false;
+
+    /// <summary>
+    /// A service extension method is generated, which registers ITSRuntime and if available, the module interfaces.
+    /// </summary>
+    public bool ModuleGroupingServiceExtension { get; init; } = MODULE_GROUPING_SERVICE_EXTENSION;
+    private const bool MODULE_GROUPING_SERVICE_EXTENSION = true;
+
+    /// <summary>
+    /// Naming of the generated module interfaces when <see cref="ModuleGrouping"/> is enabled.
+    /// </summary>
+    public ModuleNamePattern ModuleGroupingNamePattern { get; init; } = new(MODULE_GROUPING_NAME_PATTERN, MODULE_GROUPING_MODULE_TRANSFORM);
+    private const string MODULE_GROUPING_NAME_PATTERN = "I#module#Module";
+    private const NameTransform MODULE_GROUPING_MODULE_TRANSFORM = NameTransform.FirstUpperCase;
 
     #endregion
 
@@ -344,6 +367,33 @@ public sealed record class Config {
         }
 
 
+        // ModuleGrouping, ModuleGroupingServiceExtension, ModuleGroupingNamePattern
+        {
+            if (root["module grouping"] is JsonValue valueNode) {
+                ModuleGrouping = valueNode.ParseAsBool("[module grouping]");
+                ModuleGroupingServiceExtension = MODULE_GROUPING_SERVICE_EXTENSION;
+                ModuleGroupingNamePattern = new ModuleNamePattern(MODULE_GROUPING_NAME_PATTERN, MODULE_GROUPING_MODULE_TRANSFORM);
+            }
+            else if (root.AsJsonObjectOrNull("module grouping") is JsonObject jsonObject) {
+                ModuleGrouping = jsonObject["enabled"]?.ParseAsBool("[module grouping].[enabled]") ?? MODULE_GROUPING;
+                ModuleGroupingServiceExtension = jsonObject["service extension"]?.ParseAsBool("[module grouping].[service extension]") ?? MODULE_GROUPING_SERVICE_EXTENSION;
+
+                if (jsonObject.AsJsonObjectOrNull("interface name pattern", "[module grouping],[interface name pattern]") is JsonObject namePatternJsonObject) {
+                    string namePattern = namePatternJsonObject["pattern"]?.ParseAsString("[module grouping],[interface name pattern].pattern") ?? MODULE_GROUPING_NAME_PATTERN;
+                    NameTransform moduleTransform = namePatternJsonObject["module transform"]?.ParseAsNameTransform("[module grouping],[interface name pattern].[module transform]") ?? MODULE_GROUPING_MODULE_TRANSFORM;
+                    ModuleGroupingNamePattern = new ModuleNamePattern(namePattern, moduleTransform);
+                }
+                else
+                    ModuleGroupingNamePattern = new ModuleNamePattern(MODULE_GROUPING_NAME_PATTERN, MODULE_GROUPING_MODULE_TRANSFORM);
+            }
+            else {
+                ModuleGrouping = MODULE_GROUPING;
+                ModuleGroupingServiceExtension = MODULE_GROUPING_SERVICE_EXTENSION;
+                ModuleGroupingNamePattern = new ModuleNamePattern(MODULE_GROUPING_NAME_PATTERN, MODULE_GROUPING_MODULE_TRANSFORM);
+            }
+        }
+
+
         // JSRuntimeSyncEnabled, JSRuntimeTrySyncEnabled, JSRuntimeAsyncEnabled
         {
             if (root.AsJsonObjectOrNull("js runtime") is JsonObject jsonObject) {
@@ -475,6 +525,14 @@ public sealed record class Config {
                 },
                 "all modules name": "{{PRELOAD_ALL_MODULES_NAME}}"
               },
+              "module grouping": {
+                "enabled": {{(ModuleGrouping ? "true" : "false")}},
+                "service extension": {{(ModuleGroupingServiceExtension ? "true" : "false")}},
+                "interface name pattern": {
+                  "pattern": "{{ModuleGroupingNamePattern.NamePattern}}",
+                  "module transform": "{{ModuleGroupingNamePattern.ModuleTransform}}"
+                }
+              },
               "js runtime": {
                 "sync enabled": {{(JSRuntimeSyncEnabled ? "true" : "false")}},
                 "trysync enabled": {{(JSRuntimeTrySyncEnabled ? "true" : "false")}},
@@ -524,6 +582,13 @@ public sealed record class Config {
         if (PreloadNamePattern != other.PreloadNamePattern)
             return false;
         if (PreloadAllModulesName != other.PreloadAllModulesName)
+            return false;
+
+        if (ModuleGrouping != other.ModuleGrouping)
+            return false;
+        if (ModuleGroupingServiceExtension != other.ModuleGroupingServiceExtension)
+            return false;
+        if (ModuleGroupingNamePattern != other.ModuleGroupingNamePattern)
             return false;
 
         if (JSRuntimeSyncEnabled != other.JSRuntimeSyncEnabled)

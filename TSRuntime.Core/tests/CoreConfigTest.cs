@@ -58,6 +58,9 @@ public sealed class CoreConfigTest {
         jsonObject["preload function"]!.AsObject().Remove("name pattern");
         numberOfLeafNodes++;
 
+        jsonObject["module grouping"]!.AsObject().Remove("interface name pattern");
+        numberOfLeafNodes++;
+
         #endregion
 
         foreach (KeyValuePair<string, JsonNode?> node in jsonObject)

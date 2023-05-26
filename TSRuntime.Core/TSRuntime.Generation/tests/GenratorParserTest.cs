@@ -2,49 +2,39 @@ using Xunit;
 
 namespace TSRuntime.Generation.Tests;
 
-file static class ParserExtension {
-    internal static string ParseAndGetContent(this Parser parser, string argument) {
-        parser.Parse(argument);
-        return parser.GetContent();
-    }
-}
-
 public sealed class GenratorParserTest {
     [Fact]
     public void RawText_ConvertsTo_YieldReturnRawText() {
-        string result = new Parser().ParseAndGetContent("Example asdf Text");
+        string result = Parser.Parse("Example asdf Text");
 
         Assert.Equal(""""
                     yield return """
                         Example asdf Text
                         """;
-
             """", result);
     }
 
     [Fact]
     public void SingleTick_ConvertsTo_YieldReturnRawCode() {
-        string result = new Parser().ParseAndGetContent("`ExampleVariable`");
+        string result = Parser.Parse("`ExampleVariable`");
 
         Assert.Equal("""
                     yield return ExampleVariable;
-
             """, result);
     }
 
     [Fact]
     public void DoubleTick_ConvertsTo_RawCode() {
-        string result = new Parser().ParseAndGetContent("``My Example Code``");
+        string result = Parser.Parse("``My Example Code``");
 
         Assert.Equal("""
                     My Example Code
-
             """, result);
     }
 
     [Fact]
     public void LinebreakAfterDoubleTick_IsIgnored() {
-        string result = new Parser().ParseAndGetContent("""
+        string result = Parser.Parse("""
             ``My Example Code``
             asdf
             """);
@@ -54,39 +44,36 @@ public sealed class GenratorParserTest {
                     yield return """
                         asdf
                         """;
-
             """", result);
     }
 
     [Fact]
     public void DoubleTickPlus_ConvertsTo_RawCodeAndIncreasesIndent() {
-        string result = new Parser().ParseAndGetContent("``My Example Code`+asdf");
+        string result = Parser.Parse("``My Example Code`+asdf");
 
         Assert.Equal(""""
                     My Example Code
                         yield return """
                             asdf
                             """;
-
             """", result);
     }
 
     [Fact]
     public void DoubleTickMinus_ConvertsTo_RawCodeAndDecreasesIndent() {
-        string result = new Parser().ParseAndGetContent("``My Example Code`-asdf");
+        string result = Parser.Parse("``My Example Code`-asdf");
 
         Assert.Equal(""""
                 My Example Code
                 yield return """
                     asdf
                     """;
-
             """", result);
     }
 
     [Fact]
     public void Empty_ConvertsTo_Empty() {
-        string result = new Parser().ParseAndGetContent(string.Empty);
+        string result = Parser.Parse(string.Empty);
 
         Assert.Equal(string.Empty, result);
     }
@@ -101,7 +88,6 @@ public sealed class GenratorParserTest {
                 yield return """
                     qwer
                     """;
-
         """")]
     [InlineData("""
         aaa
@@ -124,10 +110,9 @@ public sealed class GenratorParserTest {
                         
                         """;
                 indent-1
-
         """")]
     public void Combination_ConvertsTo_Concatenation(string input, string expected) {
-        string result = new Parser().ParseAndGetContent(input);
+        string result = Parser.Parse(input);
 
         Assert.Equal(expected, result);
     }
