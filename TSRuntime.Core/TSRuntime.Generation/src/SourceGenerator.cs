@@ -79,6 +79,8 @@ public sealed class SourceGenerator : IIncrementalGenerator {
 
         {{JSRUNTIME_METHODS}}
         }
+
+        {{ServiceExtension}}
         """;
 
     private static string MultipleInterfaces => $$"""
