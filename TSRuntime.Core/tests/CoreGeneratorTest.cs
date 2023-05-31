@@ -68,18 +68,18 @@ public sealed class CoreGeneratorTest {
     #region Invoke methods
 
     private const string INVOKE = """
-            public double Test(double a, string b)
-                => Invoke<double>(0, "/test.js", "Test", a, b);
+            public TNumber Test<TNumber>(TNumber a, string b) where TNumber : INumber<TNumber>
+                => Invoke<TNumber>(0, "/test.js", "Test", a, b);
         """;
 
     private const string INVOKE_TRYSYNC = """
-            public ValueTask<double> Test(double a, string b, CancellationToken cancellationToken = default)
-                => InvokeTrySync<double>(0, "/test.js", "Test", cancellationToken, a, b);
+            public ValueTask<TNumber> Test<TNumber>(TNumber a, string b, CancellationToken cancellationToken = default) where TNumber : INumber<TNumber>
+                => InvokeTrySync<TNumber>(0, "/test.js", "Test", cancellationToken, a, b);
         """;
 
     private const string INVOKE_ASYNC = """
-            public ValueTask<double> Test(double a, string b, CancellationToken cancellationToken = default)
-                => InvokeAsync<double>(0, "/test.js", "Test", cancellationToken, a, b);
+            public ValueTask<TNumber> Test<TNumber>(TNumber a, string b, CancellationToken cancellationToken = default) where TNumber : INumber<TNumber>
+                => InvokeAsync<TNumber>(0, "/test.js", "Test", cancellationToken, a, b);
         """;
 
     [Fact]
@@ -316,8 +316,8 @@ public sealed class CoreGeneratorTest {
         string content = GetITSRuntimeContent(tsRuntimeContent);
 
         const string expected = """
-                public ValueTask<double> TestAsync(double a, string b, CancellationToken cancellationToken = default)
-                    => InvokeAsync<double>(0, "/test.js", "Test", cancellationToken, a, b);
+                public ValueTask<TNumber> TestAsync<TNumber>(TNumber a, string b, CancellationToken cancellationToken = default) where TNumber : INumber<TNumber>
+                    => InvokeAsync<TNumber>(0, "/test.js", "Test", cancellationToken, a, b);
             """;
         Assert.Contains(expected, content);
     }
@@ -332,7 +332,7 @@ public sealed class CoreGeneratorTest {
     [InlineData("banana")]
     [InlineData("")]
     [InlineData("asdf")]
-    public void FunctionNmaePattern_Constant(string name) {
+    public void FunctionNamePattern_Constant(string name) {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
             InvokeFunctionTrySyncEnabled = true,
@@ -343,14 +343,14 @@ public sealed class CoreGeneratorTest {
         string content = GetITSRuntimeContent(tsRuntimeContent);
 
         string expected = $"""
-            public ValueTask<double> {name}(double a, string b, CancellationToken cancellationToken = default)
-                => InvokeTrySync<double>(0, "/test.js", "Test", cancellationToken, a, b);
+            public ValueTask<TNumber> {name}<TNumber>(TNumber a, string b, CancellationToken cancellationToken = default) where TNumber : INumber<TNumber>
+                => InvokeTrySync<TNumber>(0, "/test.js", "Test", cancellationToken, a, b);
         """;
         Assert.Contains(expected, content);
     }
 
     [Fact]
-    public void FunctionNmaePattern_Variable() {
+    public void FunctionNamePattern_Variable() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
             InvokeFunctionTrySyncEnabled = true,
@@ -361,14 +361,14 @@ public sealed class CoreGeneratorTest {
         string content = GetITSRuntimeContent(tsRuntimeContent);
 
         const string expected = """
-            public ValueTask<double> MyTestTestInvokeTrySync(double a, string b, CancellationToken cancellationToken = default)
-                => InvokeTrySync<double>(0, "/test.js", "Test", cancellationToken, a, b);
+            public ValueTask<TNumber> MyTestTestInvokeTrySync<TNumber>(TNumber a, string b, CancellationToken cancellationToken = default) where TNumber : INumber<TNumber>
+                => InvokeTrySync<TNumber>(0, "/test.js", "Test", cancellationToken, a, b);
         """;
         Assert.Contains(expected, content);
     }
 
     [Fact]
-    public void FunctionNmaePattern_NameTransform() {
+    public void FunctionNamePattern_NameTransform() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
             InvokeFunctionTrySyncEnabled = true,
@@ -379,8 +379,8 @@ public sealed class CoreGeneratorTest {
         string content = GetITSRuntimeContent(tsRuntimeContent);
 
         const string expected = """
-            public ValueTask<double> MyTESTTESTINVOKETRYSYNC(double a, string b, CancellationToken cancellationToken = default)
-                => InvokeTrySync<double>(0, "/test.js", "Test", cancellationToken, a, b);
+            public ValueTask<TNumber> MyTESTTESTINVOKETRYSYNC<TNumber>(TNumber a, string b, CancellationToken cancellationToken = default) where TNumber : INumber<TNumber>
+                => InvokeTrySync<TNumber>(0, "/test.js", "Test", cancellationToken, a, b);
         """;
         Assert.Contains(expected, content);
     }
@@ -390,7 +390,7 @@ public sealed class CoreGeneratorTest {
     [InlineData("banana")]
     [InlineData("")]
     [InlineData("asdf")]
-    public void PreloadNmaePattern_Constant(string name) {
+    public void PreloadNamePattern_Constant(string name) {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
             InvokeFunctionTrySyncEnabled = true,
@@ -408,7 +408,7 @@ public sealed class CoreGeneratorTest {
     }
 
     [Fact]
-    public void PreloadNmaePattern_Variable() {
+    public void PreloadNamePattern_Variable() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
             InvokeFunctionTrySyncEnabled = true,
@@ -426,7 +426,7 @@ public sealed class CoreGeneratorTest {
     }
 
     [Fact]
-    public void PreloadNmaePattern_NameTransform() {
+    public void PreloadNamePattern_NameTransform() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
             InvokeFunctionTrySyncEnabled = true,
@@ -502,7 +502,6 @@ public sealed class CoreGeneratorTest {
                 public ValueTask<number> Test(number a, string b, CancellationToken cancellationToken = default)
                     => InvokeTrySync<number>(0, "/test.js", "Test", cancellationToken, a, b);
             """;
-
         Assert.Contains(expected, content);
     }
 
@@ -522,7 +521,6 @@ public sealed class CoreGeneratorTest {
                 public ValueTask<number?> Test(number a, string b, CancellationToken cancellationToken = default)
                     => InvokeTrySync<number?>(0, "/test.js", "Test", cancellationToken, a, b);
             """;
-
         Assert.Contains(expected, content);
     }
 
@@ -542,7 +540,6 @@ public sealed class CoreGeneratorTest {
                 public ValueTask<number[]> Test(number a, string b, CancellationToken cancellationToken = default)
                     => InvokeTrySync<number[]>(0, "/test.js", "Test", cancellationToken, a, b);
             """;
-
         Assert.Contains(expected, content);
     }
 
@@ -563,7 +560,6 @@ public sealed class CoreGeneratorTest {
                 public ValueTask<number[]?> Test(number a, string b, CancellationToken cancellationToken = default)
                     => InvokeTrySync<number[]?>(0, "/test.js", "Test", cancellationToken, a, b);
             """;
-
         Assert.Contains(expected, content);
     }
 
@@ -585,7 +581,6 @@ public sealed class CoreGeneratorTest {
                 public ValueTask<number?[]?> Test(number a, string b, CancellationToken cancellationToken = default)
                     => InvokeTrySync<number?[]?>(0, "/test.js", "Test", cancellationToken, a, b);
             """;
-
         Assert.Contains(expected, content);
     }
 
@@ -595,8 +590,8 @@ public sealed class CoreGeneratorTest {
         Config config = new() {
             InvokeFunctionTrySyncEnabled = true,
             TypeMap = new() {
-                ["number"] = "A",
-                ["string"] = "B"
+                ["number"] = new MappedType("A"),
+                ["string"] = new MappedType("B")
             }
         };
 
@@ -607,7 +602,211 @@ public sealed class CoreGeneratorTest {
                 public ValueTask<A> Test(A a, B b, CancellationToken cancellationToken = default)
                     => InvokeTrySync<A>(0, "/test.js", "Test", cancellationToken, a, b);
             """;
+        Assert.Contains(expected, content);
+    }
 
+    #endregion
+
+
+    #region generics
+
+    [Fact]
+    public void SimpleGeneric() {
+        TSFunction function = new() {
+            Name = "Test",
+            ParameterList = new List<TSParameter>() {
+                new TSParameter() {
+                    Name = "p1",
+                    Type = "number"
+                }
+            },
+            ReturnType = new TSParameter() {
+                Name = "ReturnType",
+                Type = "void"
+            }
+        };
+        TSStructureTree structureTree = CreateExampleStructureTree();
+        structureTree.ModuleList[0].FunctionList[0] = function;
+
+        Config config = new() { InvokeFunctionSyncEnabled = true };
+        IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
+        string content = GetITSRuntimeContent(tsRuntimeContent);
+
+        const string expected = """
+                public void Test<TNumber>(TNumber p1) where TNumber : INumber<TNumber>
+                    => Invoke<IJSVoidResult>(0, "/test.js", "Test", p1);
+            """;
+        Assert.Contains(expected, content);
+    }
+
+    [Fact]
+    public void DoubleGeneric_DoesNotProduceDuplicate() {
+        TSFunction function = new() {
+            Name = "Test",
+            ParameterList = new List<TSParameter>() {
+                new TSParameter() {
+                    Name = "p1",
+                    Type = "number"
+                },
+                new TSParameter() {
+                    Name = "p2",
+                    Type = "number"
+                }
+            },
+            ReturnType = new TSParameter() {
+                Name = "ReturnType",
+                Type = "void"
+            }
+        };
+        TSStructureTree structureTree = CreateExampleStructureTree();
+        structureTree.ModuleList[0].FunctionList[0] = function;
+
+        Config config = new() { InvokeFunctionSyncEnabled = true };
+        IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
+        string content = GetITSRuntimeContent(tsRuntimeContent);
+
+        const string expected = """
+                public void Test<TNumber>(TNumber p1, TNumber p2) where TNumber : INumber<TNumber>
+                    => Invoke<IJSVoidResult>(0, "/test.js", "Test", p1, p2);
+            """;
+        Assert.Contains(expected, content);
+    }
+
+    [Fact]
+    public void ReturnTypeGeneric() {
+        TSFunction function = new() {
+            Name = "Test",
+            ParameterList = new List<TSParameter>(),
+            ReturnType = new TSParameter() {
+                Name = "ReturnType",
+                Type = "number"
+            }
+        };
+        TSStructureTree structureTree = CreateExampleStructureTree();
+        structureTree.ModuleList[0].FunctionList[0] = function;
+
+        Config config = new() { InvokeFunctionSyncEnabled = true };
+        IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
+        string content = GetITSRuntimeContent(tsRuntimeContent);
+
+        const string expected = """
+                public TNumber Test<TNumber>() where TNumber : INumber<TNumber>
+                    => Invoke<TNumber>(0, "/test.js", "Test");
+            """;
+        Assert.Contains(expected, content);
+    }
+
+    [Fact]
+    public void DoubleGenericAndReturnTypeGeneric() {
+        TSFunction function = new() {
+            Name = "Test",
+            ParameterList = new List<TSParameter>() {
+                new TSParameter() {
+                    Name = "p1",
+                    Type = "number"
+                },
+                new TSParameter() {
+                    Name = "p2",
+                    Type = "number"
+                }
+            },
+            ReturnType = new TSParameter() {
+                Name = "ReturnType",
+                Type = "number"
+            }
+        };
+        TSStructureTree structureTree = CreateExampleStructureTree();
+        structureTree.ModuleList[0].FunctionList[0] = function;
+
+        Config config = new() { InvokeFunctionSyncEnabled = true };
+        IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
+        string content = GetITSRuntimeContent(tsRuntimeContent);
+
+        const string expected = """
+                public TNumber Test<TNumber>(TNumber p1, TNumber p2) where TNumber : INumber<TNumber>
+                    => Invoke<TNumber>(0, "/test.js", "Test", p1, p2);
+            """;
+        Assert.Contains(expected, content);
+    }
+
+    [Fact]
+    public void GenericOptional_OnlyWhenGenericNeeded() {
+        TSFunction function = new() {
+            Name = "Test",
+            ParameterList = new List<TSParameter>() {
+                new TSParameter() {
+                    Name = "p1",
+                    Type = "number",
+                    Optional = true
+                },
+                new TSParameter() {
+                    Name = "p2",
+                    Type = "number",
+                    Optional = true
+                }
+            },
+            ReturnType = new TSParameter() {
+                Name = "ReturnType",
+                Type = "void"
+            }
+        };
+        TSStructureTree structureTree = CreateExampleStructureTree();
+        structureTree.ModuleList[0].FunctionList[0] = function;
+
+        Config config = new() { InvokeFunctionSyncEnabled = true };
+        IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
+        string content = GetITSRuntimeContent(tsRuntimeContent);
+
+        const string expected1 = """
+                public void Test<TNumber>(TNumber p1, TNumber p2) where TNumber : INumber<TNumber>
+                    => Invoke<IJSVoidResult>(0, "/test.js", "Test", p1, p2);
+            """;
+        Assert.Contains(expected1, content);
+        const string expected2 = """
+                public void Test<TNumber>(TNumber p1) where TNumber : INumber<TNumber>
+                    => Invoke<IJSVoidResult>(0, "/test.js", "Test", p1);
+            """;
+        Assert.Contains(expected2, content);
+        const string expected3 = """
+                public void Test()
+                    => Invoke<IJSVoidResult>(0, "/test.js", "Test");
+            """;
+        Assert.Contains(expected3, content);
+    }
+
+    [Fact]
+    public void DoubleDifferentGenerics() {
+        TSFunction function = new() {
+            Name = "Test",
+            ParameterList = new List<TSParameter>() {
+                new TSParameter() {
+                    Name = "p1",
+                    Type = "number"
+                },
+                new TSParameter() {
+                    Name = "p2",
+                    Type = "Test",
+                }
+            },
+            ReturnType = new TSParameter() {
+                Name = "ReturnType",
+                Type = "void"
+            }
+        };
+        TSStructureTree structureTree = CreateExampleStructureTree();
+        structureTree.ModuleList[0].FunctionList[0] = function;
+        
+
+        Config config = new() { InvokeFunctionSyncEnabled = true };
+        config.TypeMap.Add("Test", new MappedType("Test", new GenericType("TTest") { Constraint = "ITest" }));
+
+        IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
+        string content = GetITSRuntimeContent(tsRuntimeContent);
+
+        const string expected = """
+                public void Test<TNumber, TTest>(TNumber p1, Test p2) where TNumber : INumber<TNumber> where TTest : ITest
+                    => Invoke<IJSVoidResult>(0, "/test.js", "Test", p1, p2);
+            """;
         Assert.Contains(expected, content);
     }
 

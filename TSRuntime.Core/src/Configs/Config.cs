@@ -44,7 +44,7 @@ public sealed record class Config {
     /// List of generated using statements at the top of ITSRuntime.
     /// </summary>
     public string[] UsingStatements { get; init; } = UsingStatementsDefault;
-    private static string[] UsingStatementsDefault => new string[2] { "Microsoft.AspNetCore.Components", "Microsoft.Extensions.DependencyInjection" };
+    private static string[] UsingStatementsDefault => new string[3] { "Microsoft.AspNetCore.Components", "Microsoft.Extensions.DependencyInjection", "System.Numerics" };
 
 
     #region invoke function
@@ -116,12 +116,12 @@ public sealed record class Config {
     /// <para>Mapping of typescript-types (key) to C#-types (value).</para>
     /// <para>Not listed types are mapped unchanged (Identity function).</para>
     /// </summary>
-    public Dictionary<string, string> TypeMap { get; init; } = TypeMapDefault;
-    private static Dictionary<string, string> TypeMapDefault => new() {
-        ["number"] = "double",
-        ["boolean"] = "bool",
-        ["Uint8Array"] = "byte[]",
-        ["HTMLObjectElement"] = "ElementReference"
+    public Dictionary<string, MappedType> TypeMap { get; init; } = TypeMapDefault;
+    private static Dictionary<string, MappedType> TypeMapDefault => new() {
+        ["number"] = new MappedType("TNumber", new GenericType("TNumber") { Constraint = "INumber<TNumber>" }),
+        ["boolean"] = new MappedType("bool"),
+        ["Uint8Array"] = new MappedType("byte[]"),
+        ["HTMLObjectElement"] = new MappedType("ElementReference")
     };
 
     #endregion
@@ -283,7 +283,7 @@ public sealed record class Config {
         UsingStatements = root.ParseAsStringArray("using statements") ?? UsingStatementsDefault;
 
 
-        // InvokeFunctionSyncEnabled,InvokeFunctionTrySyncEnabled,InvokeFunctionAsyncEnabled ,InvokeFunctionNamePattern ,PromiseOnlyAsync,PromiseAppendAsync ,TypeMap
+        // InvokeFunctionSyncEnabled,InvokeFunctionTrySyncEnabled,InvokeFunctionAsyncEnabled , InvokeFunctionNamePattern , PromiseOnlyAsync,PromiseAppendAsync , TypeMap
         {
             if (root.AsJsonObjectOrNull("invoke function") is JsonObject jsonObject) {
                 InvokeFunctionSyncEnabled = jsonObject["sync enabled"]?.ParseAsBool("[invoke function].[sync enabled]") ?? INVOKE_FUNCTION_SYNC_ENABLED;
@@ -325,7 +325,80 @@ public sealed record class Config {
                     PromiseAppendAsync = PROMISE_APPEND_ASYNC;
                 }
 
-                TypeMap = jsonObject.ParseAsStringDictionary("type map") ?? TypeMapDefault;
+                // TypeMap
+                if (jsonObject.AsJsonObjectOrNull("type map", "[invoke function],[type map]") is JsonObject typeMapJsonObject) {
+                    TypeMap = new Dictionary<string, MappedType>(typeMapJsonObject.Count);
+
+                    try {
+                        foreach (KeyValuePair<string, JsonNode?> item in typeMapJsonObject) {
+                            MappedType mappedType = typeMapJsonObject[item.Key] switch {
+                                JsonValue valueNode => new MappedType(valueNode.ParseAsString(item.Key)),
+                                JsonObject keyJsonObject => ParseMappedJsonObject(keyJsonObject, item.Key),
+                                _ => throw JsonException.UnexpectedType(item.Key)
+                            };
+
+                            TypeMap.Add(item.Key, mappedType);
+
+
+                            static MappedType ParseMappedJsonObject(JsonObject keyJsonObject, string errorKey) {
+                                try {
+                                    string type = keyJsonObject["type"] switch {
+                                        JsonValue value => value.ParseAsString("type"),
+                                        null => throw JsonException.KeyNotFound("type"),
+                                        _ => throw JsonException.UnexpectedType("type")
+                                    };
+
+                                    GenericType[] genericTypes = keyJsonObject["generic types"] switch {
+                                        JsonArray array => ParseJsonArray(array),
+                                        JsonObject jsonObject => new GenericType[1] { ParseJsonObject(jsonObject) },
+                                        JsonValue value => new GenericType[1] { new(value.ParseAsString("generic types")) },
+                                        null => Array.Empty<GenericType>(),
+                                        _ => throw JsonException.UnexpectedType("generic types")
+                                    };
+
+                                    return new MappedType(type, genericTypes);
+
+
+                                    static GenericType[] ParseJsonArray(JsonArray array) {
+                                        GenericType[] result = new GenericType[array.Count];
+
+                                        for (int i = 0; i < array.Count; i++)
+                                            try {
+                                                result[i] = array[i] switch {
+                                                    JsonValue value => new GenericType(value.ParseAsString("generic types")),
+                                                    JsonObject jsonObject => ParseJsonObject(jsonObject),
+                                                    _ => throw JsonException.UnexpectedType("generic types")
+                                                };
+                                            }
+                                            catch (ArgumentException exception) { throw new ArgumentException($"error at array index {i}: {exception.Message}", exception); }
+
+                                        return result;
+                                    }
+
+                                    static GenericType ParseJsonObject(JsonObject jsonObject) {
+                                        string name = jsonObject["name"] switch {
+                                            JsonValue value => value.ParseAsString("name"),
+                                            null => throw JsonException.KeyNotFound("name"),
+                                            _ => throw JsonException.UnexpectedType("name")
+                                        };
+
+                                        string? constraint = jsonObject["constraint"] switch {
+                                            JsonValue value => value.ParseAsString("constraint"),
+                                            null => null,
+                                            _ => throw JsonException.UnexpectedType("constraint")
+                                        };
+
+                                        return new GenericType(name) { Constraint = constraint };
+                                    }
+                                }
+                                catch (ArgumentException exception) { throw new ArgumentException($"at {errorKey}: {exception.Message}", exception); }
+                            }
+                        }
+                    }
+                    catch (ArgumentException exception) { throw new ArgumentException($"error at [invoke function].[type map]: {exception.Message}", exception); }
+                }
+                else
+                    TypeMap = TypeMapDefault;
             }
             else {
                 InvokeFunctionSyncEnabled = INVOKE_FUNCTION_SYNC_ENABLED;
@@ -408,7 +481,7 @@ public sealed record class Config {
             }
         }
     }
-
+    
     /// <summary>
     /// Converts this instance as a json-file.
     /// </summary>
@@ -466,25 +539,43 @@ public sealed record class Config {
         else {
             builder.Clear();
 
-            foreach (KeyValuePair<string, string> pair in TypeMap) {
-                builder.Append("""
-
-                          "
-                    """);
+            foreach (KeyValuePair<string, MappedType> pair in TypeMap) {
+                builder.Append("\n      \"");
                 builder.Append(pair.Key);
-                builder.Append("""
-                    ": "
-                    """);
-                builder.Append(pair.Value);
-                builder.Append("""
-                    ",
-                    """);
+                builder.Append(@""": ");
+                if (pair.Value.GenericTypes.Length == 0) {
+                    builder.Append('"');
+                    builder.Append(pair.Value.Type);
+                    builder.Append('"');
+                }
+                else {
+                    builder.Append($$"""
+                        {
+                                "type": "{{pair.Value.Type}}",
+                                "generic types": [
+
+                        """);
+                    foreach (GenericType genericType in pair.Value.GenericTypes) {
+                        builder.Append($$"""
+                                      {
+                                        "name": "{{genericType.Name}}",
+                                        "constraint": {{(genericType.Constraint != null ? $"\"{genericType.Constraint}\"" : "null")}}
+                                      },
+
+                            """);
+
+                    }
+                    builder.Length -= 2;
+                    builder.Append("""
+
+                                ]
+                              }
+                        """);
+                }
+                builder.Append(',');
             }
             builder.Length--;
-            builder.Append("""
-
-                
-            """);
+            builder.Append("\n    ");
             typeMap = builder.ToString();
         }
 
@@ -616,8 +707,8 @@ public sealed record class Config {
             if (a.TypeMap.Count != b.TypeMap.Count)
                 return false;
 
-            foreach (KeyValuePair<string, string> pair in a.TypeMap) {
-                if (!b.TypeMap.TryGetValue(pair.Key, out string value))
+            foreach (KeyValuePair<string, MappedType> pair in a.TypeMap) {
+                if (!b.TypeMap.TryGetValue(pair.Key, out MappedType value))
                     return false;
 
                 if (pair.Value != value)
@@ -654,26 +745,6 @@ file static class JsonNodeExtension {
                 result[i] = array[i].ParseAsString(parentKey);
             }
             catch (ArgumentException exception) { throw new ArgumentException($"{exception.Message}, at array index {i}", exception); }
-
-        return result;
-    }
-
-
-    internal static Dictionary<string, string>? ParseAsStringDictionary(this JsonNode parentNode, string parentKey)
-        => parentNode[parentKey] switch {
-            JsonObject jsonObject => jsonObject.ParseObjectAsStringDictionary(parentKey),
-            null => null,
-            _ => throw JsonException.UnexpectedType(parentKey)
-        };
-
-    internal static Dictionary<string, string> ParseObjectAsStringDictionary(this JsonObject jsonObject, string parentKey) {
-        Dictionary<string, string> result = new(jsonObject.Count);
-
-        foreach (KeyValuePair<string, JsonNode?> item in jsonObject)
-            try {
-                result.Add(item.Key, item.Value.ParseAsString(parentKey));
-            }
-            catch (ArgumentException exception) { throw new ArgumentException($"error at key element '{item.Key}', {exception.Message}", exception); }
 
         return result;
     }

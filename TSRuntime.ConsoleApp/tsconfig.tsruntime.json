@@ -26,7 +26,13 @@
       "append Async": false
     },
     "type map": {
-      "number": "double",
+      "number": {
+        "type": "TNumber",
+        "generic types": {
+          "name": "TNumber",
+          "constraint": "INumber<TNumber>"
+        }
+      },
       "boolean": "bool",
       "Uint8Array": "byte[]",
       "HTMLObjectElement": "ElementReference"

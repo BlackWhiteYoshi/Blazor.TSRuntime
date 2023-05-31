@@ -47,6 +47,8 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         ``
         }
         `-
+
+        {{ServiceExtension}}
         """";
 
     private static string SingleInterface => $$"""
@@ -59,6 +61,8 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         public interface ITSRuntime : ITSBase {
         {{PRELOAD_ALL_MODULES}}
         ``
+        List<MappedType> mappedParameterList = new();
+        List<GenericType> genericParameterList = new();
         for (int i = 0; i < structureTree.ModuleList.Count; i++) {
             TSModule module = structureTree.ModuleList[i];
             string index = i.ToString();
@@ -79,8 +83,6 @@ public sealed class SourceGenerator : IIncrementalGenerator {
 
         {{JSRUNTIME_METHODS}}
         }
-
-        {{ServiceExtension}}
         """;
 
     private static string MultipleInterfaces => $$"""
@@ -96,6 +98,8 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         }
 
         ``
+        List<MappedType> mappedParameterList = new();
+        List<GenericType> genericParameterList = new();
         for (int i = 0; i < structureTree.ModuleList.Count; i++) {
             TSModule module = structureTree.ModuleList[i];
             string index = i.ToString();
@@ -113,8 +117,6 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         public interface ITSRuntime : {{INTERFACE_MODULE_NAMES}}ITSBase {
         {{PRELOAD_ALL_MODULES}}
         }
-
-        {{ServiceExtension}}
         """;
 
 
@@ -202,9 +204,10 @@ public sealed class SourceGenerator : IIncrementalGenerator {
 
     private const string PRELOAD_ALL_MODULES = $$"""
             /// <summary>
-            /// <para>Preloads all modules as javascript-modules.</para>
+            /// <para>Fetches all modules as javascript-modules.</para>
             /// <para>If already loading, it doesn't trigger a second loading and if any already loaded, these are not loaded again, so if all already loaded, it returns a completed task.</para>
             /// </summary>
+            /// <returns>A Task that will complete when all module loading Tasks have completed.</returns>
             public Task `config.PreloadAllModulesName`() {
         ``
         foreach (TSModule module in structureTree.ModuleList) {
@@ -220,9 +223,10 @@ public sealed class SourceGenerator : IIncrementalGenerator {
 
     private const string PRELOAD_MODULE = $"""
             /// <summary>
-            /// <para>Preloads '`module.ModuleName`' (`module.ModulePath`) as javascript-module.</para>
+            /// <para>Fetches '`module.ModuleName`' (`module.ModulePath`) as javascript-module.</para>
             /// <para>If already loading, it doesn't trigger a second loading and if already loaded, it returns a completed task.</para>
             /// </summary>
+            /// <returns>A Task that will complete when the module import have completed.</returns>
             public Task {PRELOAD_NAME_PATTERN}()
                 => GetOrLoadModule(`index`, "`module.ModulePath`");
         """;
@@ -246,7 +250,16 @@ public sealed class SourceGenerator : IIncrementalGenerator {
 
         ``
         foreach (TSFunction function in module.FunctionList) {
-            string returnType = config.TypeMap.GetValueOrKey(function.ReturnType.Type);
+            mappedParameterList.Clear();
+            foreach (TSParameter parameter in function.ParameterList)
+                if (config.TypeMap.TryGetValue(parameter.Type, out MappedType mappedType))
+                    mappedParameterList.Add(mappedType);
+                else
+                    mappedParameterList.Add(new MappedType(parameter.Type));
+
+            if(!config.TypeMap.TryGetValue(function.ReturnType.Type, out MappedType mappedReturnType))
+                mappedReturnType = new(function.ReturnType.Type);
+            string returnType = mappedReturnType.Type;
             string returnModifiers = (function.ReturnType.TypeNullable, function.ReturnType.Array, function.ReturnType.ArrayNullable) switch {
                 (false, false, _) => string.Empty,
                 (true, false, _) => "?",
@@ -274,6 +287,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         int lastIndex = function.ParameterList.Count;
         do {
             lastIndex--;
+        {{CREATE_TYPE_PARAMETER_LIST}}
         `+
 
             /// <summary>
@@ -281,8 +295,12 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             /// <para>If module is not loaded or synchronous is not supported, it fails with an exception.</para>
             /// </summary>
         {{SUMMARY_PARAMETERS}}
-            /// <returns>result of the JS-function</returns>
-            public `returnType``returnModifiers` {{GetFunctionNamePattern("config.InvokeFunctionActionNameSync")}}({{PARAMETERS_JOIN}})
+        ``
+        if (returnType != "void")
+        `+
+            /// <returns>result of the JS-function.</returns>
+        ```-
+            public `returnType``returnModifiers` {{GetFunctionNamePattern("config.InvokeFunctionActionNameSync")}}{{TYPE_PARAMETERS}}({{PARAMETERS_JOIN}}){{TYPE_CONSTAINTS}}
                 => Invoke<{{MAPPED_IJS_VOID_RESULT}}>(`index`, "`module.ModulePath`", "`function.Name`"{{ARGUMENTS}});
         ``
         }
@@ -336,6 +354,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             int lastIndex = function.ParameterList.Count;
             do {
                 lastIndex--;
+            {{CREATE_TYPE_PARAMETER_LIST}}
             `+
 
                 /// <summary>
@@ -343,11 +362,11 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 /// </summary>
             {{SUMMARY_PARAMETERS}}
                 /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
-                /// <returns>result of the JS-function</returns>
             ``
             if (returnType == "void") {
             `+
-                public Task {{GetFunctionNamePattern(methodName)}}({{PARAMETERS}}CancellationToken cancellationToken = default) {
+                /// <returns>A Task that will complete when the JS-Function have completed.</returns>
+                public Task {{GetFunctionNamePattern(methodName)}}{{TYPE_PARAMETERS}}({{PARAMETERS}}CancellationToken cancellationToken = default){{TYPE_CONSTAINTS}} {
                     ValueTask<IJSVoidResult> task = {{methodAction}}<IJSVoidResult>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
                     return task.IsCompleted ? Task.CompletedTask : task.AsTask();
                 }
@@ -357,7 +376,8 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             ``
             else {
             `+
-                public ValueTask<`returnType``returnModifiers`> {{GetFunctionNamePattern(methodName)}}({{PARAMETERS}}CancellationToken cancellationToken = default)
+                /// <returns>result of the JS-function<./returns>
+                public ValueTask<`returnType``returnModifiers`> {{GetFunctionNamePattern(methodName)}}{{TYPE_PARAMETERS}}({{PARAMETERS}}CancellationToken cancellationToken = default){{TYPE_CONSTAINTS}}
                     => {{methodAction}}<`returnType``returnModifiers`>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
             ``
             }
@@ -628,29 +648,38 @@ public sealed class SourceGenerator : IIncrementalGenerator {
 
     private const string SUMMARY_PARAMETERS = """
         ``
-        foreach (TSParameter parameter in function.ParameterList) {
+        foreach (GenericType genericType in genericParameterList) {
         `+
-            /// <param name="`parameter.Name`"></param>
+            /// <typeparam name="`genericType.Name`"></typeparam>
+        ``
+        }
+        `-
+        ``
+        for (int __i = 0; __i <= lastIndex; __i++) {
+        `+
+            /// <param name="`function.ParameterList[__i].Name`"></param>
         ``
         }
         `-
         """;
 
-    
+
     private const string PARAMETERS_JOIN = $$"""
         ``
         if (lastIndex >= 0) {
             for (int __i = 0; __i < lastIndex; __i++) {
                 TSParameter parameter = function.ParameterList[__i];
 
-                {{PARAMETERS_INNTER}}
+                yield return mappedParameterList[__i].Type;
+        {{PARAMETERS_INNTER}}
                 yield return ", ";
             }
 
             {
                 TSParameter parameter = function.ParameterList[lastIndex];
 
-                {{PARAMETERS_INNTER}}
+                yield return mappedParameterList[lastIndex].Type;
+        {{PARAMETERS_INNTER}}
             }
         }
         ``
@@ -658,17 +687,19 @@ public sealed class SourceGenerator : IIncrementalGenerator {
 
     private const string PARAMETERS = $$"""
         ``
-        for (int __i = 0; __i <= lastIndex; __i++) {
-            TSParameter parameter = function.ParameterList[__i];
+        {
+            for (int __i = 0; __i <= lastIndex; __i++) {
+                TSParameter parameter = function.ParameterList[__i];
 
-            {{PARAMETERS_INNTER}}
-            yield return ", ";
+                yield return mappedParameterList[__i].Type;
+        {{PARAMETERS_INNTER}}
+                yield return ", ";
+            }
         }
         ``
         """;
 
     private const string PARAMETERS_INNTER = """
-        yield return config.TypeMap.GetValueOrKey(parameter.Type);
                 if (parameter.TypeNullable)
                     yield return "?";
                 if (parameter.Array)
@@ -679,7 +710,54 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 yield return parameter.Name;
         """;
 
-    
+
+    private const string CREATE_TYPE_PARAMETER_LIST = """
+            genericParameterList.Clear();
+            
+            for (int __i = 0; __i <= lastIndex; __i++)
+                for (int __j = 0; __j < mappedParameterList[__i].GenericTypes.Length; __j++)
+                    if (!genericParameterList.Contains(mappedParameterList[__i].GenericTypes[__j]))
+                        genericParameterList.Add(mappedParameterList[__i].GenericTypes[__j]);
+
+            for (int __j = 0; __j < mappedReturnType.GenericTypes.Length; __j++)
+                if (!genericParameterList.Contains(mappedReturnType.GenericTypes[__j]))
+                    genericParameterList.Add(mappedReturnType.GenericTypes[__j]);
+        """;
+
+    private const string TYPE_PARAMETERS = """
+        ``
+        if (genericParameterList.Count > 0) {
+            yield return "<";
+            yield return genericParameterList[0].Name;
+
+            for (int __i = 1; __i < genericParameterList.Count; __i++) {
+                yield return ", ";
+                yield return genericParameterList[__i].Name;
+            }
+
+            yield return ">";
+        }
+        ``
+        """;
+
+    private const string TYPE_CONSTAINTS = """
+        ``
+        foreach (GenericType genericType in genericParameterList) {
+        `+
+        ``
+        if (genericType.Constraint != null) {
+        `+
+         where `genericType.Name` : `genericType.Constraint```
+        }
+        `-
+        ``
+        }
+        `-
+
+        """;
+
+
+
     private const string ARGUMENTS = """
         ``
         for (int __i = 0; __i <= lastIndex; __i++) {
@@ -704,18 +782,16 @@ public sealed class SourceGenerator : IIncrementalGenerator {
     private const string INTERFACE_MODULE_NAMES = $$"""
         ``
         foreach (TSModule module in structureTree.ModuleList) {
-        ``
-        {{INTERFACE_MODULE_NAME}}
-        ``
-            yield return ", ";
+        `+
+        {{INTERFACE_MODULE_NAME}}, ``
         }
-        ``
+        `-
         """;
 
     private const string INTERFACE_MODULE_NAME = """
         ``
-            foreach (string str in config.ModuleGroupingNamePattern.GetNaming(module.ModuleName))
-                yield return str;
+        foreach (string str in config.ModuleGroupingNamePattern.GetNaming(module.ModuleName))
+            yield return str;
         ``
         """;
 

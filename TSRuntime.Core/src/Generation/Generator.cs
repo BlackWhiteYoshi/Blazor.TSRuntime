@@ -139,19 +139,4 @@ public static partial class Generator {
     /// <param name="config"></param>
     /// <returns></returns>
     public static partial IEnumerable<string> GetITSRuntimeContent(TSStructureTree structureTree, Config config);
-
-
-    /// <summary>
-    /// Retrieves the value in a Dictionary and defaults to the given key if not found.
-    /// </summary>
-    /// <param name="dictionary"></param>
-    /// <param name="key"></param>
-    /// <returns></returns>
-    private static string GetValueOrKey(this Dictionary<string, string> dictionary, string key) {
-        bool success = dictionary.TryGetValue(key, out string? value);
-        if (success)
-            return value!;
-        else
-            return key;
-    }
 }

@@ -14,4 +14,4 @@ export declare function LongWait(): Promise<void>;
 
 export declare function test(p1?: undefined | string | null): (string | null)[] | null;
 
-export declare function optionalTest(p1?: string, p2?: string,  p3?: string,  p4?: string): void; 
+export declare function optionalTest(p1?: string, p2?: number): void; 

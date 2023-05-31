@@ -85,19 +85,6 @@ public sealed class CoreConfigTest {
     }
 
 
-    [Fact]
-    public void Config_FromJson_EmptyPathWorks() {
-        string json = """
-            {
-                "declaration path": ""
-            }
-            """;
-        Config config = new(json);
-        
-        Assert.Equal(string.Empty, config.DeclarationPath[0].Include);
-    }
-
-
     [Theory]
     [InlineData("""{ "declaration path": "" }""", new string?[3] { "", "", null })]
     [InlineData("""{ "declaration path": "\\test" }""", new string?[3] { "/test", "", null })]
@@ -109,6 +96,8 @@ public sealed class CoreConfigTest {
     [InlineData("""{ "declaration path": { "include": "\\test", "excludes": "as\\df", "file module path": "yx\\cv" } }""", new string?[3] { "/test", "as/df", "yx/cv" })]
     [InlineData("""{ "declaration path": [{ "include": "\\test", "excludes": "as\\df", "file module path": "yx\\cv" }, { "include": "q", "excludes": ["w", "ww" ] } ] }""", new string?[6] { "/test", "as/df", "yx/cv", "q", "w,ww", null })]
     public void Config_FromJson_DeclarationPathWorks(string json, string?[] expected) {
+        // expected = [include1, exclude1, fileModulePath1, include2, exclude2, fileModulePath2, ...]
+
         Config config = new(json);
 
         string?[] result = new string[config.DeclarationPath.Length * 3];
@@ -249,6 +238,35 @@ public sealed class CoreConfigTest {
 
 
     [Theory]
+    [InlineData(""" "test": "Test" """, "test", "Test", new string?[] { })]
+    [InlineData(""" "test": { "type": "Test" } """, "test", "Test", new string?[] { })]
+    [InlineData(""" "test": { "type": "Test", "generic types": [] } """, "test", "Test", new string?[] { })]
+    [InlineData(""" "test": { "type": "Test", "generic types": "TTest" } """, "test", "Test", new string?[] { "TTest", null })]
+    [InlineData(""" "test": { "type": "Test", "generic types": { "name": "TTest" } } """, "test", "Test", new string?[] { "TTest", null })]
+    [InlineData(""" "test": { "type": "Test", "generic types": { "name": "TTest", "constraint": "ITest" } } """, "test", "Test", new string?[] { "TTest", "ITest" })]
+    [InlineData(""" "test": { "type": "Test", "generic types": [ { "name": "TTest", "constraint": "ITest" } ] } """, "test", "Test", new string?[] { "TTest", "ITest" })]
+    [InlineData(""" "test": { "type": "Test", "generic types": [ { "name": "TTest1", "constraint": "ITest1" }, { "name": "TTest2", "constraint": "ITest2" } ] } """, "test", "Test", new string?[] { "TTest1", "ITest1", "TTest2", "ITest2" })]
+    public void Config_FromJson_TypeMapWorks(string typeMapItemJson, string expectedKey, string expectedType, string?[] expectedGenericTypes) {
+        // expected = [genericType1, constraint1, genericType2, constraint2, ...]
+
+        string json = $$"""
+            {
+                "invoke function": {
+                  "type map": { {{typeMapItemJson}} }
+                }
+            }
+            """;
+        Config config = new(json);
+
+        Assert.Equal(expectedKey, config.TypeMap.Keys.First());
+        Assert.Equal(expectedType, config.TypeMap[expectedKey].Type);
+        for (int i = 0; i < config.TypeMap[expectedKey].GenericTypes.Length; i++) {
+            Assert.Equal(expectedGenericTypes[2 * i], config.TypeMap[expectedKey].GenericTypes[i].Name);
+            Assert.Equal(expectedGenericTypes[2 * i + 1], config.TypeMap[expectedKey].GenericTypes[i].Constraint);
+        }
+    }
+
+    [Theory]
     [InlineData(new string[] { }, """{ }""")]
     [InlineData(new string[] { "key", "value" }, """
                                                 {
@@ -262,10 +280,12 @@ public sealed class CoreConfigTest {
                                                                   "e": "f"
                                                                 }
                                                             """)]
-    public void Config_ToJson_TypeMapWorks(string[] types , string expected) {
-        Dictionary<string, string> map = new(types.Length / 2);
+    public void Config_ToJson_TypeMapSimpleMappingWorks(string[] types , string expected) {
+        // types = [key1, value1, key2, value2, ...]
+
+        Dictionary<string, MappedType> map = new(types.Length / 2);
         for (int i = 0; i < types.Length; i += 2)
-            map.Add(types[i], types[i + 1]);
+            map.Add(types[i], new MappedType(types[i + 1]));
 
         Config config = new() {
             TypeMap = map
@@ -275,10 +295,135 @@ public sealed class CoreConfigTest {
         Assert.Contains($""" "type map": {expected}""", json);
     }
 
+    [Theory]
+    [InlineData("test", "Test", new string?[] { "TTest", null }, """
+                                                                      "test": {
+                                                                        "type": "Test",
+                                                                        "generic types": [
+                                                                          {
+                                                                            "name": "TTest",
+                                                                            "constraint": null
+                                                                          }
+                                                                        ]
+                                                                      }
+                                                                """)]
+    [InlineData("test", "Test", new string?[] { "TTest", "ITest" }, """
+                                                                      "test": {
+                                                                        "type": "Test",
+                                                                        "generic types": [
+                                                                          {
+                                                                            "name": "TTest",
+                                                                            "constraint": "ITest"
+                                                                          }
+                                                                        ]
+                                                                      }
+                                                                """)]
+    [InlineData("test", "Test", new string?[] { "TTest1", "ITest1", "TTest2", "ITest2" }, """
+                                                                                              "test": {
+                                                                                                "type": "Test",
+                                                                                                "generic types": [
+                                                                                                  {
+                                                                                                    "name": "TTest1",
+                                                                                                    "constraint": "ITest1"
+                                                                                                  },
+                                                                                                  {
+                                                                                                    "name": "TTest2",
+                                                                                                    "constraint": "ITest2"
+                                                                                                  }
+                                                                                                ]
+                                                                                              }
+                                                                                        """)]
+    public void Config_ToJson_TypeMapComplexMappingWorks(string key, string type, string?[] genericTypes, string expected) {
+        // genericTypes = [genericType1, constraint1, genericType2, constraint2, ...]
+
+        GenericType[] generics = new GenericType[genericTypes.Length / 2];
+        for (int i = 0; i < generics.Length; i++)
+            generics[i] = new GenericType(genericTypes[2 * i]!) { Constraint = genericTypes[2 * i + 1] };
+
+        Dictionary<string, MappedType> map = new(1) {
+            [key] = new MappedType(type, generics)
+        };
+
+        Config config = new() {
+            TypeMap = map
+        };
+        string json = config.ToJson();
+
+        Assert.Contains($$"""
+            "type map": {
+            {{expected}}
+                }
+            """, json);
+    }
+
+
+    [Theory]
+    [InlineData("""true""", true, true, "I#module#Module", NameTransform.FirstUpperCase)]
+    [InlineData("""false""", false, true, "I#module#Module", NameTransform.FirstUpperCase)]
+    [InlineData("""{ "enabled": true }""", true, true, "I#module#Module", NameTransform.FirstUpperCase)]
+    [InlineData("""{ "enabled": true, "service extension": false }""", true, false, "I#module#Module", NameTransform.FirstUpperCase)]
+    [InlineData("""{ "enabled": true, "service extension": false, "interface name pattern": { "pattern": "test", "module transform": "none" } }""", true, false, "test", NameTransform.None)]
+    public void Config_FromJson_ModuleGroupingWorks(string moduleGroupingJson, bool expectedModuleGrouping, bool expectedServiceExtension, string expectedNamePattern, NameTransform expectedModuleTransform) {
+        string json = $$"""
+            {
+              "module grouping": {{moduleGroupingJson}}
+            }
+            """;
+        Config config = new(json);
+
+        Assert.Equal(expectedModuleGrouping, config.ModuleGrouping);
+        Assert.Equal(expectedServiceExtension, config.ModuleGroupingServiceExtension);
+        Assert.Equal(expectedNamePattern, config.ModuleGroupingNamePattern.NamePattern);
+        Assert.Equal(expectedModuleTransform, config.ModuleGroupingNamePattern.ModuleTransform);
+    }
+
+    [Theory]
+    [InlineData(true, false, "", NameTransform.None, """
+                                                    {
+                                                        "enabled": true,
+                                                        "service extension": false,
+                                                        "interface name pattern": {
+                                                          "pattern": "",
+                                                          "module transform": "None"
+                                                        }
+                                                      }
+                                                    """)]
+    [InlineData(false, true, "", NameTransform.None, """
+                                                    {
+                                                        "enabled": false,
+                                                        "service extension": true,
+                                                        "interface name pattern": {
+                                                          "pattern": "",
+                                                          "module transform": "None"
+                                                        }
+                                                      }
+                                                    """)]
+    [InlineData(false, false, "test", NameTransform.FirstUpperCase, """
+                                                    {
+                                                        "enabled": false,
+                                                        "service extension": false,
+                                                        "interface name pattern": {
+                                                          "pattern": "test",
+                                                          "module transform": "FirstUpperCase"
+                                                        }
+                                                      }
+                                                    """)]
+    public void Config_ToJson_ModuleGroupingWorks(bool enabled, bool serviceExtension, string interfaceNamePattern, NameTransform moduleTransform, string expected) {
+        Config config = new() {
+            ModuleGrouping = enabled,
+            ModuleGroupingServiceExtension = serviceExtension,
+            ModuleGroupingNamePattern = new ModuleNamePattern(interfaceNamePattern, moduleTransform)
+        };
+        string json = config.ToJson();
+
+        Assert.Contains($""" "module grouping": {expected}""", json);
+    }
+
+
     [Fact]
     public void StructureTreeEquals() {
-        Config configA = new Config();
-        Config configB = new Config();
+        Config configA = new();
+        Config configB = new();
 
         Assert.True(configA.StructureTreeEquals(configB));
 
@@ -308,7 +453,7 @@ public sealed class CoreConfigTest {
         Assert.False(configA.StructureTreeEquals(configB));
 
 
-        configB = configA with { TypeMap = new Dictionary<string, string>() };
+        configB = configA with { TypeMap = new Dictionary<string, MappedType>() };
         Assert.False(configA.StructureTreeEquals(configB));
 
 
