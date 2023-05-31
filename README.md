@@ -282,14 +282,14 @@ All available config keys with its default value:
 }
 ```
 
-- **[\[declaration path\]](#configure-declaration-files-dts-directory)**: Folder where to locate the d.ts declaration files. Path relative to this file and no starting or ending slash.
+- **[\[declaration path\]](#configure-declaration-files-dts-directory)**: Folder where to locate the .d.ts declaration files. Path relative to json-file and no starting or ending slash.
 - **[file output].[class]**: File-path of TSRuntime. Path relative to json-file and no starting slash. Not used in source generator.
 - **[file output].[interface]**: File-path of ITSRuntime. Path relative to json-file and no starting slash. Not used in source generator.
-- **[generate on save]**: If true, every time a .d.ts-file is changed, ITSRuntime is generated. Not used in source generator.
+- **[generate on save]**: Every time a .d.ts-file is changed, ITSRuntime is generated. Not used in source generator.
 - **[\[using statements\]](#using-statements)**: List of generated using statements at the top of ITSRuntime.
-- **[invoke function].[sync enabled]**: Toggles whether sync invoke methods should be generated for modules.
-- **[invoke function].[trysync enabled]**: Toggles whether try-sync invoke methods should be generated for modules.
-- **[invoke function].[async enabled]**: Toggles whether async invoke methods should be generated for modules.
+- **[\[invoke function\].\[sync enabled\]](#invoke)**: Toggles whether sync invoke methods should be generated for modules.
+- **[\[invoke function\].\[trysync enabled\]](#invoke)**: Toggles whether try-sync invoke methods should be generated for modules.
+- **[\[invoke function\].\[async enabled\]](#invoke)**: Toggles whether async invoke methods should be generated for modules.
 - **[\[invoke function\].\[name pattern\].\[pattern\]](#name-pattern)**: Naming of the generated methods that invoke module functions.
 - **[\[invoke function\].\[name pattern\].\[module transform\]](#name-pattern)**: Lower/Upper case transform for the variable #module#.
 - **[\[invoke function\].\[name pattern\].\[function transform\]](#name-pattern)**: Lower/Upper case transform for the variable #function#.
@@ -303,9 +303,13 @@ All available config keys with its default value:
 - **[\[preload function\].\[name pattern\].\[pattern\]](#name-pattern)**: Naming of the generated methods that preloads a specific module.
 - **[\[preload function\].\[name pattern\].\[module transform\]](#name-pattern)**: Lower/Upper case transform for the variable #module#.
 - **[\[preload function\].\[all modules name\]](#name-pattern)**: Naming of the method that preloads all modules.
-- **[js runtime].[sync enabled]**: Toggles whether generic JSRuntime sync invoke method should be generated.
-- **[js runtime].[trysync enabled]**: Toggles whether generic JSRuntime try-sync invoke method should be generated.
-- **[js runtime].[async enabled]**: Toggles whether generic JSRuntime async invoke method should be generated.
+- **[\[module grouping\].\[enabled\]](#module-grouping)**: Each module gets it own interface and the functions of that module are only available in that interface.
+- **[\[module grouping\].\[service extension\]](#module-grouping)**: A service extension method is generated, which registers ITSRuntime and if available, the module interfaces.
+- **[\[module grouping\].\[interface name pattern\].\[pattern\]](#name-pattern)**: Naming of the generated module interfaces when *module grouping* is enabled.
+- **[\[module grouping\].\[interface name pattern\].\[module transform\]](#name-pattern)**: Lower/Upper case transform for the variable #module#.
+- **[\[js runtime\].\[sync enabled\]](#js-runtime)**: Toggles whether generic JSRuntime sync invoke method should be generated.
+- **[\[js runtime\].\[trysync enabled\]](#js-runtime)**: Toggles whether generic JSRuntime try-sync invoke method should be generated.
+- **[\[js runtime\].\[async enabled\]](#js-runtime)**: Toggles whether generic JSRuntime async invoke method should be generated.
 
 
 ### Using Statements
@@ -372,7 +376,7 @@ With [function transform] set to "first upper case" you get:
 ### Promise Function
 
 
-**[only async enabled]**: If true, whenever a module function returns a promise, the *[invoke function].[sync enabled]*, *[invoke function].[trysync enabled]* and *[invoke function].[async enabled]* flags will be ignored
+**[only async enabled]**: Whenever a module function returns a promise, the *[invoke function].[sync enabled]*, *[invoke function].[trysync enabled]* and *[invoke function].[async enabled]* flags will be ignored
 and instead, only the async invoke method will be generated.  
 Asynchronous JS-functions will only be awaited with the async invoke method, so this value should always be true.
 Set it only to false when you know what you are doing.
@@ -407,6 +411,43 @@ Here are some examples:
 | do(myParameter: (string \| null)[] \| null \| undefined) | Do(), Do(string?[]? myParameter) |
 
 **Note**: default value parameters (e.g. do(myParameter = 5)) are automatically mapped to optional parameters in .d.ts-files, so they will work as expected.
+
+
+### Module Grouping
+
+When your ITSRuntime gets big and complex, you can split it up into multiple interfaces, each represents a module.
+To enable module grouping you can use a shorthand and set the \[module grouping] key directly to true:
+
+```json
+{
+  "module grouping": true
+
+  // - the same as
+  // "module grouping": {
+  //   "enabled": true,
+  //   "service extension": true,
+  //   "interface name pattern": {
+  //     "pattern": "I#module#Module",
+  //     "module transform": "first upper case"
+  //   }
+  // }
+}
+```
+
+This will result in setting \[module grouping].[enabled] = true, while \[module grouping].[service extension] and \[module grouping].[interface name pattern] will have its default values.
+
+When [service extension] is enabled, you can use the generated extension method to register all generated module interfaces to your service collection.
+This will register a scoped ITSRuntime with a TSRuntime as implementation and registers the module interfaces with the same TSRuntime-object.
+If module grouping is disabled and service extension is enabled, it will only register ITSRuntime as scoped dependency with a TSRuntime as implementation.
+This extension method uses the IServiceCollection interface, so a namespace for that interface must be present e.g. *Microsoft.Extensions.DependencyInjection*.
+
+With [interface name pattern] you can specify the naming of your module interfaces. For how it works see [Name Pattern].
+
+
+### JS Runtime
+
+It exposes the JSRuntime functionalities, so you can use the generic IJSRuntime methods with the ITSRuntime interface.
+Additionally, the InvokeTrySync-method is also available, which does not exist in the IJSRuntime interface.
 
 
 <br></br>
@@ -513,7 +554,6 @@ This package is in preview and breaking changes may occur.
 
 There are some features planned (no guarantees whatsoever):
 
-* module grouping in seperate interfaces
 * Generic type-mapping (INumber&lt;T&gt; instead of double)
 * Generic TS-Functions
 
@@ -537,3 +577,5 @@ There are some features planned (no guarantees whatsoever):
 - 0.3  
   Breaking changes: changed config keys, defaults and properties in Config, changed Config.FromJson(string json) to new Config(string json).  
   Added key "generate on save" and "action name" keys to config.
+- 0.4  
+  Module grouping is now supported. Small breaking change: A namespace that contains IServiceCollection is required when serviceExtension is enabled and namespace *Microsoft.Extensions.DependencyInjection* was added to the defaults.
