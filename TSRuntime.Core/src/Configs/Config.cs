@@ -43,8 +43,8 @@ public sealed record class Config {
     /// <summary>
     /// List of generated using statements at the top of ITSRuntime.
     /// </summary>
-    public string[] UsingStatements { get; init; } = new string[1] { USING_STATEMENT };
-    private const string USING_STATEMENT = "Microsoft.AspNetCore.Components";
+    public string[] UsingStatements { get; init; } = UsingStatementsDefault;
+    private static string[] UsingStatementsDefault => new string[2] { "Microsoft.AspNetCore.Components", "Microsoft.Extensions.DependencyInjection" };
 
 
     #region invoke function
@@ -280,7 +280,7 @@ public sealed record class Config {
 
         GenerateOnSave = root["generate on save"]?.ParseAsBool("generate on save") ?? GENERATE_ON_SAVE;
 
-        UsingStatements = root.ParseAsStringArray("using statements") ?? new string[1] { USING_STATEMENT };
+        UsingStatements = root.ParseAsStringArray("using statements") ?? UsingStatementsDefault;
 
 
         // InvokeFunctionSyncEnabled,InvokeFunctionTrySyncEnabled,InvokeFunctionAsyncEnabled ,InvokeFunctionNamePattern ,PromiseOnlyAsync,PromiseAppendAsync ,TypeMap

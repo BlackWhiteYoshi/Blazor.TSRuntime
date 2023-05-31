@@ -5,7 +5,7 @@
     "interface": "ITSRuntime.cs"
   },
   "generate on save": true,
-  "using statements": [ "Microsoft.AspNetCore.Components" ],
+  "using statements": [ "Microsoft.AspNetCore.Components", "Microsoft.Extensions.DependencyInjection", "System.Numerics" ],
   "invoke function": {
     "sync enabled": true,
     "trysync enabled": true,

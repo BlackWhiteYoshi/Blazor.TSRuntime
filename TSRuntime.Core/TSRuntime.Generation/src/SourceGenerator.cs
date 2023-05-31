@@ -182,6 +182,10 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         #nullable enable annotations
         
         
+        using Microsoft.JSInterop.Infrastructure;
+        using System.Diagnostics.CodeAnalysis;
+        using System.Threading;
+        using System.Threading.Tasks;
         ``
         foreach (string usingStatement in config.UsingStatements) {
         `+
@@ -189,10 +193,6 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         ``
         }
         `-
-        using Microsoft.JSInterop.Infrastructure;
-        using System.Diagnostics.CodeAnalysis;
-        using System.Threading;
-        using System.Threading.Tasks;
         
         namespace Microsoft.JSInterop;
         """;
