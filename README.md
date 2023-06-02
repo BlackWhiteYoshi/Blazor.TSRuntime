@@ -438,7 +438,7 @@ This is once again a shorthand for:
         "name": "TSelf",
         "constraint": null
       }
-    }
+    ]
   }
 }
 ```
