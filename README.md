@@ -253,7 +253,13 @@ All available config keys with its default value:
       "append Async": false
     },
     "type map": {
-      "number": "double",
+      "number": {
+        "type": "TNumber",
+        "generic types": {
+          "name": "TNumber",
+          "constraint": "INumber<TNumber>"
+        }
+      },
       "boolean": "bool",
       "Uint8Array": "byte[]",
       "HTMLObjectElement": "ElementReference"
@@ -368,7 +374,7 @@ With [function transform] set to "first upper case" you get:
   -> InvokeTrySync_textSaveNumber(...)  
   -> InvokeAsync_textSaveNumber(...)
 
-\[name pattern\] for preload works pretty much the same, except there is only 1 variable:
+The \[name pattern\] for preload or module grouping works pretty much the same, except there is only 1 variable:
 
 - #module#
 
@@ -386,6 +392,96 @@ If your pattern ends already with "Async", for example with the #action# variabl
 
 
 ### Type Map
+
+This map defines all types that are convertible between the languages. Types with the same name does not need to be listed.
+Keep in mind that the JSRuntime conversion logic must support the mapping, otherwise you will end up with the wrong type.
+
+To define a convertible pair, set the TS-type as key and the C#-type as value:
+
+```json
+"type map": {
+  "number": "double" 
+}
+```
+
+Generic types are not detected automatically and must be specified explicitly.
+The above example is actually a shorthand:
+
+```json
+"type map": {
+  "number": {
+    "type": "double",
+    "generic types": []
+  }
+}
+```
+
+So, if your type depends on one or more generic types, specify it in "generic types":
+
+```json
+"type map": {
+  "number": {
+    "type": "INumber<T>",
+    "generic types": "T"
+  }
+}
+```
+
+This is once again a shorthand for:
+
+```json
+"type map": {
+  "MyList": {
+    "type": "INumber<TSelf>",
+    "generic types": [
+      {
+        "name": "TSelf",
+        "constraint": null
+      }
+    }
+  }
+}
+```
+
+The above example will work on types like List&lt;T&gt;, but not INumber&lt;TSelf&gt;.
+To use INumber&lt;TSelf&gt; properly, we need to use type constraint: 
+
+```json
+"type map": {
+  "number": {
+    "type": "TNumber",
+    "generic types": {
+      "name": "TNumber",
+      "constraint": "INumber<TNumber>"
+    }
+  }
+}
+```
+
+If you want to add multiple constraints on a type, just separate them with ','.  
+Here a final complete example:
+
+```json
+"type map": {
+  "JSType": {
+    "type": "CSharpType<TType1, TType2>",
+    "generic types": [
+      {
+        "name": "TType1",
+        "constraint": "constraint1, constraint2, ..."
+      },
+      {
+        "name": "TType2",
+        "constraint": "IDisposable, new()"
+      }
+    ]
+  }
+}
+```
+
+**Note**: generic-type naming conflicts are not detected nor handled, so make sure your generic types are named uniquely.
+<br></br>
+
 
 Variants of nullable or optional are not concidered as different types.
 If a TS-variable is nullable, it is also nullable in C#.
@@ -554,15 +650,11 @@ This package is in preview and breaking changes may occur.
 
 There are some features planned (no guarantees whatsoever):
 
-* Generic type-mapping (INumber&lt;T&gt; instead of double)
-* Generic TS-Functions
-
 - TSRuntime as VS-Extension
 - map callbacks <-> delegates
 - improved parser (summary, .ts, .js with JSDocs)
 - support for non-module files
-
-* [JSImport]/[JSExport] interop
+- Generic TS-Functions
 
 
 <br></br>
@@ -579,3 +671,5 @@ There are some features planned (no guarantees whatsoever):
   Added key "generate on save" and "action name" keys to config.
 - 0.4  
   Module grouping is now supported. Small breaking change: A namespace that contains IServiceCollection is required when serviceExtension is enabled and namespace *Microsoft.Extensions.DependencyInjection* was added to the defaults.
+- 0.5  
+  Generics in type map is supported now.
