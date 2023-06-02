@@ -24,7 +24,7 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 
-    <Version>0.5.0</Version>
+    <Version>0.5.1</Version>
 
     <!--<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
   </PropertyGroup>
@@ -40,7 +40,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="7.0.2" />
+    <PackageReference Include="System.Text.Json" Version="6.0.7" />
     <PackageReference Include="PolySharp" Version="1.13.2" PrivateAssets="all" />
   </ItemGroup>
 

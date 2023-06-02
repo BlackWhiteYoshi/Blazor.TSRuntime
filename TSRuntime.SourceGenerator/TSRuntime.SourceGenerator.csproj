@@ -30,7 +30,7 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
 
-    <Version>0.5.0</Version>
+    <Version>0.5.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -61,7 +61,7 @@
   <!-- generator dependencies -->  
 
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="7.0.2" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="System.Text.Json" Version="6.0.7" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="System.Buffers" Version="4.5.1" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="System.Memory" Version="4.5.5" PrivateAssets="all" GeneratePathProperty="true" />
