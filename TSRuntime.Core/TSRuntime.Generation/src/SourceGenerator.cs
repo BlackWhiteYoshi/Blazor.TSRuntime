@@ -33,20 +33,12 @@ public sealed class SourceGenerator : IIncrementalGenerator {
     private readonly string Content = $$""""
         {{NAMESPACE_USINGS}}
 
-        ``
-        if (!config.ModuleGrouping) {
-        `+
+        `` if (!config.ModuleGrouping) { `+
         {{SingleInterface}}
-        ``
-        }
-        `-
-        ``
-        else {
-        `+
+        `` } `-
+        `` else { `+
         {{MultipleInterfaces}}
-        ``
-        }
-        `-
+        `` } `-
 
         {{ServiceExtension}}
         """";
@@ -73,9 +65,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
 
         {{Module}}
             #endregion
-        ``
-        }
-        `-
+        `` } `-
         
 
         {{PrivateInvokeMethods(true)}}
@@ -109,9 +99,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         {{Module}}
         }
         
-        ``
-        }
-        `-
+        `` } `-
 
         {{ITS_RUNTIME_SUMMARY}}
         public interface ITSRuntime : {{INTERFACE_MODULE_NAMES}}ITSBase {
@@ -188,13 +176,9 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         using System.Diagnostics.CodeAnalysis;
         using System.Threading;
         using System.Threading.Tasks;
-        ``
-        foreach (string usingStatement in config.UsingStatements) {
-        `+
+        `` foreach (string usingStatement in config.UsingStatements) { `+
         using `usingStatement`;
-        ``
-        }
-        `-
+        `` } `-
         
         namespace Microsoft.JSInterop;
         """;
@@ -209,13 +193,9 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             /// </summary>
             /// <returns>A Task that will complete when all module loading Tasks have completed.</returns>
             public Task `config.PreloadAllModulesName`() {
-        ``
-        foreach (TSModule module in structureTree.ModuleList) {
-        `+
+        `` foreach (TSModule module in structureTree.ModuleList) { `+
                 {{PRELOAD_NAME_PATTERN}}();
-        ``
-        }
-        `-
+        `` } `-
 
                 return Task.WhenAll(Modules!);
             }
@@ -269,21 +249,13 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 (true, true, true) => "?[]?"
             };
         `+
-        ``
-        if (config.PromiseOnlyAsync && function.ReturnPromise) {
-        `+
+        `` if (config.PromiseOnlyAsync && function.ReturnPromise) { `+
         {{Get_TrySync_Async(trySync: false)}}
 
+        `` } `-
+        `` else { `+
+        `` if (config.InvokeFunctionSyncEnabled) { `+
         ``
-        }
-        `-
-        ``
-        else {
-        `+
-        ``
-        if (config.InvokeFunctionSyncEnabled) {
-        `+
-            ``
         int lastIndex = function.ParameterList.Count;
         do {
             lastIndex--;
@@ -295,43 +267,25 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             /// <para>If module is not loaded or synchronous is not supported, it fails with an exception.</para>
             /// </summary>
         {{SUMMARY_PARAMETERS}}
-        ``
-        if (returnType != "void")
-        `+
+        `` if (returnType != "void") `+
             /// <returns>result of the JS-function.</returns>
         ```-
             public `returnType``returnModifiers` {{GetFunctionNamePattern("config.InvokeFunctionActionNameSync")}}{{TYPE_PARAMETERS}}({{PARAMETERS_JOIN}}){{TYPE_CONSTAINTS}}
                 => Invoke<{{MAPPED_IJS_VOID_RESULT}}>(`index`, "`module.ModulePath`", "`function.Name`"{{ARGUMENTS}});
-        ``
-        }
-        while (lastIndex >= 0 && function.ParameterList[lastIndex].Optional);
-        `-
-        ``
-        }
-        `-
-        ``
-        if (config.InvokeFunctionTrySyncEnabled) {
-        `+
+        `` }
+        while (lastIndex >= 0 && function.ParameterList[lastIndex].Optional); `-
+        `` } `-
+        `` if (config.InvokeFunctionTrySyncEnabled) { `+
 
         {{Get_TrySync_Async(trySync: true)}}
-        ``
-        }
-        `-
-        ``
-        if (config.InvokeFunctionAsyncEnabled) {
-        `+
+        `` } `-
+        `` if (config.InvokeFunctionAsyncEnabled) { `+
 
         {{Get_TrySync_Async(trySync: false)}}
-        ``
-        }
-        `-
+        `` } `-
             
-        ``
-        }
-        `-
-        ``
-        }
-        `-
+        `` } `-
+        `` } `-
         """;
 
     private static string Get_TrySync_Async(bool trySync) {
@@ -362,30 +316,20 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                 /// </summary>
             {{SUMMARY_PARAMETERS}}
                 /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
-            ``
-            if (returnType == "void") {
-            `+
+            `` if (returnType == "void") { `+
                 /// <returns>A Task that will complete when the JS-Function have completed.</returns>
                 public Task {{GetFunctionNamePattern(methodName)}}{{TYPE_PARAMETERS}}({{PARAMETERS}}CancellationToken cancellationToken = default){{TYPE_CONSTAINTS}} {
                     ValueTask<IJSVoidResult> task = {{methodAction}}<IJSVoidResult>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
                     return task.IsCompleted ? Task.CompletedTask : task.AsTask();
                 }
-            ``
-            }
-            `-
-            ``
-            else {
-            `+
+            `` } `-
+            `` else { `+
                 /// <returns>result of the JS-function<./returns>
                 public ValueTask<`returnType``returnModifiers`> {{GetFunctionNamePattern(methodName)}}{{TYPE_PARAMETERS}}({{PARAMETERS}}CancellationToken cancellationToken = default){{TYPE_CONSTAINTS}}
                     => {{methodAction}}<`returnType``returnModifiers`>(`index`, "`module.ModulePath`", "`function.Name`", cancellationToken{{ARGUMENTS}});
-            ``
-            }
-            `-
-            ``
-            }
-            while (lastIndex >= 0 && function.ParameterList[lastIndex].Optional);
-            `-
+            `` } `-
+            `` }
+            while (lastIndex >= 0 && function.ParameterList[lastIndex].Optional); `-
             """;
     }
 
@@ -465,9 +409,7 @@ public sealed class SourceGenerator : IIncrementalGenerator {
     /// </summary>
     private const string JSRUNTIME_METHODS = """
             #region JSRuntime methods
-        ``
-        if (config.JSRuntimeSyncEnabled) {
-        `+
+        `` if (config.JSRuntimeSyncEnabled) { `+
 
             /// <summary>
             /// Invokes the specified JavaScript function synchronously.
@@ -487,12 +429,8 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             public TResult Invoke<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] TResult>(string identifier, params object?[]? args)
                 => ((IJSInProcessRuntime)JsRuntime).Invoke<TResult>(identifier, args);
 
-        ``
-        }
-        `-
-        ``
-        if (config.JSRuntimeTrySyncEnabled) {
-        `+
+        `` } `-
+        `` if (config.JSRuntimeTrySyncEnabled) { `+
 
             /// <summary>
             /// This method performs synchronous, if the underlying implementation supports synchrounous interoperability.
@@ -538,12 +476,8 @@ public sealed class SourceGenerator : IIncrementalGenerator {
                     return JsRuntime.InvokeAsync<TValue>(identifier, cancellationToken, args);
             }
         
-        ``
-        }
-        `-
-        ``
-        if (config.JSRuntimeAsyncEnabled) {
-        `+
+        `` } `-
+        `` if (config.JSRuntimeAsyncEnabled) { `+
 
             /// <summary>
             /// Invokes the specified JavaScript function asynchronously.
@@ -599,17 +533,13 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, params object?[]? args)
                 => JsRuntime.InvokeAsync<TValue>(identifier, cancellationToken, args);
 
-        ``
-        }
-        `-
+        `` } `-
             #endregion
         """;
 
 
     private const string ServiceExtension = $$"""
-        ``
-        if (config.ModuleGroupingServiceExtension) {
-        `+
+        `` if (config.ModuleGroupingServiceExtension) { `+
         public static class TSRuntimeServiceExctension {
             /// <summary>
             /// Registers a scoped ITSRuntime with a TSRuntime as implementation and if available, registers the module interfaces with the same TSRuntime-object.
@@ -618,27 +548,17 @@ public sealed class SourceGenerator : IIncrementalGenerator {
             /// <returns></returns>
             public static IServiceCollection AddTSRuntime(this IServiceCollection services) {
                 services.AddScoped<ITSRuntime, TSRuntime>();
-        ``
-        if (config.ModuleGrouping) {
-        `+
+        `` if (config.ModuleGrouping) { `+
 
-        ``
-        foreach (TSModule module in structureTree.ModuleList) {
-        `+
+        `` foreach (TSModule module in structureTree.ModuleList) { `+
                 services.AddScoped<{{INTERFACE_MODULE_NAME}}>(serviceProvider => serviceProvider.GetRequiredService<ITSRuntime>());
-        ``
-        }
-        `-
-        ``
-        }
-        `-
+        `` } `-
+        `` } `-
 
                 return services;
             }
         }
-        ``
-        }
-        `-
+        `` } `-
         """;
 
     #endregion
@@ -647,20 +567,12 @@ public sealed class SourceGenerator : IIncrementalGenerator {
     #region Substitution
 
     private const string SUMMARY_PARAMETERS = """
-        ``
-        foreach (GenericType genericType in genericParameterList) {
-        `+
+        `` foreach (GenericType genericType in genericParameterList) { `+
             /// <typeparam name="`genericType.Name`"></typeparam>
-        ``
-        }
-        `-
-        ``
-        for (int __i = 0; __i <= lastIndex; __i++) {
-        `+
+        `` } `-
+        `` for (int __i = 0; __i <= lastIndex; __i++) { `+
             /// <param name="`function.ParameterList[__i].Name`"></param>
-        ``
-        }
-        `-
+        `` } `-
         """;
 
 
@@ -741,18 +653,11 @@ public sealed class SourceGenerator : IIncrementalGenerator {
         """;
 
     private const string TYPE_CONSTAINTS = """
-        ``
-        foreach (GenericType genericType in genericParameterList) {
-        `+
-        ``
-        if (genericType.Constraint != null) {
-        `+
+        `` foreach (GenericType genericType in genericParameterList) { `+
+        `` if (genericType.Constraint != null) { `+
          where `genericType.Name` : `genericType.Constraint```
-        }
-        `-
-        ``
-        }
-        `-
+        } `-
+        `` } `-
 
         """;
 
@@ -780,12 +685,9 @@ public sealed class SourceGenerator : IIncrementalGenerator {
 
 
     private const string INTERFACE_MODULE_NAMES = $$"""
-        ``
-        foreach (TSModule module in structureTree.ModuleList) {
-        `+
+        `` foreach (TSModule module in structureTree.ModuleList) { `+
         {{INTERFACE_MODULE_NAME}}, ``
-        }
-        `-
+        } `-
         """;
 
     private const string INTERFACE_MODULE_NAME = """

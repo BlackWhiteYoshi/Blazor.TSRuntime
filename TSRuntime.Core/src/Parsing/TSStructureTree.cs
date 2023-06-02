@@ -21,7 +21,7 @@ public sealed class TSStructureTree {
     /// <summary>
     /// Traverses recursively the given folder or read the given file and parses every "*.d.ts"-file as <see cref="TSModule"/> and adds it to <see cref="ModuleList"/>.
     /// </summary>
-    /// <param name="path">dictionary or file to the source</param>
+    /// <param name="path">directory or file to the source</param>
     public static async Task<TSStructureTree> ParseFiles(string path) {
         TSStructureTree structureTree = new();
         await structureTree.Parse(path);
@@ -31,7 +31,7 @@ public sealed class TSStructureTree {
     /// <summary>
     /// Traverses recursively the given folder or read the given file and parses every "*.d.ts"-file as <see cref="TSModule"/> and adds it to <see cref="ModuleList"/>.
     /// </summary>
-    /// <param name="path">dictionary or file to the source</param>
+    /// <param name="path">directories or files to the source</param>
     public static async Task<TSStructureTree> ParseFiles(DeclarationPath[] pathList) {
         TSStructureTree structureTree = new();
         await structureTree.Parse(pathList);
@@ -42,13 +42,13 @@ public sealed class TSStructureTree {
     /// <summary>
     /// Traverses recursively the given folder or read the given file and parses every "*.d.ts"-file as <see cref="TSModule"/> and adds it to <see cref="ModuleList"/>.
     /// </summary>
-    /// <param name="path">dictionary or file to the source</param>
+    /// <param name="path">directory or file to the source</param>
     public Task Parse(string path) => Parse(new DeclarationPath[1] { new(path) });
 
     /// <summary>
     /// Traverses recursively the given folders or read the given files and parses every "*.d.ts"-file as <see cref="TSModule"/> and adds it to <see cref="ModuleList"/>.
     /// </summary>
-    /// <param name="pathList">TODO.</param>
+    /// <param name="pathList">directories or files to the source</param>
     public async Task Parse(DeclarationPath[] pathList) {
         foreach ((string include, string[] excludes, string? fileModulePath) in pathList) {
             if (File.Exists(include)) {
