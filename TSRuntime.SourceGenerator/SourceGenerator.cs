@@ -8,7 +8,7 @@ using TSRuntime.FileWatching;
 
 namespace TSRuntime.SourceGenerator;
 
-[Generator]
+[Generator(LanguageNames.CSharp)]
 public sealed class SourceGenerator : ISourceGenerator, IDisposable {
     private TSFileWatcher? fileWatcher;
 
