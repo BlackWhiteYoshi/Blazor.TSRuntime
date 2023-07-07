@@ -8,9 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="tsconfig.tsruntime.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Content Include="tsconfig.tsruntime.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
