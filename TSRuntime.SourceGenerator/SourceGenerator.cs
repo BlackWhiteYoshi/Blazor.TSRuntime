@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.Extensions.ObjectPool;
 using System.Text;
 using TSRuntime.Core.Configs;
 using TSRuntime.Core.Generation;
@@ -13,16 +14,16 @@ public sealed class SourceGenerator : ISourceGenerator, IDisposable {
     private TSFileWatcher? fileWatcher;
 
     private string source = string.Empty;
-    private readonly StringBuilder sourceBuilder = new(10000);
+    private readonly ObjectPool<StringBuilder> stringBuilderPool = new DefaultObjectPoolProvider().CreateStringBuilderPool(initialCapacity: 8 * 1024, maximumRetainedCapacity: 1024 * 1024);
 
     private void CreateITSRuntimeContentString(TSStructureTree structureTree, Config config) {
-        lock (sourceBuilder) {
-            sourceBuilder.Clear();
-            foreach (string str in Generator.GetITSRuntimeContent(structureTree, config))
-                sourceBuilder.Append(str);
-        
-            source = sourceBuilder.ToString();
-        }
+        StringBuilder sourceBuilder = stringBuilderPool.Get();
+
+        foreach (string str in Generator.GetITSRuntimeContent(structureTree, config))
+            sourceBuilder.Append(str);
+        source = sourceBuilder.ToString();
+
+        stringBuilderPool.Return(sourceBuilder);
     }
 
 
