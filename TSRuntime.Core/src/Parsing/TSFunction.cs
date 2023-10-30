@@ -1,4 +1,6 @@
-﻿namespace TSRuntime.Core.Parsing;
+﻿using System;
+
+namespace TSRuntime.Core.Parsing;
 
 /// <summary>
 /// Represents a js-function inside a <see cref="TSModule"/>.
@@ -33,12 +35,14 @@ public sealed class TSFunction {
     /// <returns>null, if not starting with "export declare function ", otherwise tries to parse and returns a <see cref="TSFunction"/>.</returns>
     /// <exception cref="Exception">is thrown when a parsing error occurs.</exception>
     public static TSFunction? Parse(ReadOnlySpan<char> line) {
-        if (!line.StartsWith("export declare function ".AsSpan()))
+        if (line.StartsWith("export declare function ".AsSpan()))
+            line = line[24..]; // skip "export declare function "
+        else if (line.StartsWith("export function ".AsSpan()))
+            line = line[16..]; // skip "export function "
+        else
             return null;
 
         TSFunction tsFunction = new();
-        line = line[24..]; // skip "export declare function "
-
 
         // FunctionName
         int openBracket = IndexOf(line, '(');
