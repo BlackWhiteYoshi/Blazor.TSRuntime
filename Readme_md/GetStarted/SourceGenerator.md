@@ -80,7 +80,13 @@ Your .csproj-file, tsconfig.json, tsconfig.tsruntime.json should be all in the s
       "action transform": "none"
     },
     "type map": {
-      "number": "double",
+      "number": {
+        "type": "TNumber",
+        "generic types": {
+          "name": "TNumber",
+          "constraint": "INumber<TNumber>"
+        }
+      },
       "boolean": "bool",
       "Uint8Array": "byte[]",
       "HTMLObjectElement": "ElementReference"
@@ -99,6 +105,31 @@ Register them in your dependency container.
 using Microsoft.JSInterop;
 
 services.AddScoped<ITSRuntime, TSRuntime>();
+```
+
+## 5. Use It
+
+Now you are ready to rumble, to make a "Hello World" test you can create 2 files:
+
+- Example.razor
+
+```razor
+<button @onclick="InvokeJS">
+
+@code {
+    [Inject]
+    public required ITSRuntime TsRuntime { private get; init; }
+    
+    private Task InvokeJS() => TsRuntime.Example();
+}
+```
+
+- Example.razor.ts
+
+```js
+export function example() {
+    console.log("Hello World");
+}
 ```
 
 
