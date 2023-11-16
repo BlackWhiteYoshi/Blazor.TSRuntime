@@ -28,14 +28,15 @@ public sealed class SourceGenerator : ISourceGenerator, IDisposable {
 
 
     public void Dispose() {
-        if (fileWatcher != null) {
-            fileWatcher.StructureTreeChanged -= CreateITSRuntimeContentString;
-            fileWatcher.Dispose();
-        }
+        Destructor();
         GC.SuppressFinalize(this);
     }
 
     ~SourceGenerator() {
+        Destructor();
+    }
+
+    private void Destructor() {
         if (fileWatcher != null) {
             fileWatcher.StructureTreeChanged -= CreateITSRuntimeContentString;
             fileWatcher.Dispose();

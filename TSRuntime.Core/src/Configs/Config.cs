@@ -12,7 +12,7 @@ public sealed record class Config {
     /// Declares the input source. It contains folder and file paths where each paths can have some more properties.
     /// </summary>
     public DeclarationPath[] DeclarationPath { get; init; } = DeclarationPathDefault;
-    private static readonly DeclarationPath[] DeclarationPathDefault = new DeclarationPath[1] { new(string.Empty) };
+    private static readonly DeclarationPath[] DeclarationPathDefault = [new DeclarationPath(string.Empty)];
 
 
     /// <summary>
@@ -209,8 +209,8 @@ public sealed record class Config {
             try {
                 DeclarationPath = root["declaration path"] switch {
                     JsonArray array => ParseJsonArray(array),
-                    JsonObject jsonObject => new DeclarationPath[1] { ParseJsonObject(jsonObject) },
-                    JsonValue value => new DeclarationPath[1] { new(Normalize(value.ParseAsString("declaration path"))) },
+                    JsonObject jsonObject => [ParseJsonObject(jsonObject)],
+                    JsonValue value => [new(Normalize(value.ParseAsString("declaration path")))],
                     null => DeclarationPathDefault,
                     _ => throw JsonException.UnexpectedType("declaration path")
                 };
@@ -241,7 +241,7 @@ public sealed record class Config {
                     _ => throw JsonException.UnexpectedType("include")
                 };
 
-                string[] excludes = jsonObject.ParseAsStringArray("excludes") ?? Array.Empty<string>();
+                string[] excludes = jsonObject.ParseAsStringArray("excludes") ?? [];
                 for (int i = 0; i < excludes.Length; i++)
                     excludes[i] = Normalize(excludes[i]);
 
@@ -350,9 +350,9 @@ public sealed record class Config {
 
                                     GenericType[] genericTypes = keyJsonObject["generic types"] switch {
                                         JsonArray array => ParseJsonArray(array),
-                                        JsonObject jsonObject => new GenericType[1] { ParseJsonObject(jsonObject) },
-                                        JsonValue value => new GenericType[1] { new(value.ParseAsString("generic types")) },
-                                        null => Array.Empty<GenericType>(),
+                                        JsonObject jsonObject => [ParseJsonObject(jsonObject)],
+                                        JsonValue value => [new(value.ParseAsString("generic types"))],
+                                        null => [],
                                         _ => throw JsonException.UnexpectedType("generic types")
                                     };
 
@@ -732,7 +732,7 @@ file static class JsonNodeExtension {
     internal static string[]? ParseAsStringArray(this JsonNode parentNode, string parentKey)
         => parentNode[parentKey] switch {
             JsonArray array => array.ParseArrayAsStrings(parentKey),
-            JsonValue valueNode => new string[1] { valueNode.ParseAsString(parentKey) },
+            JsonValue valueNode => [valueNode.ParseAsString(parentKey)],
             null => null,
             _ => throw JsonException.UnexpectedType(parentKey)
         };

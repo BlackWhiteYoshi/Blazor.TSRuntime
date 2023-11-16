@@ -31,7 +31,7 @@ public sealed class TSFileWatcherUpdateTests : IAsyncLifetime {
         Directory.CreateDirectory(declarationPath);
 
         Config config = new() {
-            DeclarationPath = new DeclarationPath[1] { new(DECLARATION_FOLDER) }
+            DeclarationPath = [new DeclarationPath(DECLARATION_FOLDER)]
         };
 
         fileWatcher = new TSFileWatcher(config, rootFolderPath);

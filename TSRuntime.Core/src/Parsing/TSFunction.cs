@@ -14,13 +14,13 @@ public sealed class TSFunction {
     /// <summary>
     /// List of the parameters of this js-function.
     /// </summary>
-    public List<TSParameter> ParameterList { get; set; } = new();
+    public List<TSParameter> ParameterList { get; set; } = [];
 
     /// <summary>
     /// <para>Holds information about the return value.</para>
     /// <para>Since return values have no names, the <see cref="TSParameter.Name"/> defaults to "ReturnValue".</para>
     /// </summary>
-    public TSParameter ReturnType { get; set; } = new() { Name = "ReturnValue" };
+    public TSParameter ReturnType { get; set; } = new TSParameter() { Name = "ReturnValue" };
     
     /// <summary>
     /// Indicates if the <see cref="ReturnType"/> is a promise or not.

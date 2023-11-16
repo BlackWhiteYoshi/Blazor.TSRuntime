@@ -80,11 +80,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
 
 
         Config config = new() {
-            DeclarationPath = new DeclarationPath[1] {
-                new DeclarationPath($"{DECLARATION_FOLDER}/{moduleName}") {
-                    FileModulePath = testPath
-                }
-            }
+            DeclarationPath = [new DeclarationPath($"{DECLARATION_FOLDER}/{moduleName}") { FileModulePath = testPath }]
         };
 
         fileWatcher = new TSFileWatcher(config, rootFolderPath);
@@ -104,9 +100,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
 
 
         Config config = new() {
-            DeclarationPath = new DeclarationPath[1] {
-                new DeclarationPath($"{DECLARATION_FOLDER}/{moduleName}")
-            }
+            DeclarationPath = [new DeclarationPath($"{DECLARATION_FOLDER}/{moduleName}")]
         };
 
         fileWatcher = new TSFileWatcher(config, rootFolderPath);
@@ -128,10 +122,10 @@ public sealed class TSFileWatcherPathTests : IDisposable {
 
 
         Config config = new() {
-            DeclarationPath = new DeclarationPath[2] {
+            DeclarationPath = [
                 new DeclarationPath(DECLARATION_FOLDER),
                 new DeclarationPath(OTHER_DECLARATION_FOLDER)
-            }
+            ]
         };
 
         fileWatcher = new TSFileWatcher(config, rootFolderPath);
@@ -153,12 +147,10 @@ public sealed class TSFileWatcherPathTests : IDisposable {
 
 
         Config config = new() {
-            DeclarationPath = new DeclarationPath[2] {
+            DeclarationPath = [
                 new DeclarationPath(DECLARATION_FOLDER),
-                new DeclarationPath($"{OTHER_DECLARATION_FOLDER}/{moduleName}") {
-                    FileModulePath = string.Empty
-                }
-            }
+                new DeclarationPath($"{OTHER_DECLARATION_FOLDER}/{moduleName}") { FileModulePath = string.Empty }
+            ]
         };
 
         fileWatcher = new TSFileWatcher(config, rootFolderPath);
@@ -177,11 +169,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
     [Fact]
     public async Task ExcludeCreateFile_NotUpdateStructureTree() {
         Config config = new() {
-            DeclarationPath = new DeclarationPath[1] {
-                new DeclarationPath(DECLARATION_FOLDER) {
-                    Excludes = new string[1] { $"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}" }
-                }
-            }
+            DeclarationPath = [new DeclarationPath(DECLARATION_FOLDER) { Excludes = [$"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}"] }]
         };
 
         int iTsRuntimeChangedCounter = 0;
@@ -206,11 +194,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
     [Fact]
     public async Task ExcludeCreateWithMoveFile_NotUpdateStructureTree() {
         Config config = new() {
-            DeclarationPath = new DeclarationPath[1] {
-                new DeclarationPath(DECLARATION_FOLDER) {
-                    Excludes = new string[1] { $"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}" }
-                }
-            }
+            DeclarationPath = [new DeclarationPath(DECLARATION_FOLDER) { Excludes = [$"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}"] }]
         };
 
         int iTsRuntimeChangedCounter = 0;
@@ -239,11 +223,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
         await File.WriteAllTextAsync(moduleFilePath2, TestFileContent.TS_DECLARATION);
 
         Config config = new() {
-            DeclarationPath = new DeclarationPath[1] {
-                new DeclarationPath(DECLARATION_FOLDER) {
-                    Excludes = new string[1] { $"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}" }
-                }
-            }
+            DeclarationPath = [new DeclarationPath(DECLARATION_FOLDER) { Excludes = [$"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}"] }]
         };
 
         int iTsRuntimeChangedCounter = 0;
@@ -271,11 +251,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
         await File.WriteAllTextAsync(moduleFilePath2, TestFileContent.TS_DECLARATION);
 
         Config config = new() {
-            DeclarationPath = new DeclarationPath[1] {
-                new DeclarationPath(DECLARATION_FOLDER) {
-                    Excludes = new string[1] { $"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}" }
-                }
-            }
+            DeclarationPath = [new DeclarationPath(DECLARATION_FOLDER) { Excludes = [$"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}"] }]
         };
 
         int iTsRuntimeChangedCounter = 0;
@@ -302,11 +278,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
         await File.WriteAllTextAsync(moduleFilePath2, TestFileContent.TS_DECLARATION);
 
         Config config = new() {
-            DeclarationPath = new DeclarationPath[1] {
-                new DeclarationPath(DECLARATION_FOLDER) {
-                    Excludes = new string[1] { $"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}" }
-                }
-            }
+            DeclarationPath = [new DeclarationPath(DECLARATION_FOLDER) { Excludes = [$"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}"] }]
         };
 
         int iTsRuntimeChangedCounter = 0;
@@ -333,11 +305,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
         await File.WriteAllTextAsync(moduleFilePath2, TestFileContent.TS_DECLARATION);
 
         Config config = new() {
-            DeclarationPath = new DeclarationPath[1] {
-                new DeclarationPath(DECLARATION_FOLDER) {
-                    Excludes = new string[1] { $"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}" }
-                }
-            }
+            DeclarationPath = [new DeclarationPath(DECLARATION_FOLDER) { Excludes = [$"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}"] }]
         };
 
         int iTsRuntimeChangedCounter = 0;
@@ -369,11 +337,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
         await File.WriteAllTextAsync(moduleFilePath2, TestFileContent.TS_DECLARATION);
 
         Config config = new() {
-            DeclarationPath = new DeclarationPath[1] {
-                new DeclarationPath(DECLARATION_FOLDER) {
-                    Excludes = new string[1] { $"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}" }
-                }
-            }
+            DeclarationPath = [new DeclarationPath(DECLARATION_FOLDER) { Excludes = [$"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}"] }]
         };
 
         int iTsRuntimeChangedCounter = 0;
@@ -402,14 +366,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
     [Fact]
     public async Task MultipleExcludes_NotUpdateStructureTree() {
         Config config = new() {
-            DeclarationPath = new DeclarationPath[1] {
-                new DeclarationPath(DECLARATION_FOLDER) {
-                    Excludes = new string[2] {
-                        $"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}",
-                        OTHER_DECLARATION_FOLDER
-                    }
-                }
-            }
+            DeclarationPath = [new DeclarationPath(DECLARATION_FOLDER) { Excludes = [$"{DECLARATION_FOLDER}/{DECLARATION_FOLDER_NESTED}", OTHER_DECLARATION_FOLDER] }]
         };
 
         int iTsRuntimeChangedCounter = 0;
@@ -437,11 +394,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
     public async Task ExcludeModuleFilePath_NotUpdateStructureTree() {
         const string excludeFileName = "updateTest2.d.ts";
         Config config = new() {
-            DeclarationPath = new DeclarationPath[1] {
-                new DeclarationPath(DECLARATION_FOLDER) {
-                    Excludes = new string[1] { $"{DECLARATION_FOLDER}/{excludeFileName}" }
-                }
-            }
+            DeclarationPath = [new DeclarationPath(DECLARATION_FOLDER) { Excludes = [$"{DECLARATION_FOLDER}/{excludeFileName}"] }]
         };
 
         int iTsRuntimeChangedCounter = 0;
@@ -472,15 +425,7 @@ public sealed class TSFileWatcherPathTests : IDisposable {
         await File.WriteAllTextAsync(moduleFilePath, TestFileContent.TS_DECLARATION);
 
         Config config = new() {
-            DeclarationPath = new DeclarationPath[1] {
-                new DeclarationPath(filePath) {
-                    Excludes = new string[2] {
-                        DECLARATION_FOLDER,
-                        filePath
-                    },
-                    FileModulePath = string.Empty
-                }
-            }
+            DeclarationPath = [new DeclarationPath(filePath) { Excludes = [DECLARATION_FOLDER, filePath], FileModulePath = string.Empty }]
         };
 
         fileWatcher = new TSFileWatcher(config, rootFolderPath);

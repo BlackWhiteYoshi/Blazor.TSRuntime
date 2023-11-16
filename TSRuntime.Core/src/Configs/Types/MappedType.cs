@@ -1,32 +1,15 @@
 ﻿namespace TSRuntime.Core.Configs;
 
-public readonly struct MappedType : IEquatable<MappedType>
+public readonly struct MappedType(string type, GenericType[] genericTypes) : IEquatable<MappedType>
 {
-    public readonly string Type { get; init; }
-    public readonly GenericType[] GenericTypes { get; init; }
+    public readonly string Type { get; init; } = type;
+    public readonly GenericType[] GenericTypes { get; init; } = genericTypes;
 
-    public MappedType(string type)
-    {
-        Type = type;
-        GenericTypes = Array.Empty<GenericType>();
-    }
+    public MappedType(string type) : this(type, Array.Empty<GenericType>()) { }
 
-    public MappedType(string type, string genericType)
-    {
-        Type = type;
-        GenericTypes = new GenericType[1] { new(genericType) };
-    }
+    public MappedType(string type, string genericType) : this(type, [new GenericType(genericType)]) { }
 
-    public MappedType(string type, GenericType genericType) {
-        Type = type;
-        GenericTypes = new GenericType[1] { genericType };
-    }
-
-    public MappedType(string type, GenericType[] genericTypes)
-    {
-        Type = type;
-        GenericTypes = genericTypes;
-    }
+    public MappedType(string type, GenericType genericType) : this(type, [genericType]) { }
 
 
     #region IEquatable

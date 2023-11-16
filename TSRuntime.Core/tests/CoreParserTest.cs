@@ -197,9 +197,7 @@ public sealed class CoreParserTest {
 
     [Fact]
     public async Task StructureTree_ParseModules_ParsesEvery_d_ts_File_WhenParameterIsIncludeOnly() {
-        DeclarationPath[] declarationPath = new DeclarationPath[1] {
-            new DeclarationPath(RootFolder)
-        };
+        DeclarationPath[] declarationPath = [new DeclarationPath(RootFolder)];
 
         TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
@@ -209,11 +207,7 @@ public sealed class CoreParserTest {
 
     [Fact]
     public async Task StructureTree_ParseModules_ParsesNoExcludesFolder() {
-        DeclarationPath[] declarationPath = new DeclarationPath[1] {
-            new DeclarationPath(RootFolder) {
-                Excludes = new string[1] { $"{RootFolder}/{NESTED_FOLDER}" }
-            }
-        };
+        DeclarationPath[] declarationPath = [new DeclarationPath(RootFolder) { Excludes = [$"{RootFolder}/{NESTED_FOLDER}"] }];
 
         TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
@@ -223,11 +217,7 @@ public sealed class CoreParserTest {
 
     [Fact]
     public async Task StructureTree_ParseModules_ParsesNoExcludesFile() {
-        DeclarationPath[] declarationPath = new DeclarationPath[1] {
-            new DeclarationPath(RootFolder) {
-                Excludes = new string[1] { $"{RootFolder}/{NESTED_FOLDER}/{NESTED_MODULE}.d.ts" }
-            }
-        };
+        DeclarationPath[] declarationPath = [new DeclarationPath(RootFolder) { Excludes = [$"{RootFolder}/{NESTED_FOLDER}/{NESTED_MODULE}.d.ts"] }];
 
         TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
@@ -237,11 +227,7 @@ public sealed class CoreParserTest {
 
     [Fact]
     public async Task StructureTree_ParseModules_ExcludesFolderAndFileOnly() {
-        DeclarationPath[] declarationPath = new DeclarationPath[1] {
-            new DeclarationPath(RootFolder) {
-                Excludes = new string[1] { $"{RootFolder}/{NESTED_FOLDER[..^1]}" }
-            }
-        };
+        DeclarationPath[] declarationPath = [new DeclarationPath(RootFolder) { Excludes = [$"{RootFolder}/{NESTED_FOLDER[..^1]}"] }];
 
         TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
@@ -251,11 +237,7 @@ public sealed class CoreParserTest {
 
     [Fact]
     public async Task StructureTree_ParseModules_MultipleExcludes() {
-        DeclarationPath[] declarationPath = new DeclarationPath[1] {
-            new DeclarationPath(RootFolder) {
-                Excludes = new string[2] { $"{RootFolder}/{NESTED_FOLDER}", $"{RootFolder}/{MODULE}.d.ts" }
-            }
-        };
+        DeclarationPath[] declarationPath = [new DeclarationPath(RootFolder) { Excludes = [$"{RootFolder}/{NESTED_FOLDER}", $"{RootFolder}/{MODULE}.d.ts"] }];
 
         TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
@@ -265,10 +247,10 @@ public sealed class CoreParserTest {
 
     [Fact]
     public async Task StructureTree_ParseModules_ParseMultipleFolders() {
-        DeclarationPath[] declarationPath = new DeclarationPath[2] {
+        DeclarationPath[] declarationPath = [
             new DeclarationPath(RootFolder),
             new DeclarationPath($"{RootFolder}/{NESTED_FOLDER}")
-        };
+        ];
 
         TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
@@ -279,11 +261,7 @@ public sealed class CoreParserTest {
 
     [Fact]
     public async Task StructureTree_ParseModules_ParseModule_WhenPathIsFile() {
-        DeclarationPath[] declarationPath = new DeclarationPath[1] {
-            new DeclarationPath($"{RootFolder}/{MODULE}.d.ts") {
-                FileModulePath = "somePath"
-            }
-        };
+        DeclarationPath[] declarationPath = [new DeclarationPath($"{RootFolder}/{MODULE}.d.ts") { FileModulePath = "somePath" }];
 
         TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
@@ -294,12 +272,7 @@ public sealed class CoreParserTest {
     [Fact]
     public async Task StructureTree_ParseModules_IgnoresExclude_WhenPathIsFile() {
         const string modulePath = $"{RootFolder}/{MODULE}.d.ts";
-        DeclarationPath[] declarationPath = new DeclarationPath[1] {
-            new DeclarationPath(modulePath) {
-                Excludes = new string[1] { modulePath },
-                FileModulePath = "somePath"
-            }
-        };
+        DeclarationPath[] declarationPath = [new DeclarationPath(modulePath) { Excludes = [modulePath], FileModulePath = "somePath" }];
 
         TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
@@ -309,21 +282,17 @@ public sealed class CoreParserTest {
 
     [Fact]
     public async Task StructureTree_ParseModules_ThrowsDirectoryNotFoundException_WhenWrongModulePath() {
-        DeclarationPath[] declarationPath = new DeclarationPath[1] { new("somePath") };
+        DeclarationPath[] declarationPath = [new DeclarationPath("somePath")];
 
         await Assert.ThrowsAsync<DirectoryNotFoundException>(async () => await TSStructureTree.ParseFiles(declarationPath));
     }
 
     [Fact]
     public async Task StructureTree_ParseModules_ParseMultipleModules() {
-        DeclarationPath[] declarationPath = new DeclarationPath[2] {
-            new DeclarationPath($"{RootFolder}/{MODULE}.d.ts") {
-                FileModulePath = "somePath"
-            },
-            new DeclarationPath($"{RootFolder}/{NESTED_FOLDER}/{NESTED_MODULE}.d.ts") {
-                FileModulePath = "somePath"
-            }
-        };
+        DeclarationPath[] declarationPath = [
+            new DeclarationPath($"{RootFolder}/{MODULE}.d.ts") { FileModulePath = "somePath" },
+            new DeclarationPath($"{RootFolder}/{NESTED_FOLDER}/{NESTED_MODULE}.d.ts") { FileModulePath = "somePath" }
+        ];
 
         TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
@@ -334,12 +303,10 @@ public sealed class CoreParserTest {
 
     [Fact]
     public async Task StructureTree_ParseModules_FolderAndFilesWorks() {
-        DeclarationPath[] declarationPath = new DeclarationPath[2] {
+        DeclarationPath[] declarationPath = [
             new DeclarationPath($"{RootFolder}/{NESTED_FOLDER}"),
-            new DeclarationPath($"{RootFolder}/{MODULE}.d.ts") {
-                FileModulePath = "somePath"
-            }
-        };
+            new DeclarationPath($"{RootFolder}/{MODULE}.d.ts") { FileModulePath = "somePath" }
+        ];
 
         TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 
@@ -350,12 +317,10 @@ public sealed class CoreParserTest {
     [Fact]
     public async Task StructureTree_ParseModules_ExcludesAreScopedToSingle() {
         const string nestedFolderPath = $"{RootFolder}/{NESTED_FOLDER}";
-        DeclarationPath[] declarationPath = new DeclarationPath[2] {
-            new DeclarationPath(RootFolder) {
-                Excludes = new string[1] { nestedFolderPath }
-            },
+        DeclarationPath[] declarationPath = [
+            new DeclarationPath(RootFolder) { Excludes = [nestedFolderPath] },
             new DeclarationPath(nestedFolderPath)
-        };
+        ];
 
         TSStructureTree structureTree = await TSStructureTree.ParseFiles(declarationPath);
 

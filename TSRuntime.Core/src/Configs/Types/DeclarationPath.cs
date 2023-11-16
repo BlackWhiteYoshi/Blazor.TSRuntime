@@ -1,13 +1,13 @@
 ﻿namespace TSRuntime.Core.Configs;
 
-public readonly struct DeclarationPath : IEquatable<DeclarationPath>
+public readonly struct DeclarationPath(string include, string[] excludes, string? fileModulePath) : IEquatable<DeclarationPath>
 {
     /// <summary>
     /// <para>Path to a folder. Every .d.ts-file in that folder will be included.</para>
     /// <para>It can also be a path to a file. If this is a file-path, <see cref="FileModulePath"/> must also be set.</para>
     /// <para>No trailing slash.</para>
     /// </summary>
-    public readonly string Include { get; init; }
+    public readonly string Include { get; init; } = include;
 
     /// <summary>
     /// <para>Excludes specific folders or files from <see cref="Include"/>.</para>
@@ -16,7 +16,7 @@ public readonly struct DeclarationPath : IEquatable<DeclarationPath>
     /// No trailing slash allowed, otherwise that path won't match.
     /// </para>
     /// </summary>
-    public readonly string[] Excludes { get; init; }
+    public readonly string[] Excludes { get; init; } = excludes;
 
     /// <summary>
     /// <para>Relative Path/URL to load the module.<br />
@@ -24,54 +24,28 @@ public readonly struct DeclarationPath : IEquatable<DeclarationPath>
     /// <para>Must be set if <see cref="Include"/> is a path to a file, otherwise an exception is thrown.<br />
     /// If <see cref="Include"/> is a folder path, this does nothing.</para>
     /// </summary>
-    public readonly string? FileModulePath { get; init; }
+    public readonly string? FileModulePath { get; init; } = fileModulePath;
 
 
     /// <summary>
     /// Sets <see cref="Include"/> to given string and <see cref="Excludes"/> to an empty array.
     /// </summary>
     /// <param name="include"></param>
-    public DeclarationPath(string include)
-    {
-        Include = include;
-        Excludes = Array.Empty<string>();
-    }
+    public DeclarationPath(string include) : this(include, [], null) { }
 
     /// <summary>
     /// Sets <see cref="Include"/> and <see cref="Excludes"/> to the given values.
     /// </summary>
     /// <param name="include"></param>
     /// <param name="excludes"></param>
-    public DeclarationPath(string include, string[] excludes)
-    {
-        Include = include;
-        Excludes = excludes;
-    }
+    public DeclarationPath(string include, string[] excludes) : this(include, excludes, null) { }
 
     /// <summary>
     /// Sets <see cref="Include"/> and <see cref="FileModulePath"/> to the given values and <see cref="Excludes"/> to an empty array.
     /// </summary>
     /// <param name="include"></param>
     /// <param name="fileModulePath"></param>
-    public DeclarationPath(string include, string? fileModulePath)
-    {
-        Include = include;
-        Excludes = Array.Empty<string>();
-        FileModulePath = fileModulePath;
-    }
-
-    /// <summary>
-    /// Sets <see cref="Include"/>, <see cref="Excludes"/> and <see cref="FileModulePath"/> to the given values.
-    /// </summary>
-    /// <param name="include"></param>
-    /// <param name="excludes"></param>
-    /// <param name="fileModulePath"></param>
-    public DeclarationPath(string include, string[] excludes, string? fileModulePath)
-    {
-        Include = include;
-        Excludes = excludes;
-        FileModulePath = fileModulePath;
-    }
+    public DeclarationPath(string include, string? fileModulePath) : this(include, [], fileModulePath) { }
 
 
     public readonly void Deconstruct(out string include, out string[] excludes, out string? fileModulePath)

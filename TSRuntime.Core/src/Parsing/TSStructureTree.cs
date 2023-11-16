@@ -10,12 +10,12 @@ public sealed class TSStructureTree {
     /// <summary>
     /// Contains a list of js-files that are typically imported as modules. 
     /// </summary>
-    public List<TSModule> ModuleList { get; set; } = new();
+    public List<TSModule> ModuleList { get; set; } = [];
     
     /// <summary>
     /// Contains a list of js-functions that are typically statically included in the html per &lt;script&gt;-tag
     /// </summary>
-    public List<TSFunction> FunctionList { get; set; } = new();
+    public List<TSFunction> FunctionList { get; set; } = [];
 
 
     /// <summary>

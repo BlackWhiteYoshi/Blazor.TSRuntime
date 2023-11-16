@@ -15,7 +15,7 @@ public sealed class TSFileWatcher : IDisposable {
 
 
     public TSStructureTree StructureTree { get; } = new();
-    private readonly Dictionary<string, int> moduleMap = new();
+    private readonly Dictionary<string, int> moduleMap = [];
 
     public Config Config { get; private set; }
     private readonly string basePath;
@@ -368,7 +368,7 @@ public sealed class TSFileWatcher : IDisposable {
     /// <summary>
     /// contains new and local modules, so only modules that are not in structureTree
     /// </summary>
-    private readonly HashSet<TSModule> dirtyModules = new();
+    private readonly HashSet<TSModule> dirtyModules = [];
     private Task moduleUpdater = Task.CompletedTask;
     
     private async Task UpdateModules() {

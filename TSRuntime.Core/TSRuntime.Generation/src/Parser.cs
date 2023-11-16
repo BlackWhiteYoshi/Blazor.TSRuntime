@@ -11,10 +11,8 @@ public static class Parser {
             builder.Append(c);
     }
 
-    private struct Core {
+    private readonly struct Core() {
         private readonly StringBuilder builder = new(65536);
-        
-        public Core() { }
     
 
         /// <summary>
@@ -22,7 +20,7 @@ public static class Parser {
         /// </summary>
         /// <param name="str"></param>
         /// <exception cref="Exception"></exception>
-        public string Parse(ReadOnlySpan<char> str) {
+        public readonly string Parse(ReadOnlySpan<char> str) {
             int index;
             int indentation = 2;
             while (str.Length > 0) {
@@ -83,7 +81,7 @@ public static class Parser {
         }
 
 
-        private void WriteString(ReadOnlySpan<char> str, int indentation) {
+        private readonly void WriteString(ReadOnlySpan<char> str, int indentation) {
             Indent(indentation);
             builder.Append("yield return \"\"\"\n");
 
@@ -94,7 +92,7 @@ public static class Parser {
             builder.Append("\"\"\";\n");
         }
 
-        private void WriteVar(ReadOnlySpan<char> var, int indentation) {
+        private readonly void WriteVar(ReadOnlySpan<char> var, int indentation) {
             Indent(indentation);
 
             builder.Append("yield return ");
@@ -103,13 +101,13 @@ public static class Parser {
             builder.Append('\n');
         }
 
-        private void WriteCode(ReadOnlySpan<char> code, int indentation) {
+        private readonly void WriteCode(ReadOnlySpan<char> code, int indentation) {
             IndentWriting(code.Trim(), indentation);
             builder.Append('\n');
         }
 
 
-        private void IndentWriting(ReadOnlySpan<char> lines, int indentation) {
+        private readonly void IndentWriting(ReadOnlySpan<char> lines, int indentation) {
             while (true) {
                 Indent(indentation);
 
@@ -125,6 +123,6 @@ public static class Parser {
             }
         }
 
-        private void Indent(int indentation) => builder.Append(' ', 4 * indentation);
+        private readonly void Indent(int indentation) => builder.Append(' ', 4 * indentation);
     }
 }

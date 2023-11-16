@@ -22,7 +22,7 @@ public sealed class TSModule {
     /// <summary>
     /// List of js-functions of a module (js-file).
     /// </summary>
-    public List<TSFunction> FunctionList { get; set; } = new();
+    public List<TSFunction> FunctionList { get; set; } = [];
 
 
     #region ParseMetaData

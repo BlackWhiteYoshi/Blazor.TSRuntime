@@ -154,7 +154,7 @@ public sealed class CoreConfigTest {
         """)]
     public void Config_ToJson_DeclarationPathWorks(string include, string[] excludes, string fileModulePath, string expected) {
         Config config = new() {
-            DeclarationPath = new DeclarationPath[1] { new(include, excludes, fileModulePath) }
+            DeclarationPath = [new DeclarationPath(include, excludes, fileModulePath)]
         };
         string json = config.ToJson();
 
@@ -164,7 +164,10 @@ public sealed class CoreConfigTest {
     [Fact]
     public void Config_ToJson_MultipleDeclarationPath() {
         Config config = new() {
-            DeclarationPath = new DeclarationPath[2] { new("qwer", new string[1] { "asdf" }, "yxcv"), new("rewq", new string[2] { "fdsa", "kjhg" }, "vcxy") }
+            DeclarationPath = [
+                new DeclarationPath("qwer") { Excludes = ["asdf"], FileModulePath = "yxcv" },
+                new DeclarationPath("rewq") { Excludes = ["fdsa", "kjhg"], FileModulePath = "vcxy" }
+            ]
         };
         string json = config.ToJson();
 
@@ -191,7 +194,7 @@ public sealed class CoreConfigTest {
     [Fact]
     public void Config_ToJson_EmptyDeclarationPath() {
         Config config = new() {
-            DeclarationPath = Array.Empty<DeclarationPath>()
+            DeclarationPath = []
         };
         string json = config.ToJson();
 
@@ -218,9 +221,9 @@ public sealed class CoreConfigTest {
     }
 
     [Theory]
-    [InlineData(new string[] { }, """[]""")]
-    [InlineData(new string[] { "Microsoft.AspNetCore.Components" }, """[ "Microsoft.AspNetCore.Components" ]""")]
-    [InlineData(new string[] { "qwer", "asdf", "yxcv" }, """
+    [InlineData(new string[0], """[]""")]
+    [InlineData(new string[1] { "Microsoft.AspNetCore.Components" }, """[ "Microsoft.AspNetCore.Components" ]""")]
+    [InlineData(new string[3] { "qwer", "asdf", "yxcv" }, """
                                                         [
                                                             "qwer",
                                                             "asdf",
@@ -238,14 +241,14 @@ public sealed class CoreConfigTest {
 
 
     [Theory]
-    [InlineData(""" "test": "Test" """, "test", "Test", new string?[] { })]
-    [InlineData(""" "test": { "type": "Test" } """, "test", "Test", new string?[] { })]
-    [InlineData(""" "test": { "type": "Test", "generic types": [] } """, "test", "Test", new string?[] { })]
-    [InlineData(""" "test": { "type": "Test", "generic types": "TTest" } """, "test", "Test", new string?[] { "TTest", null })]
-    [InlineData(""" "test": { "type": "Test", "generic types": { "name": "TTest" } } """, "test", "Test", new string?[] { "TTest", null })]
-    [InlineData(""" "test": { "type": "Test", "generic types": { "name": "TTest", "constraint": "ITest" } } """, "test", "Test", new string?[] { "TTest", "ITest" })]
-    [InlineData(""" "test": { "type": "Test", "generic types": [ { "name": "TTest", "constraint": "ITest" } ] } """, "test", "Test", new string?[] { "TTest", "ITest" })]
-    [InlineData(""" "test": { "type": "Test", "generic types": [ { "name": "TTest1", "constraint": "ITest1" }, { "name": "TTest2", "constraint": "ITest2" } ] } """, "test", "Test", new string?[] { "TTest1", "ITest1", "TTest2", "ITest2" })]
+    [InlineData(""" "test": "Test" """, "test", "Test", new string?[0])]
+    [InlineData(""" "test": { "type": "Test" } """, "test", "Test", new string?[0])]
+    [InlineData(""" "test": { "type": "Test", "generic types": [] } """, "test", "Test", new string?[0])]
+    [InlineData(""" "test": { "type": "Test", "generic types": "TTest" } """, "test", "Test", new string?[2] { "TTest", null })]
+    [InlineData(""" "test": { "type": "Test", "generic types": { "name": "TTest" } } """, "test", "Test", new string?[2] { "TTest", null })]
+    [InlineData(""" "test": { "type": "Test", "generic types": { "name": "TTest", "constraint": "ITest" } } """, "test", "Test", new string?[2] { "TTest", "ITest" })]
+    [InlineData(""" "test": { "type": "Test", "generic types": [ { "name": "TTest", "constraint": "ITest" } ] } """, "test", "Test", new string?[2] { "TTest", "ITest" })]
+    [InlineData(""" "test": { "type": "Test", "generic types": [ { "name": "TTest1", "constraint": "ITest1" }, { "name": "TTest2", "constraint": "ITest2" } ] } """, "test", "Test", new string?[4] { "TTest1", "ITest1", "TTest2", "ITest2" })]
     public void Config_FromJson_TypeMapWorks(string typeMapItemJson, string expectedKey, string expectedType, string?[] expectedGenericTypes) {
         // expected = [genericType1, constraint1, genericType2, constraint2, ...]
 
@@ -267,13 +270,13 @@ public sealed class CoreConfigTest {
     }
 
     [Theory]
-    [InlineData(new string[] { }, """{ }""")]
-    [InlineData(new string[] { "key", "value" }, """
+    [InlineData(new string[0], """{ }""")]
+    [InlineData(new string[2] { "key", "value" }, """
                                                 {
                                                       "key": "value"
                                                     }
                                                 """)]
-    [InlineData(new string[] { "a", "b", "c", "d", "e", "f" }, """
+    [InlineData(new string[6] { "a", "b", "c", "d", "e", "f" }, """
                                                             {
                                                                   "a": "b",
                                                                   "c": "d",
@@ -296,7 +299,7 @@ public sealed class CoreConfigTest {
     }
 
     [Theory]
-    [InlineData("test", "Test", new string?[] { "TTest", null }, """
+    [InlineData("test", "Test", new string?[2] { "TTest", null }, """
                                                                       "test": {
                                                                         "type": "Test",
                                                                         "generic types": [
@@ -307,7 +310,7 @@ public sealed class CoreConfigTest {
                                                                         ]
                                                                       }
                                                                 """)]
-    [InlineData("test", "Test", new string?[] { "TTest", "ITest" }, """
+    [InlineData("test", "Test", new string?[2] { "TTest", "ITest" }, """
                                                                       "test": {
                                                                         "type": "Test",
                                                                         "generic types": [
@@ -318,7 +321,7 @@ public sealed class CoreConfigTest {
                                                                         ]
                                                                       }
                                                                 """)]
-    [InlineData("test", "Test", new string?[] { "TTest1", "ITest1", "TTest2", "ITest2" }, """
+    [InlineData("test", "Test", new string?[4] { "TTest1", "ITest1", "TTest2", "ITest2" }, """
                                                                                               "test": {
                                                                                                 "type": "Test",
                                                                                                 "generic types": [
@@ -428,7 +431,7 @@ public sealed class CoreConfigTest {
         Assert.True(configA.StructureTreeEquals(configB));
 
 
-        configB = configA with { UsingStatements = Array.Empty<string>() };
+        configB = configA with { UsingStatements = [] };
         Assert.False(configA.StructureTreeEquals(configB));
 
 
@@ -453,7 +456,7 @@ public sealed class CoreConfigTest {
         Assert.False(configA.StructureTreeEquals(configB));
 
 
-        configB = configA with { TypeMap = new Dictionary<string, MappedType>() };
+        configB = configA with { TypeMap = [] };
         Assert.False(configA.StructureTreeEquals(configB));
 
 

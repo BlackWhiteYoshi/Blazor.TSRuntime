@@ -19,32 +19,19 @@ public sealed class CoreGeneratorTest {
 
     private static TSStructureTree CreateExampleStructureTree() {
         return new TSStructureTree() {
-            ModuleList = new List<TSModule>() {
-                new TSModule() {
-                    ModuleName = "Test",
-                    FilePath = "/test",
-                    ModulePath = "/test.js",
-                    FunctionList = new List<TSFunction>() {
-                        new TSFunction() {
-                            Name = "Test",
-                            ParameterList = new List<TSParameter>() {
-                                new TSParameter() {
-                                    Name = "a",
-                                    Type = "number"
-                                },
-                                new TSParameter() {
-                                    Name = "b",
-                                    Type = "string"
-                                }
-                            },
-                            ReturnType = new TSParameter() {
-                                Name = "ReturnType",
-                                Type = "number"
-                            }
-                        }
-                    }
-                }
-            }
+            ModuleList = [new TSModule() {
+                ModuleName = "Test",
+                FilePath = "/test",
+                ModulePath = "/test.js",
+                FunctionList = [new TSFunction() {
+                    Name = "Test",
+                    ParameterList = [
+                        new TSParameter() { Name = "a", Type = "number" },
+                        new TSParameter() { Name = "b", Type = "string" }
+                    ],
+                    ReturnType = new TSParameter() { Name = "ReturnType", Type = "number" }
+                }]
+            }]
         };
     }
 
@@ -471,7 +458,7 @@ public sealed class CoreGeneratorTest {
     public void UsingStatements() {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
-            UsingStatements = new string[] { "System", "banana", "", "asdf" }
+            UsingStatements = ["System", "banana", "", "asdf"]
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -492,7 +479,7 @@ public sealed class CoreGeneratorTest {
         TSStructureTree structureTree = CreateExampleStructureTree();
         Config config = new() {
             InvokeFunctionTrySyncEnabled = true,
-            TypeMap = new()
+            TypeMap = []
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -511,7 +498,7 @@ public sealed class CoreGeneratorTest {
         structureTree.ModuleList[0].FunctionList[0].ReturnType.TypeNullable = true;
         Config config = new() {
             InvokeFunctionTrySyncEnabled = true,
-            TypeMap = new()
+            TypeMap = []
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -530,7 +517,7 @@ public sealed class CoreGeneratorTest {
         structureTree.ModuleList[0].FunctionList[0].ReturnType.Array = true;
         Config config = new() {
             InvokeFunctionTrySyncEnabled = true,
-            TypeMap = new()
+            TypeMap = []
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -550,7 +537,7 @@ public sealed class CoreGeneratorTest {
         structureTree.ModuleList[0].FunctionList[0].ReturnType.ArrayNullable = true;
         Config config = new() {
             InvokeFunctionTrySyncEnabled = true,
-            TypeMap = new()
+            TypeMap = []
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -571,7 +558,7 @@ public sealed class CoreGeneratorTest {
         structureTree.ModuleList[0].FunctionList[0].ReturnType.ArrayNullable = true;
         Config config = new() {
             InvokeFunctionTrySyncEnabled = true,
-            TypeMap = new()
+            TypeMap = []
         };
 
         IEnumerable<string> tsRuntimeContent = Generator.GetITSRuntimeContent(structureTree, config);
@@ -614,16 +601,8 @@ public sealed class CoreGeneratorTest {
     public void SimpleGeneric() {
         TSFunction function = new() {
             Name = "Test",
-            ParameterList = new List<TSParameter>() {
-                new TSParameter() {
-                    Name = "p1",
-                    Type = "number"
-                }
-            },
-            ReturnType = new TSParameter() {
-                Name = "ReturnType",
-                Type = "void"
-            }
+            ParameterList = [new TSParameter() { Name = "p1", Type = "number" }],
+            ReturnType = new TSParameter() { Name = "ReturnType", Type = "void" }
         };
         TSStructureTree structureTree = CreateExampleStructureTree();
         structureTree.ModuleList[0].FunctionList[0] = function;
@@ -643,20 +622,11 @@ public sealed class CoreGeneratorTest {
     public void DoubleGeneric_DoesNotProduceDuplicate() {
         TSFunction function = new() {
             Name = "Test",
-            ParameterList = new List<TSParameter>() {
-                new TSParameter() {
-                    Name = "p1",
-                    Type = "number"
-                },
-                new TSParameter() {
-                    Name = "p2",
-                    Type = "number"
-                }
-            },
-            ReturnType = new TSParameter() {
-                Name = "ReturnType",
-                Type = "void"
-            }
+            ParameterList = [
+                new TSParameter() { Name = "p1", Type = "number" },
+                new TSParameter() { Name = "p2", Type = "number" }
+            ],
+            ReturnType = new TSParameter() { Name = "ReturnType", Type = "void" }
         };
         TSStructureTree structureTree = CreateExampleStructureTree();
         structureTree.ModuleList[0].FunctionList[0] = function;
@@ -676,11 +646,8 @@ public sealed class CoreGeneratorTest {
     public void ReturnTypeGeneric() {
         TSFunction function = new() {
             Name = "Test",
-            ParameterList = new List<TSParameter>(),
-            ReturnType = new TSParameter() {
-                Name = "ReturnType",
-                Type = "number"
-            }
+            ParameterList = [],
+            ReturnType = new TSParameter() { Name = "ReturnType", Type = "number" }
         };
         TSStructureTree structureTree = CreateExampleStructureTree();
         structureTree.ModuleList[0].FunctionList[0] = function;
@@ -700,20 +667,11 @@ public sealed class CoreGeneratorTest {
     public void DoubleGenericAndReturnTypeGeneric() {
         TSFunction function = new() {
             Name = "Test",
-            ParameterList = new List<TSParameter>() {
-                new TSParameter() {
-                    Name = "p1",
-                    Type = "number"
-                },
-                new TSParameter() {
-                    Name = "p2",
-                    Type = "number"
-                }
-            },
-            ReturnType = new TSParameter() {
-                Name = "ReturnType",
-                Type = "number"
-            }
+            ParameterList = [
+                new TSParameter() { Name = "p1", Type = "number" },
+                new TSParameter() { Name = "p2", Type = "number" }
+            ],
+            ReturnType = new TSParameter() { Name = "ReturnType", Type = "number" }
         };
         TSStructureTree structureTree = CreateExampleStructureTree();
         structureTree.ModuleList[0].FunctionList[0] = function;
@@ -733,22 +691,11 @@ public sealed class CoreGeneratorTest {
     public void GenericOptional_OnlyWhenGenericNeeded() {
         TSFunction function = new() {
             Name = "Test",
-            ParameterList = new List<TSParameter>() {
-                new TSParameter() {
-                    Name = "p1",
-                    Type = "number",
-                    Optional = true
-                },
-                new TSParameter() {
-                    Name = "p2",
-                    Type = "number",
-                    Optional = true
-                }
-            },
-            ReturnType = new TSParameter() {
-                Name = "ReturnType",
-                Type = "void"
-            }
+            ParameterList = [
+                new TSParameter() { Name = "p1", Type = "number", Optional = true },
+                new TSParameter() { Name = "p2", Type = "number", Optional = true }
+            ],
+            ReturnType = new TSParameter() { Name = "ReturnType", Type = "void" }
         };
         TSStructureTree structureTree = CreateExampleStructureTree();
         structureTree.ModuleList[0].FunctionList[0] = function;
@@ -778,20 +725,11 @@ public sealed class CoreGeneratorTest {
     public void DoubleDifferentGenerics() {
         TSFunction function = new() {
             Name = "Test",
-            ParameterList = new List<TSParameter>() {
-                new TSParameter() {
-                    Name = "p1",
-                    Type = "number"
-                },
-                new TSParameter() {
-                    Name = "p2",
-                    Type = "Test",
-                }
-            },
-            ReturnType = new TSParameter() {
-                Name = "ReturnType",
-                Type = "void"
-            }
+            ParameterList = [
+                new TSParameter() { Name = "p1", Type = "number" },
+                new TSParameter() { Name = "p2", Type = "Test" }
+            ],
+            ReturnType = new TSParameter() { Name = "ReturnType", Type = "void" }
         };
         TSStructureTree structureTree = CreateExampleStructureTree();
         structureTree.ModuleList[0].FunctionList[0] = function;
