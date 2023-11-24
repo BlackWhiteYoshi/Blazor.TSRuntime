@@ -28,16 +28,14 @@ public static partial class Generator {
         /// <para>An implementation for <see cref="ITSRuntime"/>.</para>
         /// <para>It manages JS-modules: It loads the modules, caches it in an array and disposing releases all modules.</para>
         /// </summary>
-        public sealed class TSRuntime : ITSRuntime, IDisposable, IAsyncDisposable
-        {
+        public sealed class TSRuntime : ITSRuntime, IDisposable, IAsyncDisposable {
             #region construction
 
             private readonly IJSRuntime _jsRuntime;
             IJSRuntime ITSBase.JsRuntime => _jsRuntime;
 
 
-            public TSRuntime(IJSRuntime jsRuntime)
-            {
+            public TSRuntime(IJSRuntime jsRuntime) {
                 _jsRuntime = jsRuntime;
             }
 
@@ -49,50 +47,52 @@ public static partial class Generator {
             private readonly CancellationTokenSource cancellationTokenSource = new();
 
             /// <summary>
-            /// Releases all modules asynchronously in parallel per fire and forget.
+            /// Releases each module synchronously if possible, otherwise asynchronously per fire and forget.
             /// </summary>
-            public void Dispose()
-            {
+            public void Dispose() {
                 if (cancellationTokenSource.IsCancellationRequested)
                     return;
 
                 cancellationTokenSource.Cancel();
                 cancellationTokenSource.Dispose();
 
-                for (int i = 0; i < modules.Length; i++)
-                {
+                for (int i = 0; i < modules.Length; i++) {
                     Task<IJSObjectReference>? module = modules[i];
 
                     if (module?.IsCompletedSuccessfully == true)
-                        _ = module.Result.DisposeAsync().Preserve();
+                        if (module.Result is IJSInProcessObjectReference inProcessModule)
+                            inProcessModule.Dispose();
+                        else
+                            _ = module.Result.DisposeAsync().Preserve();
 
                     modules[i] = null;
                 }
             }
 
             /// <summary>
-            /// Releases all modules asynchronously in parallel and returns a task that completes, when all module tasks complets.
+            /// <para>Releases each module synchronously if possible, otherwise asynchronously and returns a task that completes, when all module disposing tasks complete.</para>
+            /// <para>The asynchronous disposing tasks are happening in parallel.</para>
             /// </summary>
             /// <returns></returns>
-            public ValueTask DisposeAsync()
-            {
+            public ValueTask DisposeAsync() {
                 if (cancellationTokenSource.IsCancellationRequested)
                     return ValueTask.CompletedTask;
 
                 cancellationTokenSource.Cancel();
                 cancellationTokenSource.Dispose();
 
-                List<Task> taskList = new();
-                for (int i = 0; i < modules.Length; i++)
-                {
+                List<Task> taskList = new(modules.Length);
+                for (int i = 0; i < modules.Length; i++) {
                     Task<IJSObjectReference>? module = modules[i];
 
                     if (module?.IsCompletedSuccessfully == true)
-                    {
-                        ValueTask valueTask = module.Result.DisposeAsync();
-                        if (!valueTask.IsCompleted)
-                            taskList.Add(valueTask.AsTask());
-                    }
+                        if (module.Result is IJSInProcessObjectReference inProcessModule)
+                            inProcessModule.Dispose();
+                        else {
+                            ValueTask valueTask = module.Result.DisposeAsync();
+                            if (!valueTask.IsCompleted)
+                                taskList.Add(valueTask.AsTask());
+                        }
 
                     modules[i] = null;
                 }
