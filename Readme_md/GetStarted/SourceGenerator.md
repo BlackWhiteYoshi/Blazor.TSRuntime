@@ -48,7 +48,7 @@ In your .csproj-file put a package reference to *TSRuntime.SourceGenerator*.
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="TSRuntime.SourceGenerator" Version="x.x.x" PrivateAssets="all" />
+  <PackageReference Include="TSRuntime.SourceGenerator" Version="{latest version}" PrivateAssets="all" />
 </ItemGroup>
 ```
 
@@ -59,7 +59,7 @@ In your .csproj-file put an additional file directive to *tsconfig.tsruntime.jso
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="TSRuntime.SourceGenerator" Version="x.x.x" PrivateAssets="all" />
+  <PackageReference Include="TSRuntime.SourceGenerator" Version="{latest version}" PrivateAssets="all" />
   <AdditionalFiles Include="tsconfig.tsruntime.json" />
 </ItemGroup>
 ```

@@ -4,7 +4,7 @@ You can also generate the class and interface by using *TSRuntime.Core* directly
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="TSRuntime.Core" Version="x.x.x" />
+  <PackageReference Include="TSRuntime.Core" Version="{latest version}" />
 </ItemGroup>
 ```
 
