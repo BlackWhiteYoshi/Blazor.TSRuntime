@@ -1,0 +1,158 @@
+using TSRuntime.Parsing;
+
+namespace TSRuntime.Tests;
+
+public static class ParserTests {
+    #region TSParamter
+
+    [Theory]
+    [InlineData("number", "number", false, false, false, false)]
+    [InlineData("string", "string", false, false, false, false)]
+    [InlineData("asdf", "asdf", false, false, false, false)]
+
+    [InlineData("number | null", "number", true, false, false, false)]
+    [InlineData("number | undefined", "number", false, false, false, true)]
+    [InlineData("number | null | undefined", "number", true, false, false, true)]
+    [InlineData("number | undefined | null", "number", true, false, false, true)]
+    [InlineData("null | undefined | number", "number", true, false, false, true)]
+    [InlineData("undefined | null | number", "number", true, false, false, true)]
+    [InlineData("null | number | undefined", "number", true, false, false, true)]
+    [InlineData("undefined | number | null", "number", true, false, false, true)]
+
+
+    [InlineData("number[]", "number", false, true, false, false)]
+    [InlineData("readonly number[]", "number", false, true, false, false)]
+    [InlineData("Array<number>", "number", false, true, false, false)]
+    [InlineData("readonly Array<number>", "number", false, true, false, false)]
+    [InlineData("number[] | null", "number", false, true, true, false)]
+    [InlineData("number[] | undefined", "number", false, true, false, true)]
+    [InlineData("number[] | null | undefined", "number", false, true, true, true)]
+    [InlineData("Array<number> | null", "number", false, true, true, false)]
+    [InlineData("Array<number> | undefined", "number", false, true, false, true)]
+    [InlineData("Array<number> | null | undefined", "number", false, true, true, true)]
+
+    [InlineData("(number | null)[]", "number", true, true, false, false)]
+    [InlineData("(number | undefined)[]", "number", true, true, false, false)]
+    [InlineData("(number | null | undefined)[]", "number", true, true, false, false)]
+    [InlineData("(number | null)[] | null", "number", true, true, true, false)]
+    [InlineData("(number | undefined)[] | undefined", "number", true, true, false, true)]
+    [InlineData("(number | null | undefined)[] | null | undefined", "number", true, true, true, true)]
+    [InlineData("readonly (number | null)[] | null", "number", true, true, true, false)]
+    [InlineData("readonly (number | undefined)[] | undefined", "number", true, true, false, true)]
+    [InlineData("readonly (number | null | undefined)[] | null | undefined", "number", true, true, true, true)]
+
+    [InlineData("[number, string]", "[number, string]", false, false, false, false)]
+    [InlineData("readonly [number, string]", "[number, string]", false, false, false, false)]
+    public static void ParsingParameter_Works(string input, string type, bool typeNullable, bool array, bool arrayNullable, bool optional) {
+        TSParameter parameter = new();
+
+        parameter.ParseType(input);
+
+        Assert.Equal(type, parameter.Type);
+        Assert.Equal(typeNullable, parameter.TypeNullable);
+        Assert.Equal(array, parameter.Array);
+        Assert.Equal(arrayNullable, parameter.ArrayNullable);
+        Assert.Equal(optional, parameter.Optional);
+    }
+
+    [Theory]
+    [InlineData("", "", false)]
+    [InlineData("a", "a", false)]
+    [InlineData("asdf", "asdf", false)]
+    [InlineData("a?", "a", true)]
+    [InlineData("asdf?", "asdf", true)]
+    public static void ParsingParameterName_Works(string input, string name, bool optional) {
+        TSParameter parameter = new();
+
+        parameter.ParseName(input);
+
+        Assert.Equal(name, parameter.Name);
+        Assert.Equal(optional, parameter.Optional);
+    }
+
+    #endregion
+
+
+    #region TSFunction
+
+    [Fact]
+    public static void ParsingFunction_WrongStartRetunrsNull() {
+        TSFunction? result = TSFunction.Parse("asdf");
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public static void ParsingFunction_RightStartButWrongSyntaxReturnsNull() {
+        TSFunction? result = TSFunction.Parse("export declare function ");
+        Assert.Null(result);
+    }
+
+    [Theory]
+    [InlineData("export declare function getCookies(): string;", "getCookies", "string", false)]
+    [InlineData("export declare function asdf(): qwer;", "asdf", "qwer", false)]
+    [InlineData("export declare function Test(a?: number): void;", "Test", "void", false)]
+    [InlineData("export declare function longRunningTask(): Promise<void>;", "longRunningTask", "void", true)]
+    [InlineData("export declare function longRunningTask2(): Promise<something>;", "longRunningTask2", "something", true)]
+    public static void ParsingFunction_Works(string input, string name, string returnType, bool promise) {
+        TSFunction function = TSFunction.Parse(input)!;
+
+        Assert.Equal(name, function.Name);
+        Assert.Equal(returnType, function.ReturnType.Type);
+        Assert.Equal(promise, function.ReturnPromise);
+    }
+
+    #endregion
+
+
+    #region TSModule
+
+    private const string RootFolder = "/CorePaserTestData";
+    private const string MODULE = "TestModule";
+    private const string MODULE_CONTENT = "export declare function Test(a: number, b: string): number;\n";
+
+    [Fact]
+    public static void ParsingModule_MetadataOnlyHasEmptyFunctionList() {
+        TSModule module = new($"{RootFolder}/{MODULE}.d.ts", null, []);
+
+        Assert.NotEqual(string.Empty, module.FilePath);
+        Assert.NotEqual(string.Empty, module.URLPath);
+        Assert.NotEqual(string.Empty, module.Name);
+        Assert.Empty(module.FunctionList);
+    }
+
+    [Fact]
+    public static void ParsingModule_FunctionsOnlyHasEmptyMetaData() {
+        TSModule module = new($"{RootFolder}/{MODULE}.d.ts", null, []);
+        module = module.ParseFunctions(MODULE_CONTENT);
+
+        Assert.Equal($"{RootFolder}/{MODULE}.d.ts", module.FilePath);
+        Assert.Equal($"{RootFolder}/TestModule.js", module.URLPath);
+        Assert.Equal("TestModule", module.Name);
+        Assert.NotEmpty(module.FunctionList);
+    }
+
+    [Fact]
+    public static void ParsingModuleWithModulePath() {
+        const string modulePath = "somePath";
+        TSModule module = new($"{RootFolder}/{MODULE}.d.ts", $"{modulePath}.js", []);
+
+        Assert.Equal($"{RootFolder}/{MODULE}.d.ts", module.FilePath);
+        Assert.Equal($"/{modulePath}.js", module.URLPath);
+        Assert.Equal(modulePath, module.Name);
+    }
+
+
+    [Theory]
+    [InlineData("test")]
+    [InlineData("/test")]
+    [InlineData("test.js")]
+    [InlineData("/test.js")]
+    public static void ParseMetaDataModulePath(string input) {
+        TSModule tSModule = new(input, null, []);
+
+        Assert.Equal("/test.js", tSModule.URLPath);
+        Assert.Equal("test", tSModule.Name);
+    }
+
+    #endregion
+}

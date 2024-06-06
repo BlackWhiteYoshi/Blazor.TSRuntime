@@ -1,4 +1,4 @@
-# TSRuntime
+# Balzor.TSRuntime
 
 An improved JSRuntime with
 
@@ -6,4 +6,4 @@ An improved JSRuntime with
 - compile time errors instead of runtime errors
 - IntelliSense guidance
 
-For documentation or sourcecode see [github.com/BlackWhiteYoshi/TSRuntime](https://github.com/BlackWhiteYoshi/TSRuntime).
+For documentation or sourcecode see [github.com/BlackWhiteYoshi/Blazor.TSRuntime](https://github.com/BlackWhiteYoshi/Blazor.TSRuntime).
