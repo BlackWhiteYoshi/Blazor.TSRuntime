@@ -29,8 +29,8 @@ So, if your type depends on one or more generic types, specify it in "generic ty
 ```json
 "type map": {
   "number": {
-    "type": "INumber<T>",
-    "generic types": "T"
+    "type": "TNumber",
+    "generic types": "TNumber"
   }
 }
 ```
@@ -39,11 +39,11 @@ This is once again a shorthand for:
 
 ```json
 "type map": {
-  "MyList": {
-    "type": "INumber<TSelf>",
+  "number": {
+    "type": "TNumber",
     "generic types": [
       {
-        "name": "TSelf",
+        "name": "TNumber",
         "constraint": null
       }
     ]
@@ -51,8 +51,8 @@ This is once again a shorthand for:
 }
 ```
 
-The above example will work on types like List&lt;T&gt;, but not INumber&lt;TSelf&gt;.
-To use INumber&lt;TSelf&gt; properly, we need to use type constraint: 
+At last you want a type constraint on INumber&lt;TSelf&gt;,
+so you get a working mapping from *number* to *INumber&lt;TSelf&gt;*: 
 
 ```json
 "type map": {

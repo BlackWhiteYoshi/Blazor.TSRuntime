@@ -330,6 +330,20 @@ All available config keys with its default value:
 
 
 <br></br>
+## Preview
+
+This package is in preview and breaking changes may occur.
+
+There are some features planned (no guarantees whatsoever):
+
+- map .d.ts summary <-> .cs summary
+- support for .d.ts generics
+- add JSDocs Parser
+- support for non-module files
+- map callbacks <-> delegates
+
+
+<br></br>
 ## Release Notes
 
 - 0.0.1  
@@ -348,7 +362,7 @@ All available config keys with its default value:
 - 0.6  
   huge Refactoring, many breaking changes:
   - renamed the project, repository and NuGet package to "Blazor.TSRuntime" (before it was "TSRuntime")
-  - dropped *Programmatically Usage* and *Visual Studio Extension*, only *Source Generator* will be continued. Reduced project structure to 2 projects.
+  - dropped *Programmatically Usage* and *Visual Studio Extension*, only *Source Generator* will be continued -> reduced project structure to 2 projects.
   - changed ISourceGenerator to IIncrementalGenerator
     - *tsconfig.tsruntime.json* can now be named *\*.tsruntime.json*
     - .d.ts-files must be added with *&lt;AdditionalFiles Include="\*\*\\\*.d.ts" /&gt;*

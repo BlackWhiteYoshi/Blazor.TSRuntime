@@ -1,4 +1,4 @@
-# Balzor.TSRuntime
+# Blazor.TSRuntime
 
 An improved JSRuntime with
 
