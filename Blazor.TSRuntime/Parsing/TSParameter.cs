@@ -40,16 +40,13 @@ public record struct TSParameter() : IEquatable<TSParameter> {
     /// <para>Currently ignoring an optional question mark.</para>
     /// </summary>
     /// <param name="subStr"></param>
-    public void ParseName(string line, int start, int end) {
-        if (line.Length == 0)
-            return;
-
-        if (line[end - 1] == '?') {
+    public void ParseName(ReadOnlySpan<char> subStr) {
+        if (subStr is [.., '?']) {
             optional = true;
-            name = line[start..(end - 1)];
+            name = subStr[..^1].ToString();
         }
         else
-            name = line[start..end];
+            name = subStr.ToString();
     }
 
     /// <summary>
@@ -66,78 +63,66 @@ public record struct TSParameter() : IEquatable<TSParameter> {
     /// </para>
     /// </summary>
     /// <param name="subStr">Only the part of the string that represents the type of a parameter (starting after ": " and ending before ',' or ')'.</param>
-    public void ParseType(string line, int position, int end) {
-        if (line.AsSpan(position).StartsWith("readonly ".AsSpan()))
-            position += 9;
+    public void ParseType(ReadOnlySpan<char> subStr) {
+        if (subStr is ['r', 'e', 'a', 'd', 'o', 'n', 'l', 'y', ' ', ..])
+            subStr = subStr[9..];
 
         // array or type
-        {
-            (typeNullable, bool optional) = ParseNullUndefined(line, ref position, ref end);
-            this.optional = optional;
-        }
+        (typeNullable, optional) = ParseNullUndefined(ref subStr);
 
-        if (line[end - 2] == '[' && line[end - 1] == ']') {
+        if (subStr is [.., '[', ']']) {
             array = true;
             arrayNullable = typeNullable;
-            end -= 2;   // cut "..[]"
-            if (line[position] == '(') {
-                // cut "(..)"
-                position += 1;
-                end -= 1;
-
-                (bool nullable, bool optional) = ParseNullUndefined(line, ref position, ref end);
+            subStr = subStr[..^2];   // cut "..[]"
+            if (subStr[0] == '(') {
+                subStr = subStr[1..^1]; // cut "(..)"
+                (bool nullable, bool optional) = ParseNullUndefined(ref subStr);
                 typeNullable = nullable | optional;
             }
             else
                 typeNullable = false;
         }
-        else if (line.AsSpan(position).StartsWith("Array<".AsSpan())) {
+        else if (subStr is ['A', 'r', 'r', 'a', 'y', '<', ..]) {
             array = true;
             arrayNullable = typeNullable;
-            // cut "Array<..>"
-            position += 6;
-            end -= 1;
+            subStr = subStr[6..^1];   // cut "Array<..>"
 
-            (bool nullable, bool optional) = ParseNullUndefined(line, ref position, ref end);
+            (bool nullable, bool optional) = ParseNullUndefined(ref subStr);
             typeNullable = nullable | optional;
         }
 
-        type = line[position..end];
+        type = subStr.ToString();
         return;
 
 
-        static (bool nullable, bool optional) ParseNullUndefined(string line, ref int position, ref int end) {
-            switch (line.AsSpan(position, end - position)) {
+        static (bool nullable, bool optional) ParseNullUndefined(ref ReadOnlySpan<char> subStr) {
+            switch (subStr) {
                 case [.., '|', ' ', 'n', 'u', 'l', 'l', ' ', '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd']
                 or [.., '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', ' ', 'n', 'u', 'l', 'l']:
-                    end -= 19; // cut " | null | undefined" or " | undefined | null"
+                    subStr = subStr[..^19]; // cut " | null | undefined" or " | undefined | null"
                     return (true, true);
                 case ['n', 'u', 'l', 'l', ' ', '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', ..]
                 or ['u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', ' ', 'n', 'u', 'l', 'l', ' ', '|', ..]:
-                    position += 19; // cut "null | undefined | " or "undefined | null | "
+                    subStr = subStr[19..]; // cut "null | undefined | " or "undefined | null | "
                     return (true, true);
                 case ['n', 'u', 'l', 'l', ' ', '|', .., '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd']:
-                    // cut "null | .. | undefined"
-                    position += 7;
-                    end -= 12;
+                    subStr = subStr[7..^12]; // cut "null | .. | undefined"
                     return (true, true);
                 case ['u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', .., '|', ' ', 'n', 'u', 'l', 'l']:
-                    // cut "undefined | .. | null"
-                    position += 12;
-                    end -= 7;
+                    subStr = subStr[12..^7]; // cut "undefined | .. | null"
                     return (true, true);
 
                 case [.., '|', ' ', 'n', 'u', 'l', 'l']:
-                    end -= 7; // cut " | null"
+                    subStr = subStr[..^7]; // cut " | null"
                     return (true, false);
                 case ['n', 'u', 'l', 'l', ' ', '|', ..]:
-                    position += 7; // cut "null | "
+                    subStr = subStr[7..]; // cut "null | "
                     return (true, false);
                 case [.., '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd']:
-                    end -= 12; // cut " | undefined"
+                    subStr = subStr[..^12]; // cut " | undefined"
                     return (false, true);
                 case ['u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', ..]:
-                    position += 12; // cut "undefined | "
+                    subStr = subStr[12..]; // cut "undefined | "
                     return (false, true);
             }
 

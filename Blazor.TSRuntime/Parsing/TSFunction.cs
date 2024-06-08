@@ -44,30 +44,30 @@ public sealed class TSFunction : IEquatable<TSFunction> {
     /// </summary>
     /// <param name="line">An Entire line in a "d.ts"-file.</param>
     /// <returns>null, if not starting with "export declare function ", otherwise tries to parse and returns a <see cref="TSFunction"/>.</returns>
-    public static TSFunction? Parse(string line) {
-        if (line.StartsWith("export declare function "))
-            return new TSFunction(line, 24); // skip "export declare function "
-        else if (line.StartsWith("export function "))
-            return new TSFunction(line, 16); // skip "export function "
-        else
-            return null;
-    }
+    public static TSFunction? Parse(ReadOnlySpan<char> line)
+        => line switch {
+            ['e', 'x', 'p', 'o', 'r', 't', ' ', 'd', 'e', 'c', 'l', 'a', 'r', 'e', ' ', 'f', 'u', 'n', 'c', 't', 'i', 'o', 'n', ' ', ..] => new TSFunction(line, 24), // skip "export declare function "
+            ['e', 'x', 'p', 'o', 'r', 't', ' ', 'f', 'u', 'n', 'c', 't', 'i', 'o', 'n', ' ', ..] => new TSFunction(line, 16), // skip "export function "
+            _ => null
+        };
 
-    private TSFunction(string line, int position) {
+    private TSFunction(ReadOnlySpan<char> line, int position) {
         // FunctionName
-        int openBracket = line.IndexOf('(', position);
+        int openBracket = line[position..].IndexOf('(');
         if (openBracket == -1) {
             Error = (DiagnosticErrors.ModuleMissingOpenBracket, position);
             return;
         }
+        openBracket += position;
 
-        int openGenericBracket = line.IndexOf('<', position, openBracket - position);
+        int openGenericBracket = line[position..openBracket].IndexOf('<');
         if (openGenericBracket == -1) {
-            Name = line[position..openBracket];
+            Name = line[position..openBracket].ToString();
             position = openBracket + 1; // skip "("
         }
         else {
-            Name = line[position..openGenericBracket];
+            openGenericBracket += position;
+            Name = line[position..openGenericBracket].ToString();
             position = openGenericBracket + 1;
 
             // Generics
@@ -85,13 +85,13 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                 switch (c) {
                     case ' ':
                         if (!ignoreWhiteSpace) {
-                            generics.Add(line[position..i]);
+                            generics.Add(line[position..i].ToString());
                             ignoreWhiteSpace = true; // skip "extends ..."
                         }
                         break;
                     case ',':
                         if (bracketCount == 0) {
-                            generics.Add(line[position..i]);
+                            generics.Add(line[position..i].ToString());
                             i += 2; // skip ", "
                             position = i;
                             ignoreWhiteSpace = false;
@@ -107,7 +107,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                         }
                         else {
                             if (!ignoreWhiteSpace)
-                                generics.Add(line[position..i]);
+                                generics.Add(line[position..i].ToString());
                             i += 2; // skip ">("
                             position = i;
                             goto double_break;
@@ -129,12 +129,13 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                 TSParameter tsParameter = new();
 
                 // parse Name
-                int colon = line.IndexOf(':', position);
+                int colon = line[position..].IndexOf(':');
                 if (colon == -1) {
                     Error = (DiagnosticErrors.ModuleMissingColon, position);
                     return;
                 }
-                tsParameter.ParseName(line, position, colon);
+                colon += position;
+                tsParameter.ParseName(line[position..colon]);
                 position = colon + 2; // skip ": "
 
                 // parse Type
@@ -165,7 +166,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                 }
                 double_break:
 
-                tsParameter.ParseType(line, position, parameterTypeEnd);
+                tsParameter.ParseType(line[position..parameterTypeEnd]);
 
                 parameterList.Add(tsParameter);
 
@@ -189,7 +190,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
             return;
         }
 
-        if (line.AsSpan(position).StartsWith("Promise<".AsSpan())) {
+        if (line[position..] is ['P', 'r', 'o', 'm', 'i', 's', 'e', '<', ..]) {
             ReturnPromise = true;
             // cut "Promise<..>"
             position += 8;
@@ -199,7 +200,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
             ReturnPromise = false;
 
         TSParameter parameter = new() { name = "ReturnValue" };
-        parameter.ParseType(line, position, semicolon);
+        parameter.ParseType(line[position..semicolon]);
         ReturnType = parameter;
     }
 

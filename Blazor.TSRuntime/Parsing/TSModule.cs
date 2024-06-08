@@ -128,19 +128,22 @@ public sealed class TSModule : IEquatable<TSModule> {
         List<TSFunction> functionList = [];
         
         int lineNumber = 0;
-        StringReader stringReader = new(fileContent);
-        while (true) {
-            string? line = stringReader.ReadLine();
-            if (line == null)
-                break;
-
+        int lineStart = 0;
+        while (lineStart < fileContent.Length) {
+            int lineEnd = fileContent.IndexOf('\n', lineStart);
+            if (lineEnd == -1)
+                lineEnd = fileContent.Length;
+            ReadOnlySpan<char> line = fileContent.AsSpan(lineStart, lineEnd - lineStart).Trim();
             lineNumber++;
+
             TSFunction? tsFunction = TSFunction.Parse(line);
             if (tsFunction is not null)
                 if (tsFunction.Error.descriptor is null)
                     functionList.Add(tsFunction);
                 else
                     config.ErrorList.AddFunctionParseError(tsFunction.Error.descriptor, FilePath, lineNumber, tsFunction.Error.position);
+
+            lineStart = lineEnd + 1;
         }
 
         return new TSModule(FilePath, URLPath, Name, functionList);

@@ -201,10 +201,10 @@ make sure
 - restart Visual Studio to reload the generator
 
 Note:  
-To recognize a module the file must end with ".d.ts".
-Function definitions in the module must be placed at the start of a line
-and must start with "export function" or "export declare function".
-Futhermore a function definition must not contain any line breaks and the number of whitespace also matters.
+To recognize a module, the file must end with ".d.ts".  
+Function definitions inside a module must start with "export function" or "export declare function".  
+Futhermore a function definition must not contain any line breaks
+and only the whitespace around the function is cropped, the whitespace between the tokens is important.
 
 
 <br></br>

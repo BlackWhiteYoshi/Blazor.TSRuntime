@@ -48,7 +48,7 @@ public static class ParserTests {
     public static void ParsingParameter_Works(string input, string type, bool typeNullable, bool array, bool arrayNullable, bool optional) {
         TSParameter parameter = new();
 
-        parameter.ParseType(input, 0, input.Length);
+        parameter.ParseType(input);
 
         Assert.Equal(type, parameter.type);
         Assert.Equal(typeNullable, parameter.typeNullable);
@@ -66,7 +66,7 @@ public static class ParserTests {
     public static void ParsingParameterName_Works(string input, string name, bool optional) {
         TSParameter parameter = new();
 
-        parameter.ParseName(input, 0, input.Length);
+        parameter.ParseName(input);
 
         Assert.Equal(name, parameter.name);
         Assert.Equal(optional, parameter.optional);
