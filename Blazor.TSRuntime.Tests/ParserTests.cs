@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using TSRuntime.Parsing;
 
 namespace TSRuntime.Tests;
@@ -46,13 +47,13 @@ public static class ParserTests {
     public static void ParsingParameter_Works(string input, string type, bool typeNullable, bool array, bool arrayNullable, bool optional) {
         TSParameter parameter = new();
 
-        parameter.ParseType(input);
+        parameter.ParseType(input, 0, input.Length);
 
-        Assert.Equal(type, parameter.Type);
-        Assert.Equal(typeNullable, parameter.TypeNullable);
-        Assert.Equal(array, parameter.Array);
-        Assert.Equal(arrayNullable, parameter.ArrayNullable);
-        Assert.Equal(optional, parameter.Optional);
+        Assert.Equal(type, parameter.type);
+        Assert.Equal(typeNullable, parameter.typeNullable);
+        Assert.Equal(array, parameter.array);
+        Assert.Equal(arrayNullable, parameter.arrayNullable);
+        Assert.Equal(optional, parameter.optional);
     }
 
     [Theory]
@@ -64,28 +65,16 @@ public static class ParserTests {
     public static void ParsingParameterName_Works(string input, string name, bool optional) {
         TSParameter parameter = new();
 
-        parameter.ParseName(input);
+        parameter.ParseName(input, 0, input.Length);
 
-        Assert.Equal(name, parameter.Name);
-        Assert.Equal(optional, parameter.Optional);
+        Assert.Equal(name, parameter.name);
+        Assert.Equal(optional, parameter.optional);
     }
 
     #endregion
 
 
     #region TSFunction
-
-    [Fact]
-    public static void ParsingFunction_WrongStartRetunrsNull() {
-        TSFunction? result = TSFunction.Parse("asdf");
-        Assert.Null(result);
-    }
-
-    [Fact]
-    public static void ParsingFunction_RightStartButWrongSyntaxReturnsNull() {
-        TSFunction? result = TSFunction.Parse("export declare function ");
-        Assert.Null(result);
-    }
 
     [Theory]
     [InlineData("export declare function getCookies(): string;", "getCookies", "string", false)]
@@ -97,8 +86,50 @@ public static class ParserTests {
         TSFunction function = TSFunction.Parse(input)!;
 
         Assert.Equal(name, function.Name);
-        Assert.Equal(returnType, function.ReturnType.Type);
+        Assert.Equal(returnType, function.ReturnType.type);
         Assert.Equal(promise, function.ReturnPromise);
+    }
+
+    [Fact]
+    public static void ParsingFunction_WrongStartRetunrsNull() {
+        TSFunction? result = TSFunction.Parse("asdf");
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public static void ParsingFunction_MissingOpenBracketError() {
+        TSFunction? result = TSFunction.Parse("export declare function Example[);");
+
+        List<Diagnostic> errorList = [];
+        errorList.AddFunctionParseError(result!.Error.descriptor!, "E_Module.d.ts", 1, result.Error.position);
+        Assert.Equal("invalid d.ts file: 'E_Module.d.ts' at line 1: missing '(' after column 24 (the token that indicates the start of function parameters)", errorList[0].GetMessage());
+    }
+
+    [Fact]
+    public static void ParsingFunction_MissingColonError() {
+        TSFunction? result = TSFunction.Parse("export declare function Example(number myNumber);");
+
+        List<Diagnostic> errorList = [];
+        errorList.AddFunctionParseError(result!.Error.descriptor!, "E_Module.d.ts", 1, result.Error.position);
+        Assert.Equal("invalid d.ts file: 'E_Module.d.ts' at line 1: missing ':' after column 32 (the token that seperates name and type)", errorList[0].GetMessage());
+    }
+
+    [Fact]
+    public static void ParsingFunction_NoParameterEndError() {
+        TSFunction? result = TSFunction.Parse("export declare function Example(myNumber: number];");
+
+        List<Diagnostic> errorList = [];
+        errorList.AddFunctionParseError(result!.Error.descriptor!, "E_Module.d.ts", 1, result.Error.position);
+        Assert.Equal("invalid d.ts file: 'E_Module.d.ts' at line 1: no end of parameter at column 42 found, expected ',' or ')'", errorList[0].GetMessage());
+    }
+
+    [Fact]
+    public static void ParsingFunction_MissingEndingSemicolonError() {
+        TSFunction? result = TSFunction.Parse("export declare function Example()");
+
+        List<Diagnostic> errorList = [];
+        errorList.AddFunctionParseError(result!.Error.descriptor!, "E_Module.d.ts", 1, result.Error.position);
+        Assert.Equal("invalid d.ts file: 'E_Module.d.ts' at line 1: missing ';' at at column 32", errorList[0].GetMessage());
     }
 
     #endregion
@@ -123,7 +154,7 @@ public static class ParserTests {
     [Fact]
     public static void ParsingModule_FunctionsOnlyHasEmptyMetaData() {
         TSModule module = new($"{RootFolder}/{MODULE}.d.ts", null, []);
-        module = module.ParseFunctions(MODULE_CONTENT);
+        module = module.ParseFunctions(MODULE_CONTENT, null!);
 
         Assert.Equal($"{RootFolder}/{MODULE}.d.ts", module.FilePath);
         Assert.Equal($"{RootFolder}/TestModule.js", module.URLPath);

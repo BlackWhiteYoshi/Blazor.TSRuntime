@@ -1,4 +1,6 @@
-﻿namespace TSRuntime.Parsing;
+﻿using Microsoft.CodeAnalysis;
+
+namespace TSRuntime.Parsing;
 
 /// <summary>
 /// Represents a js-function inside a <see cref="TSModule"/>.
@@ -7,23 +9,29 @@ public sealed class TSFunction : IEquatable<TSFunction> {
     /// <summary>
     /// The name of the js-function. 
     /// </summary>
-    public string Name { get; private set; } = string.Empty;
+    public string Name { get; } = string.Empty;
 
     /// <summary>
     /// List of the parameters of this js-function.
     /// </summary>
-    public List<TSParameter> ParameterList { get; } = [];
+    public TSParameter[] ParameterList { get; } = [];
 
     /// <summary>
     /// <para>Holds information about the return value.</para>
-    /// <para>Since return values have no names, the <see cref="TSParameter.Name"/> defaults to "ReturnValue".</para>
+    /// <para>Since return values have no names, the <see cref="TSParameter.name"/> defaults to "ReturnValue".</para>
     /// </summary>
-    public TSParameter ReturnType { get; } = new TSParameter("ReturnValue");
-    
+    public TSParameter ReturnType { get; } = default;
+
     /// <summary>
     /// Indicates if the <see cref="ReturnType"/> is a promise or not.
     /// </summary>
-    public bool ReturnPromise { get; private set; }
+    public bool ReturnPromise { get; } = false;
+
+
+    /// <summary>
+    /// When not null, this instance could not be instantiated correctly.
+    /// </summary>
+    public (DiagnosticDescriptor? descriptor, int position) Error { get; private set; }
 
 
     /// <summary>
@@ -31,45 +39,48 @@ public sealed class TSFunction : IEquatable<TSFunction> {
     /// </summary>
     /// <param name="line">An Entire line in a "d.ts"-file.</param>
     /// <returns>null, if not starting with "export declare function ", otherwise tries to parse and returns a <see cref="TSFunction"/>.</returns>
-    public static TSFunction? Parse(ReadOnlySpan<char> line) {
-        if (line.StartsWith("export declare function ".AsSpan()))
-            line = line[24..]; // skip "export declare function "
-        else if (line.StartsWith("export function ".AsSpan()))
-            line = line[16..]; // skip "export function "
+    public static TSFunction? Parse(string line) {
+        if (line.StartsWith("export declare function "))
+            return new TSFunction(line, 24); // skip "export declare function "
+        else if (line.StartsWith("export function "))
+            return new TSFunction(line, 16); // skip "export function "
         else
             return null;
+    }
 
-        TSFunction tsFunction = new();
-
+    private TSFunction(string line, int position) {
         // FunctionName
-        int openBracket = line.IndexOf('(');
-        if (openBracket == -1)
-            return null; // new Exception($"invalid d.ts file: '{c}' expected");
-        tsFunction.Name = line[..openBracket].ToString();
+        int openBracket = line.IndexOf('(', position);
+        if (openBracket == -1) {
+            Error = (DiagnosticErrors.ModuleMissingOpenBracket, position);
+            return;
+        }
+        Name = line[position..openBracket];
 
-        line = line[(openBracket + 1)..]; // skip "("
+        position = openBracket + 1; // skip "("
+
 
         // Parameters
-        tsFunction.ParameterList.Clear();
-        if (line[0] == ')')
-            line = line[3..]; // no parameters, skip "): "
-        else
+        if (line[position] == ')')
+            position += 3; // no parameters, skip "): "
+        else {
+            List<TSParameter> parameterList = [];
             while (true) {
-                // parameter
                 TSParameter tsParameter = new();
-                tsFunction.ParameterList.Add(tsParameter);
-                
+
                 // parse Name
-                int colon = line.IndexOf(':');
-                if (colon == -1)
-                    return null; // new Exception($"invalid d.ts file: '{c}' expected");
-                tsParameter.ParseName(line[..colon]);
-                line = line[(colon + 2)..]; // skip ": "
+                int colon = line.IndexOf(':', position);
+                if (colon == -1) {
+                    Error = (DiagnosticErrors.ModuleMissingColon, position);
+                    return;
+                }
+                tsParameter.ParseName(line, position, colon);
+                position = colon + 2; // skip ": "
 
                 // parse Type
                 int parameterTypeEnd;
                 int bracketCount = 0;
-                for (int i = 0; i < line.Length; i++) {
+                for (int i = position; i < line.Length; i++) {
                     char c = line[i];
                     switch (c) {
                         case ',':
@@ -89,37 +100,47 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                 }
                 // else
                 {
-                    return null; // new Exception($"invalid d.ts file: no end of parameter found, expected ',' or ')'");
+                    Error = (DiagnosticErrors.ModuleNoParameterEnd, position);
+                    return; 
                 }
                 brackets_counted:
 
-                //int parameterTypeEnd = IndexOfParameterEnd(line);
-                tsParameter.ParseType(line[..parameterTypeEnd]);
-                line = line[parameterTypeEnd..];
+                tsParameter.ParseType(line, position, parameterTypeEnd);
 
-                if (line[0] == ',')
-                    line = line[2..]; // skip ", "
+                parameterList.Add(tsParameter);
+
+                position = parameterTypeEnd;
+                if (line[position] == ',')
+                    position += 2; // skip ", "
                 else {
-                    line = line[3..]; // no parameters, skip "): "
+                    position += 3; // no parameters, skip "): "
                     break;
                 }
             }
 
-        // ReturnType/Promise
-        int semicolon = line.IndexOf(';');
-        if (semicolon == -1)
-            return null;
-        if (line.StartsWith("Promise<".AsSpan())) {
-            tsFunction.ReturnPromise = true;
-            line = line[8..(semicolon - 1)]; // cut "Promise<..>"
+            ParameterList = [.. parameterList];
         }
-        else {
-            tsFunction.ReturnPromise = false;
-            line = line[..semicolon];
-        }
-        tsFunction.ReturnType.ParseType(line);
 
-        return tsFunction;
+
+        // ReturnType/Promise
+        int semicolon = line.Length - 1;
+        if (line[semicolon] != ';') {
+            Error = (DiagnosticErrors.ModuleMissingEndingSemicolon, semicolon);
+            return;
+        }
+
+        if (line.AsSpan(position).StartsWith("Promise<".AsSpan())) {
+            ReturnPromise = true;
+            // cut "Promise<..>"
+            position += 8;
+            semicolon--;
+        }
+        else
+            ReturnPromise = false;
+
+        TSParameter parameter = new() { name = "ReturnValue" };
+        parameter.ParseType(line, position, semicolon);
+        ReturnType = parameter;
     }
 
 

@@ -65,7 +65,7 @@ public sealed class TSRuntimeGenerator : IIncrementalGenerator {
                 return (null, string.Empty, config);
             })
             .Where(((TSModule? module, string content, Config? config) source) => source.module is not null)!
-            .Select(((TSModule module, string content, Config config) source, CancellationToken _) => (source.module.ParseFunctions(source.content), source.config));
+            .Select(((TSModule module, string content, Config config) source, CancellationToken _) => (source.module.ParseFunctions(source.content, source.config), source.config));
 
         IncrementalValueProvider<(ImmutableArray<TSModule> moduleList, ConfigOrError configOrError)> moduleCollectionWithConfig = moduleList
             .Select(((TSModule module, Config config) tuple, CancellationToken _) => tuple.module)

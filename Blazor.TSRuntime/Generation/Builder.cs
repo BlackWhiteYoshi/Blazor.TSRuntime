@@ -614,17 +614,17 @@ public static class Builder {
                     function = module.FunctionList[i];
 
                     mappedParameterList.Clear();
-                    foreach (TSParameter parameter in function.ParameterList)
-                        if (config.TypeMap.TryGetValue(parameter.Type, out MappedType mappedType))
+                    for (int j = 0; j < function.ParameterList.Length; j++)
+                        if (config.TypeMap.TryGetValue(function.ParameterList[j].type, out MappedType mappedType))
                             mappedParameterList.Add(mappedType);
                         else
-                            mappedParameterList.Add(new MappedType(parameter.Type));
+                            mappedParameterList.Add(new MappedType(function.ParameterList[j].type));
 
-                    if (!config.TypeMap.TryGetValue(function.ReturnType.Type, out mappedReturnType))
-                        mappedReturnType = new(function.ReturnType.Type);
+                    if (!config.TypeMap.TryGetValue(function.ReturnType.type, out mappedReturnType))
+                        mappedReturnType = new(function.ReturnType.type);
 
                     returnType = mappedReturnType.Type;
-                    returnModifiers = (function.ReturnType.TypeNullable, function.ReturnType.Array, function.ReturnType.ArrayNullable) switch {
+                    returnModifiers = (function.ReturnType.typeNullable, function.ReturnType.array, function.ReturnType.arrayNullable) switch {
                         (false, false, _) => string.Empty,
                         (true, false, _) => "?",
                         (false, true, false) => "[]",
@@ -703,7 +703,7 @@ public static class Builder {
         /// <param name="invokeFunction"></param>
         /// <param name="isSync"></param>
         private readonly void AppendInvokeMethodCore(string summaryAction, string invokeFunctionActionName, string invokeFunction, bool isSync) {
-            int lastIndex = function.ParameterList.Count;
+            int lastIndex = function.ParameterList.Length;
             do {
                 lastIndex--;
 
@@ -734,7 +734,7 @@ public static class Builder {
                 }
                 for (int i = 0; i <= lastIndex; i++) {
                     builder.Append("    /// <param name=\"");
-                    builder.Append(function.ParameterList[i].Name);
+                    builder.Append(function.ParameterList[i].name);
                     builder.Append("\"></param>\n");
                 }
                 if (isSync) {
@@ -785,17 +785,15 @@ public static class Builder {
                 builder.Append('(');
                 if (lastIndex >= 0) {
                     for (int i = 0; i <= lastIndex; i++) {
-                        TSParameter parameter = function.ParameterList[i];
-
                         builder.Append(mappedParameterList[i].Type);
-                        if (parameter.TypeNullable)
+                        if (function.ParameterList[i].typeNullable)
                             builder.Append('?');
-                        if (parameter.Array)
+                        if (function.ParameterList[i].array)
                             builder.Append("[]");
-                        if (parameter.ArrayNullable)
+                        if (function.ParameterList[i].arrayNullable)
                             builder.Append('?');
                         builder.Append(' ');
-                        builder.Append(parameter.Name);
+                        builder.Append(function.ParameterList[i].name);
                         builder.Append(", ");
                     }
                     if (isSync)
@@ -833,10 +831,10 @@ public static class Builder {
                 if (lastIndex >= 0) {
                     builder.Append(", [");
                     for (int i = 0; i < lastIndex; i++) {
-                        builder.Append(function.ParameterList[i].Name);
+                        builder.Append(function.ParameterList[i].name);
                         builder.Append(", ");
                     }
-                    builder.Append(function.ParameterList[lastIndex].Name);
+                    builder.Append(function.ParameterList[lastIndex].name);
                     builder.Append(']');
                 }
                 builder.Append(')');
@@ -864,7 +862,7 @@ public static class Builder {
                     }
 
                 builder.Append(";\n\n");
-            } while (lastIndex >= 0 && function.ParameterList[lastIndex].Optional);
+            } while (lastIndex >= 0 && function.ParameterList[lastIndex].optional);
         }
     }
 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using TSRuntime.Configs;
 
 namespace TSRuntime.Parsing;
 
@@ -121,18 +122,25 @@ public sealed class TSModule : IEquatable<TSModule> {
     /// <para>Parses the file given in <see cref="FilePath"/> and adds the found functions in <see cref="FunctionList"/></para>
     /// <para><see cref="FunctionList"/> is cleared before adding some functions.</para>
     /// </summary>
-    public TSModule ParseFunctions(string fileContent) {
+    /// <param name="fileContent"></param>
+    /// <param name="config">only used for appending errors.</param>
+    public TSModule ParseFunctions(string fileContent, Config config) {
         List<TSFunction> functionList = [];
         
+        int lineNumber = 0;
         StringReader stringReader = new(fileContent);
         while (true) {
             string? line = stringReader.ReadLine();
             if (line == null)
                 break;
 
-            TSFunction? tsFunction = TSFunction.Parse(line.AsSpan());
+            lineNumber++;
+            TSFunction? tsFunction = TSFunction.Parse(line);
             if (tsFunction is not null)
-                functionList.Add(tsFunction);
+                if (tsFunction.Error.descriptor is null)
+                    functionList.Add(tsFunction);
+                else
+                    config.ErrorList.AddFunctionParseError(tsFunction.Error.descriptor, FilePath, lineNumber, tsFunction.Error.position);
         }
 
         return new TSModule(FilePath, URLPath, Name, functionList);

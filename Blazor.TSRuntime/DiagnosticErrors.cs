@@ -152,5 +152,41 @@ public static class DiagnosticErrors {
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
+
+    public static void AddFunctionParseError(this List<Diagnostic> errorList, DiagnosticDescriptor descriptor, string filePath, int lineNumber, int position)
+        => errorList.Add(Diagnostic.Create(descriptor, null, [filePath, lineNumber, position]));
+
+    public static DiagnosticDescriptor ModuleMissingOpenBracket { get; } = new(
+        id: "BTS013",
+        title: "invalid d.ts file: missing '('",
+        messageFormat: "invalid d.ts file: '{0}' at line {1}: missing '(' after column {2} (the token that indicates the start of function parameters)",
+        category: "Blazor.TSRuntime",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static DiagnosticDescriptor ModuleMissingColon { get; } = new(
+        id: "BTS014",
+        title: "invalid d.ts file: missing ':'",
+        messageFormat: "invalid d.ts file: '{0}' at line {1}: missing ':' after column {2} (the token that seperates name and type)",
+        category: "Blazor.TSRuntime",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static DiagnosticDescriptor ModuleNoParameterEnd { get; } = new(
+        id: "BTS015",
+        title: "invalid d.ts file: no end of parameter",
+        messageFormat: "invalid d.ts file: '{0}' at line {1}: no end of parameter at column {2} found, expected ',' or ')'",
+        category: "Blazor.TSRuntime",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static DiagnosticDescriptor ModuleMissingEndingSemicolon { get; } = new(
+        id: "BTS016",
+        title: "invalid d.ts file: missing ending ';'",
+        messageFormat: "invalid d.ts file: '{0}' at line {1}: missing ';' at at column {2}",
+        category: "Blazor.TSRuntime",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
     #endregion
 }
