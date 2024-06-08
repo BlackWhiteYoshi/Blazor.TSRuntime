@@ -117,3 +117,12 @@ Here are some examples:
 | do(myParameter: (string \| null)[] \| null \| undefined) | Do(), Do(string?[]? myParameter) |
 
 **Note**: default value parameters (e.g. do(myParameter = 5)) are automatically mapped to optional parameters in .d.ts-files, so they will work as expected.
+
+
+<br></br>
+## Generics
+
+If you are using generic functions and want to map generic variables, the generic variable name must match.
+For example, *Map&lt;T&gt;* is treated as another type than *Map&lt;Type&gt;*.  
+Mapping of generic constraints is not supported.
+You can use constraints in your JS/TS functions, but they are just ignored, so on the C# side it will be an unconstraint type paramter.

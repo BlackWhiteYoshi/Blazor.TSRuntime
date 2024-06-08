@@ -12,6 +12,11 @@ public sealed class TSFunction : IEquatable<TSFunction> {
     public string Name { get; } = string.Empty;
 
     /// <summary>
+    /// List of the generic parameters of this js function
+    /// </summary>
+    public string[] Generics { get; } = [];
+
+    /// <summary>
     /// List of the parameters of this js-function.
     /// </summary>
     public TSParameter[] ParameterList { get; } = [];
@@ -55,9 +60,64 @@ public sealed class TSFunction : IEquatable<TSFunction> {
             Error = (DiagnosticErrors.ModuleMissingOpenBracket, position);
             return;
         }
-        Name = line[position..openBracket];
 
-        position = openBracket + 1; // skip "("
+        int openGenericBracket = line.IndexOf('<', position, openBracket - position);
+        if (openGenericBracket == -1) {
+            Name = line[position..openBracket];
+            position = openBracket + 1; // skip "("
+        }
+        else {
+            Name = line[position..openGenericBracket];
+            position = openGenericBracket + 1;
+
+            // Generics
+            List<string> generics = [];
+
+            bool ignoreWhiteSpace = false;
+            int bracketCount = 0;
+            for (int i = position; true; i++) {
+                if (i == line.Length) {
+                    Error = (DiagnosticErrors.ModuleMissingClosingGenericBracket, openGenericBracket);
+                    return;
+                }
+
+                char c = line[i];
+                switch (c) {
+                    case ' ':
+                        if (!ignoreWhiteSpace) {
+                            generics.Add(line[position..i]);
+                            ignoreWhiteSpace = true; // skip "extends ..."
+                        }
+                        break;
+                    case ',':
+                        if (bracketCount == 0) {
+                            generics.Add(line[position..i]);
+                            i += 2; // skip ", "
+                            position = i;
+                            ignoreWhiteSpace = false;
+                        }
+                        break;
+                    case '<':
+                        bracketCount++;
+                        break;
+                    case '>':
+                        if (bracketCount > 0) {
+                            bracketCount--;
+                            break;
+                        }
+                        else {
+                            if (!ignoreWhiteSpace)
+                                generics.Add(line[position..i]);
+                            i += 2; // skip ">("
+                            position = i;
+                            goto double_break;
+                        }
+                }
+            }
+            double_break:
+
+            Generics = [.. generics];
+        }
 
 
         // Parameters
@@ -80,30 +140,30 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                 // parse Type
                 int parameterTypeEnd;
                 int bracketCount = 0;
-                for (int i = position; i < line.Length; i++) {
+                for (int i = position; true; i++) {
+                    if (i == line.Length) {
+                        Error = (DiagnosticErrors.ModuleNoParameterEnd, position);
+                        return;
+                    }
+
                     char c = line[i];
                     switch (c) {
                         case ',':
                             parameterTypeEnd = i;
-                            goto brackets_counted;
+                            goto double_break;
                         case '(':
                             bracketCount++;
                             break;
                         case ')':
                             if (bracketCount == 0) {
                                 parameterTypeEnd = i;
-                                goto brackets_counted;
+                                goto double_break;
                             }
                             bracketCount--;
                             break;
                     }
                 }
-                // else
-                {
-                    Error = (DiagnosticErrors.ModuleNoParameterEnd, position);
-                    return; 
-                }
-                brackets_counted:
+                double_break:
 
                 tsParameter.ParseType(line, position, parameterTypeEnd);
 

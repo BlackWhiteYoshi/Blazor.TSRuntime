@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using TSRuntime.Parsing;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TSRuntime.Tests;
 
@@ -78,16 +79,31 @@ public static class ParserTests {
 
     [Theory]
     [InlineData("export declare function getCookies(): string;", "getCookies", "string", false)]
-    [InlineData("export declare function asdf(): qwer;", "asdf", "qwer", false)]
-    [InlineData("export declare function Test(a?: number): void;", "Test", "void", false)]
-    [InlineData("export declare function longRunningTask(): Promise<void>;", "longRunningTask", "void", true)]
-    [InlineData("export declare function longRunningTask2(): Promise<something>;", "longRunningTask2", "something", true)]
-    public static void ParsingFunction_Works(string input, string name, string returnType, bool promise) {
+    [InlineData("export function asdf(): qwer;", "asdf", "qwer", false)]
+    [InlineData("export function Test(a?: number): void;", "Test", "void", false)]
+    [InlineData("export function longRunningTask(): Promise<void>;", "longRunningTask", "void", true)]
+    [InlineData("export function longRunningTask2(): Promise<something>;", "longRunningTask2", "something", true)]
+    public static void ParsingFunction(string input, string name, string returnType, bool promise) {
         TSFunction function = TSFunction.Parse(input)!;
 
         Assert.Equal(name, function.Name);
         Assert.Equal(returnType, function.ReturnType.type);
         Assert.Equal(promise, function.ReturnPromise);
+    }
+
+    [Theory]
+    [InlineData("export function generic1<T>(): void;", "generic1", (string[])["T"])]
+    [InlineData("export function generic3<Type, Key, Value>(): void;", "generic3", (string[])["Type", "Key", "Value"])]
+    [InlineData("export function genericConstraint<Type extends HTMLElement>(): void;", "genericConstraint", (string[])["Type"])]
+    [InlineData("export function genericConstraintGeneric<Type extends Map<K, V>>(): void;", "genericConstraintGeneric", (string[])["Type"])]
+    [InlineData("export function genericKeyofConstraint<Type, Key extends keyof Type>(): void;", "genericKeyofConstraint", (string[])["Type", "Key"])]
+    public static void ParsingGenericFunction(string input, string name, string[] generics) {
+        TSFunction function = TSFunction.Parse(input)!;
+
+        Assert.Equal(name, function.Name);
+        Assert.Equal(generics.Length, function.Generics.Length);
+        for (int i = 0; i < function.Generics.Length; i++)
+            Assert.Equal(generics[i], function.Generics[i]);
     }
 
     [Fact]
@@ -106,6 +122,15 @@ public static class ParserTests {
     }
 
     [Fact]
+    public static void ParsingFunction_MissingClosingGenericBracketError() {
+        TSFunction? result = TSFunction.Parse("export function Example<T]();");
+
+        List<Diagnostic> errorList = [];
+        errorList.AddFunctionParseError(result!.Error.descriptor!, "E_Module.d.ts", 1, result.Error.position);
+        Assert.Equal("invalid d.ts file: 'E_Module.d.ts' at line 1: missing '>' after column 23 (the token that marks the end of generics)", errorList[0].GetMessage());
+    }
+
+    [Fact]
     public static void ParsingFunction_MissingColonError() {
         TSFunction? result = TSFunction.Parse("export declare function Example(number myNumber);");
 
@@ -120,7 +145,7 @@ public static class ParserTests {
 
         List<Diagnostic> errorList = [];
         errorList.AddFunctionParseError(result!.Error.descriptor!, "E_Module.d.ts", 1, result.Error.position);
-        Assert.Equal("invalid d.ts file: 'E_Module.d.ts' at line 1: no end of parameter at column 42 found, expected ',' or ')'", errorList[0].GetMessage());
+        Assert.Equal("invalid d.ts file: 'E_Module.d.ts' at line 1: missing ')' after column 42 (the token that marks end of parameters)", errorList[0].GetMessage());
     }
 
     [Fact]

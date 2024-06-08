@@ -337,7 +337,6 @@ This package is in preview and breaking changes may occur.
 There are some features planned (no guarantees whatsoever):
 
 - map .d.ts summary <-> .cs summary
-- support for .d.ts generics
 - add JSDocs Parser
 - support for non-module files
 - map callbacks <-> delegates

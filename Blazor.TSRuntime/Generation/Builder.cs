@@ -770,14 +770,17 @@ public static class Builder {
                     builder.Append("Async");
 
                 // generic parameters
-                if (genericParameterList.Count > 0) {
+                if (genericParameterList.Count > 0 || function.Generics.Length > 0) {
                     builder.Append('<');
-                    builder.Append(genericParameterList[0].Name);
-                    for (int i = 1; i < genericParameterList.Count; i++) {
-                        builder.Append(", ");
+                    for (int i = 0; i < genericParameterList.Count; i++) {
                         builder.Append(genericParameterList[i].Name);
+                        builder.Append(", ");
                     }
-
+                    foreach (string genericType in function.Generics) {
+                        builder.Append(genericType);
+                        builder.Append(", ");
+                    }
+                    builder.Length -= 2;
                     builder.Append('>');
                 }
 
