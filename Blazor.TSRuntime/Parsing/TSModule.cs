@@ -13,7 +13,7 @@ public sealed class TSModule : IEquatable<TSModule> {
     public string FilePath { get; }
 
     /// <summary>
-    /// The <see cref="RelativePath"/> but starts with "/" and ends with ".js", also ignoring starting "/wwwroot".
+    /// The <see cref="FilePath"/> but it is relative, starts with "/" and ends with ".js", also ignoring starting "/wwwroot".
     /// </summary>
     public string URLPath { get; }
 
@@ -32,8 +32,8 @@ public sealed class TSModule : IEquatable<TSModule> {
     /// Creates an object with <see cref="FilePath"/>, <see cref="URLPath"/> and <see cref="Name"/> filled and an empty <see cref="FunctionList"/>.
     /// </summary>
     /// <param name="filePath"></param>
-    /// <param name="rootPath"></param>
     /// <param name="modulePath"></param>
+    /// <param name="errorList"></param>
     public TSModule(string filePath, string? modulePath, List<Diagnostic> errorList) {
         FilePath = filePath;
 
@@ -136,10 +136,12 @@ public sealed class TSModule : IEquatable<TSModule> {
             ReadOnlySpan<char> line = fileContent.AsSpan(lineStart, lineEnd - lineStart).Trim();
             lineNumber++;
 
-            TSFunction? tsFunction = TSFunction.Parse(line);
+            TSFunction? tsFunction = TSFunction.ParseTSFunction(line);
             if (tsFunction is not null)
-                if (tsFunction.Error.descriptor is null)
+                if (tsFunction.Error.descriptor is null) {
+                    tsFunction.ParseTSSummary(fileContent, lineStart);
                     functionList.Add(tsFunction);
+                }
                 else
                     config.ErrorList.AddFunctionParseError(tsFunction.Error.descriptor, FilePath, lineNumber, tsFunction.Error.position);
 

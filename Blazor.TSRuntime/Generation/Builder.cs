@@ -273,6 +273,8 @@ public static class Builder {
     /// - JSRUNTIME methods (Sync/TrySync/Async)<br />
     /// - private Invoke-methods (Sync/TrySync/Async)
     /// </summary>
+    /// <param name="context"></param>
+    /// <param name="configOrError"></param>
     public static void BuildInterfaceCore(SourceProductionContext context, (Config? config, Diagnostic? error) configOrError) {
         if (configOrError.error is not null)
             return;
@@ -529,7 +531,6 @@ public static class Builder {
     /// <param name="builder"></param>
     /// <param name="module"></param>
     /// <param name="config"></param>
-    /// <param name="index"></param>
     private struct BuildInterfaceModuleCore(StringBuilder builder, TSModule module, Config config) {
         private TSFunction function;
         private readonly List<GenericType> genericParameterList = [];
@@ -716,7 +717,13 @@ public static class Builder {
                     if (!genericParameterList.Contains(mappedReturnType.GenericTypes[i]))
                         genericParameterList.Add(mappedReturnType.GenericTypes[i]);
 
+                // <summary>
                 builder.Append("    /// <summary>\n");
+                if (function.Summary != string.Empty) {
+                    builder.Append("    /// <para>");
+                    builder.Append(function.Summary);
+                    builder.Append("</para>\n");
+                }
                 builder.Append("    /// <para>Invokes in module '");
                 builder.Append(module.Name);
                 builder.Append("' the JS-function '");
@@ -727,32 +734,47 @@ public static class Builder {
                 if (isSync)
                     builder.Append("    /// <para>If module is not loaded or synchronous is not supported, it fails with an exception.</para>\n");
                 builder.Append("    /// </summary>\n");
+                // <remarks>
+                if (function.Remarks != string.Empty) {
+                    builder.Append("    /// <remarks>");
+                    builder.Append(function.Remarks);
+                    builder.Append("</remarks>\n");
+                }
+                // <typeparam>
                 foreach (GenericType genericType in genericParameterList) {
                     builder.Append("    /// <typeparam name=\"");
                     builder.Append(genericType.Name);
                     builder.Append("\"></typeparam>\n");
                 }
+                // <param>
                 for (int i = 0; i <= lastIndex; i++) {
                     builder.Append("    /// <param name=\"");
                     builder.Append(function.ParameterList[i].name);
-                    builder.Append("\"></param>\n");
+                    builder.Append("\">");
+                    builder.Append(function.ParameterList[i].summary);
+                    builder.Append("</param>\n");
                 }
-                if (isSync) {
-                    if (returnType != "void")
-                        builder.Append("    /// <returns>Result of the JS-function.</returns>\n");
+                if (!isSync)
+                    builder.Append("    /// <param name=\"cancellationToken\">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref=\"JSRuntime.DefaultAsyncTimeout\"/>) from being applied.</param>\n");
+                // <returns>
+                if (function.ReturnType.summary != string.Empty) {
+                    builder.Append("    /// <returns>");
+                    builder.Append(function.ReturnType.summary);
+                    builder.Append("</returns>\n");
+                }
+                else if (returnType != "void")
+                    builder.Append("    /// <returns>Result of the JS-function.</returns>\n");
+                else if (!isSync)
+                    builder.Append("    /// <returns>A Task that will complete when the JS-Function have completed.</returns>\n");
 
+                // method head (visibility and returnType)
+                if (isSync) {
                     builder.Append("    public ");
                     builder.Append(returnType);
                     builder.Append(returnModifiers);
                     builder.Append(' ');
                 }
                 else {
-                    builder.Append("    /// <param name=\"cancellationToken\">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref=\"JSRuntime.DefaultAsyncTimeout\"/>) from being applied.</param>\n");
-                    if (returnType != "void")
-                        builder.Append("    /// <returns>Result of the JS-function.</returns>\n");
-                    else
-                        builder.Append("    /// <returns>A Task that will complete when the JS-Function have completed.</returns>\n");
-
                     builder.Append("    public ");
                     if (returnType == "void")
                         builder.Append("Task ");
@@ -872,6 +894,12 @@ public static class Builder {
     #endregion
 
 
+    /// <summary>
+    /// Builds the extension method for <i>IServiceCollection</i> for registering TSRuntime.
+    /// </summary>
+    /// <param name="stringBuilderPool"></param>
+    /// <param name="context"></param>
+    /// <param name="parameters"></param>
     public static void BuildServiceExtension(this ObjectPool<StringBuilder> stringBuilderPool, SourceProductionContext context, (ImmutableArray<TSModule> moduleList, (Config? config, Diagnostic? error) configOrError) parameters) {
         if (parameters.configOrError.error is not null)
             return;

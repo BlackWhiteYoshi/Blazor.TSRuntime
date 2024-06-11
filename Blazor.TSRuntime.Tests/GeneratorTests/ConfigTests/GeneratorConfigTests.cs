@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 
 namespace TSRuntime.Tests;
 
-public static class GeneratorTests {
+public static class GeneratorConfigTests {
     private static readonly (string path, string content) testModule = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/TestModule.d.ts", "export function Test(a: number, b: string): number;\n");
     private static readonly (string path, string content) nestedTestModule = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/NestedFolder/NestedTestModule.d.ts", "export declare function NestedTest(): Promise<void>;\n");
 
@@ -116,107 +116,6 @@ public static class GeneratorTests {
             {itsRuntimeNestedModule}
             """);
     }
-
-
-    #region JS generics
-
-    [Fact]
-    public static Task JSGenerics() {
-        const string jsonConfig = """{}""";
-        (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/GenericModule.d.ts", "export function generic<A, B, C>(): A;\n");
-        string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
-
-        string tsRuntime = result[0];
-        string itsRuntimeCore = result[1];
-        string itsRuntimeModule = result[2];
-        Assert.Equal(4, result.Length);
-        return Verify($"""
-            ---------
-            TSRuntime
-            ---------
-
-            {tsRuntime}
-
-            ----------
-            ITSRuntime
-            ----------
-
-            {itsRuntimeCore}
-
-            ------
-            Module
-            ------
-
-            {itsRuntimeModule}
-            """);
-    }
-
-    [Fact]
-    public static Task JSGenericsConstraint() {
-        const string jsonConfig = """{}""";
-        (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/GenericModule.d.ts", "export function genericKeyofConstraint<Type, Key extends keyof Type>(): void;\n");
-        string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
-
-        string tsRuntime = result[0];
-        string itsRuntimeCore = result[1];
-        string itsRuntimeModule = result[2];
-        Assert.Equal(4, result.Length);
-        return Verify($"""
-            ---------
-            TSRuntime
-            ---------
-
-            {tsRuntime}
-
-            ----------
-            ITSRuntime
-            ----------
-
-            {itsRuntimeCore}
-
-            ------
-            Module
-            ------
-
-            {itsRuntimeModule}
-            """);
-    }
-
-    [Fact]
-    public static Task JSGenericsAndTypeMap() {
-        const string jsonConfig = """{}""";
-        (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/GenericModule.d.ts", "export function genericKeyofConstraint<Type, Key extends keyof Type>(): number;\n");
-        string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
-
-        string tsRuntime = result[0];
-        string itsRuntimeCore = result[1];
-        string itsRuntimeModule = result[2];
-        Assert.Equal(4, result.Length);
-        return Verify($"""
-            ---------
-            TSRuntime
-            ---------
-
-            {tsRuntime}
-
-            ----------
-            ITSRuntime
-            ----------
-
-            {itsRuntimeCore}
-
-            ------
-            Module
-            ------
-
-            {itsRuntimeModule}
-            """);
-    }
-
-    #endregion
 
 
     [Fact]

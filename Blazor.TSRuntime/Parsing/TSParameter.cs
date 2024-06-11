@@ -5,6 +5,11 @@
 /// </summary>
 public record struct TSParameter() : IEquatable<TSParameter> {
     /// <summary>
+    /// Description of this parameter.
+    /// </summary>
+    public string summary = string.Empty;
+
+    /// <summary>
     /// The given name of the parameter.
     /// </summary>
     public string name = string.Empty;

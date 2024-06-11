@@ -336,7 +336,6 @@ This package is in preview and breaking changes may occur.
 
 There are some features planned (no guarantees whatsoever):
 
-- map .d.ts summary <-> .cs summary
 - add JSDocs Parser
 - support for non-module files
 - map callbacks <-> delegates
@@ -371,3 +370,6 @@ There are some features planned (no guarantees whatsoever):
   - renamed key "file module path" to "module path"
   - renamed key "append Async" to "append async"
   - Config.InputPath.ModulePath must end with ".js"
+- 0.7  
+  Generic TS-functions are now supported.  
+  TS-function description is mapped to C# method description. Currently supported tags are &lt;summary&gt;, &lt;remarks&gt;, &lt;param&gt;, &lt;returns&gt;.

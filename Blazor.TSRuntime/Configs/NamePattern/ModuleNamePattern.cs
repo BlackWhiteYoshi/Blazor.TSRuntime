@@ -30,9 +30,10 @@ public readonly struct ModuleNamePattern : IEquatable<ModuleNamePattern> {
     /// </summary>
     /// <param name="namePattern">
     /// <para>The name pattern for creating the method name.</para>
-    /// <para>placeholder:<br />
-    /// #module#</para></param>
+    /// <para>placeholder:<br />#module#</para>
+    /// </param>
     /// <param name="moduleTransform">Upper/Lower case transform for the #module# placeholder.</param>
+    /// <param name="errorList"></param>
     public ModuleNamePattern(string namePattern, NameTransform moduleTransform, List<Diagnostic> errorList) {
         NamePattern = namePattern;
         ModuleTransform = moduleTransform;

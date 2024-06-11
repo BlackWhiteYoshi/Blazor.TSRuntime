@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using TSRuntime.Parsing;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TSRuntime.Tests;
 
@@ -84,7 +83,7 @@ public static class ParserTests {
     [InlineData("export function longRunningTask(): Promise<void>;", "longRunningTask", "void", true)]
     [InlineData("export function longRunningTask2(): Promise<something>;", "longRunningTask2", "something", true)]
     public static void ParsingFunction(string input, string name, string returnType, bool promise) {
-        TSFunction function = TSFunction.Parse(input)!;
+        TSFunction function = TSFunction.ParseTSFunction(input)!;
 
         Assert.Equal(name, function.Name);
         Assert.Equal(returnType, function.ReturnType.type);
@@ -98,7 +97,7 @@ public static class ParserTests {
     [InlineData("export function genericConstraintGeneric<Type extends Map<K, V>>(): void;", "genericConstraintGeneric", (string[])["Type"])]
     [InlineData("export function genericKeyofConstraint<Type, Key extends keyof Type>(): void;", "genericKeyofConstraint", (string[])["Type", "Key"])]
     public static void ParsingGenericFunction(string input, string name, string[] generics) {
-        TSFunction function = TSFunction.Parse(input)!;
+        TSFunction function = TSFunction.ParseTSFunction(input)!;
 
         Assert.Equal(name, function.Name);
         Assert.Equal(generics.Length, function.Generics.Length);
@@ -106,15 +105,71 @@ public static class ParserTests {
             Assert.Equal(generics[i], function.Generics[i]);
     }
 
+    [Theory]
+    [InlineData("\n\n", "")]
+    [InlineData("/**/\n", "")]
+    [InlineData("/***/\n", "")]
+    [InlineData("/**example*/\n", "example")]
+    [InlineData("/**   example  */\n", "example")]
+    [InlineData("/**  * example  */\n", "example")]
+    [InlineData("/**  ** example  */\n", "* example")]
+    [InlineData("/**\n*\n* example  */\n", "example")]
+    [InlineData("/** example\n */\n", "example")]
+    [InlineData("/**\n * a legit example\n * some more text\n *\n * some note\n */\n", "a legit example<br/>some more text<br/><br/>some note")]
+    public static void ParsingSummary(string input, string summary) {
+        const string FUNCTION_DECLARATION = "export function test(): void;";
+        TSFunction function = TSFunction.ParseTSFunction(FUNCTION_DECLARATION)!;
+        function.ParseTSSummary($"{input}{FUNCTION_DECLARATION}", input.Length);
+
+        Assert.Equal(summary, function.Summary);
+    }
+
+    [Theory]
+    [InlineData("/**@remarks*/\n", "", "")]
+    [InlineData("/**@remarks example*/\n", "", "example")]
+    [InlineData("/**summaryExample @remarks example*/\n", "summaryExample", "example")]
+    [InlineData("/**summaryExample\n * @remarks example*/\n", "summaryExample", "example")]
+    [InlineData("/**summaryExample\n * @unkownT example*/\n", "summaryExample", "")]
+    [InlineData("/**summaryExample\n * @unkownT example@remarks ex*/\n", "summaryExample", "ex")]
+    [InlineData("/**summaryExample\n * @unkownT @remarks ex*/\n", "summaryExample", "ex")]
+    [InlineData("/**\n * a legit example\n * some more text\n *\n * @remarks example\n */\n", "a legit example<br/>some more text", "example")]
+    public static void ParsingSummaryWithTag(string input, string summary, string remarks) {
+        const string FUNCTION_DECLARATION = "export function test(): void;";
+        TSFunction function = TSFunction.ParseTSFunction(FUNCTION_DECLARATION)!;
+        function.ParseTSSummary($"{input}{FUNCTION_DECLARATION}", input.Length);
+
+        Assert.Equal(summary, function.Summary);
+        Assert.Equal(remarks, function.Remarks);
+    }
+
+    [Theory]
+    [InlineData("/**@param*/\n", "", "")]
+    [InlineData("/**@param integer - example*/\n", "", "example")]
+    [InlineData("/**summaryExample @param integer example*/\n", "summaryExample", "example")]
+    [InlineData("/**summaryExample\n * @param integer - example*/\n", "summaryExample", "example")]
+    [InlineData("/**summaryExample\n * @param */\n", "summaryExample", "")]
+    [InlineData("/**summaryExample\n * @param example*/\n", "summaryExample", "")]
+    [InlineData("/**summaryExample\n * @param example @param integer ex*/\n", "summaryExample", "ex")]
+    [InlineData("/**\n * a legit example\n * some more text\n *\n * @param integer - example\n */\n", "a legit example<br/>some more text", "example")]
+    public static void ParsingSummaryWithParamTag(string input, string summary, string parameter) {
+        const string FUNCTION_DECLARATION = "export function test(integer: number): void;";
+        TSFunction function = TSFunction.ParseTSFunction(FUNCTION_DECLARATION)!;
+        function.ParseTSSummary($"{input}{FUNCTION_DECLARATION}", input.Length);
+
+        Assert.Equal(summary, function.Summary);
+        Assert.Equal(parameter, function.ParameterList[0].summary);
+    }
+
+
     [Fact]
     public static void ParsingFunction_WrongStartRetunrsNull() {
-        TSFunction? result = TSFunction.Parse("asdf");
+        TSFunction? result = TSFunction.ParseTSFunction("asdf");
         Assert.Null(result);
     }
 
     [Fact]
     public static void ParsingFunction_MissingOpenBracketError() {
-        TSFunction? result = TSFunction.Parse("export declare function Example[);");
+        TSFunction? result = TSFunction.ParseTSFunction("export declare function Example[);");
 
         List<Diagnostic> errorList = [];
         errorList.AddFunctionParseError(result!.Error.descriptor!, "E_Module.d.ts", 1, result.Error.position);
@@ -123,7 +178,7 @@ public static class ParserTests {
 
     [Fact]
     public static void ParsingFunction_MissingClosingGenericBracketError() {
-        TSFunction? result = TSFunction.Parse("export function Example<T]();");
+        TSFunction? result = TSFunction.ParseTSFunction("export function Example<T]();");
 
         List<Diagnostic> errorList = [];
         errorList.AddFunctionParseError(result!.Error.descriptor!, "E_Module.d.ts", 1, result.Error.position);
@@ -132,7 +187,7 @@ public static class ParserTests {
 
     [Fact]
     public static void ParsingFunction_MissingColonError() {
-        TSFunction? result = TSFunction.Parse("export declare function Example(number myNumber);");
+        TSFunction? result = TSFunction.ParseTSFunction("export declare function Example(number myNumber);");
 
         List<Diagnostic> errorList = [];
         errorList.AddFunctionParseError(result!.Error.descriptor!, "E_Module.d.ts", 1, result.Error.position);
@@ -141,7 +196,7 @@ public static class ParserTests {
 
     [Fact]
     public static void ParsingFunction_NoParameterEndError() {
-        TSFunction? result = TSFunction.Parse("export declare function Example(myNumber: number];");
+        TSFunction? result = TSFunction.ParseTSFunction("export declare function Example(myNumber: number];");
 
         List<Diagnostic> errorList = [];
         errorList.AddFunctionParseError(result!.Error.descriptor!, "E_Module.d.ts", 1, result.Error.position);
@@ -150,7 +205,7 @@ public static class ParserTests {
 
     [Fact]
     public static void ParsingFunction_MissingEndingSemicolonError() {
-        TSFunction? result = TSFunction.Parse("export declare function Example()");
+        TSFunction? result = TSFunction.ParseTSFunction("export declare function Example()");
 
         List<Diagnostic> errorList = [];
         errorList.AddFunctionParseError(result!.Error.descriptor!, "E_Module.d.ts", 1, result.Error.position);

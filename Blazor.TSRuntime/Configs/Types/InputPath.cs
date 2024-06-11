@@ -63,7 +63,6 @@ public readonly struct InputPath(string include, string[] excludes, string? modu
     /// exclude paths must not end with trailing slash.</para>
     /// </summary>
     /// <param name="filePath"></param>
-    /// <param name="excludes"></param>
     /// <returns></returns>
     public bool IsIncluded(string filePath) {
         if (!filePath.StartsWith(Include) || !filePath.EndsWith(".d.ts"))
