@@ -7,9 +7,6 @@ namespace TSRuntime.Configs.NamePattern;
 /// Naming with 1 variable: #module#.
 /// </summary>
 public readonly struct ModuleNamePattern : IEquatable<ModuleNamePattern> {
-    private const string MODULE = "#module#";
-
-
     private readonly List<OutputBlock> outputList = new(3); // default "I#module#Module" are 3 entries
     /// <summary>
     /// <para>The name pattern for creating the name.</para>
@@ -70,10 +67,10 @@ public readonly struct ModuleNamePattern : IEquatable<ModuleNamePattern> {
 
             // read in [#..#]
             int length = index + 1;
-            if (length == 8 && str.StartsWith(MODULE.AsSpan()))
+            if (str[..length] is ['#', 'm', 'o', 'd', 'u', 'l', 'e', '#'])
                 outputList.Add(Output.Module);
             else
-                errorList.AddConfigNamePatternInvalidVariableError(str[1..(length - 1)].ToString(), ["module"]);
+                errorList.AddConfigNamePatternInvalidVariableError(str[1..index].ToString(), ["module"]);
 
 
             str = str[length..];

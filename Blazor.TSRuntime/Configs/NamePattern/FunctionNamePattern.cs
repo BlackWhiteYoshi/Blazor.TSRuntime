@@ -8,11 +8,6 @@ namespace TSRuntime.Configs.NamePattern;
 /// <para>It supports the variables #function#, #module# and #action#.</para>
 /// </summary>
 public readonly struct FunctionNamePattern : IEquatable<FunctionNamePattern> {
-    private const string MODULE = "#module#";
-    private const string FUNCTION = "#function#";
-    private const string ACTION = "#action#";
-
-
     private readonly List<OutputBlock> outputList = new(1); // default "#function#" is 1 entry
     /// <summary>
     /// <para>The name pattern for creating the method name.</para>
@@ -88,23 +83,18 @@ public readonly struct FunctionNamePattern : IEquatable<FunctionNamePattern> {
 
             // read in [#..#]
             int length = index + 1;
-            switch (length) {
-                case 8: // "#module#" or "#action#"
-                    if (str.StartsWith(MODULE.AsSpan()))
-                        outputList.Add(Output.Module);
-                    else if (str.StartsWith(ACTION.AsSpan()))
-                        outputList.Add(Output.Action);
-                    else
-                        goto default;
+            switch (str[..length]) {
+                case ['#', 'm', 'o', 'd', 'u', 'l', 'e', '#']:
+                    outputList.Add(Output.Module);
                     break;
-                case 10: // "#function#"
-                    if (str.StartsWith(FUNCTION.AsSpan()))
-                        outputList.Add(Output.Function);
-                    else
-                        goto default;
+                case ['#', 'a', 'c', 't', 'i', 'o', 'n', '#', ..]:
+                    outputList.Add(Output.Action);
+                    break;
+                case ['#', 'f', 'u', 'n', 'c', 't', 'i', 'o', 'n', '#', ..]:
+                    outputList.Add(Output.Function);
                     break;
                 default:
-                    errorList.AddConfigNamePatternInvalidVariableError(str[1..(length - 1)].ToString(), ["module", "function", "action"]);
+                    errorList.AddConfigNamePatternInvalidVariableError(str[1..index].ToString(), ["module", "function", "action"]);
                     break;
             }
 

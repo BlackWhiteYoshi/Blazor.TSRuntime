@@ -65,17 +65,57 @@ public static class GeneratorSummaryTests {
     }
 
     [Fact]
+    public static Task ParamOnly_JSDoc() {
+        const string jsonConfig = """{}""";
+        const string moduleContent = """
+            /**
+             * @param {number} a - a is not B
+             */
+            export function test(a) { }
+
+            """;
+
+        (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/module.js", moduleContent);
+        string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
+        Assert.Empty(diagnostics);
+
+        Assert.Equal(4, result.Length);
+        string itsRuntimeModule = result[2];
+        return Verify(itsRuntimeModule);
+    }
+
+    [Fact]
     public static Task ReturnsOnly() {
         const string jsonConfig = """{}""";
         const string moduleContent = """
             /**
              * @returns a string 
              */
-            export function test(a: number): string;
+            export function test(): string;
 
             """;
 
         (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/module.d.ts", moduleContent);
+        string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
+        Assert.Empty(diagnostics);
+
+        Assert.Equal(4, result.Length);
+        string itsRuntimeModule = result[2];
+        return Verify(itsRuntimeModule);
+    }
+
+    [Fact]
+    public static Task ReturnsOnly_JSDoc() {
+        const string jsonConfig = """{}""";
+        const string moduleContent = """
+            /**
+             * @returns {string} a string 
+             */
+            export function test() { }
+
+            """;
+
+        (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/module.js", moduleContent);
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
         Assert.Empty(diagnostics);
 
@@ -103,6 +143,32 @@ public static class GeneratorSummaryTests {
             """;
 
         (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/module.d.ts", moduleContent);
+        string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
+        Assert.Empty(diagnostics);
+
+        Assert.Equal(4, result.Length);
+        string itsRuntimeModule = result[2];
+        return Verify(itsRuntimeModule);
+    }
+
+    [Fact]
+    public static Task SummaryAndRemarksAndParamAndReturns_JSDocs() {
+        const string jsonConfig = """{}""";
+        const string moduleContent = """
+            /**
+             * The example Summary
+             *
+             * @param {number} a - a is not B
+             *
+             * @returns {string} a string
+             *
+             * @remarks The example remark
+             */
+            export function test(a) { }
+
+            """;
+
+        (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/module.js", moduleContent);
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
         Assert.Empty(diagnostics);
 

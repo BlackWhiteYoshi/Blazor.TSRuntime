@@ -65,7 +65,7 @@ public readonly struct InputPath(string include, string[] excludes, string? modu
     /// <param name="filePath"></param>
     /// <returns></returns>
     public bool IsIncluded(string filePath) {
-        if (!filePath.StartsWith(Include) || !filePath.EndsWith(".d.ts"))
+        if (!filePath.StartsWith(Include) || filePath is not ([.., '.', 'j', 's'] or [.., '.', 'd', '.', 't', 's']))
             return false;
 
         foreach (string exclude in Excludes) {

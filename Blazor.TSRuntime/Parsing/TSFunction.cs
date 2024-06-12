@@ -1,4 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
+using System;
 using System.Text;
 
 namespace TSRuntime.Parsing;
@@ -27,7 +29,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
     /// <para>Since return values have no names, the <see cref="TSParameter.name"/> defaults to "ReturnValue".</para>
     /// </summary>
     public ref TSParameter ReturnType => ref _returnType;
-    private TSParameter _returnType = new() { name = "ReturnValue" };
+    private TSParameter _returnType = new() { name = "ReturnValue", type = "void" };
 
     /// <summary>
     /// Indicates if the <see cref="ReturnType"/> is a promise or not.
@@ -55,8 +57,9 @@ public sealed class TSFunction : IEquatable<TSFunction> {
 
     private TSFunction() { }
 
+
     /// <summary>
-    /// Creates a TSFunction if the given line represents a exported js-function. 
+    /// Creates a TSFunction if the given line represents a exported ts-function. 
     /// </summary>
     /// <param name="line">An Entire line in a "d.ts"-file.</param>
     /// <returns>null, if not starting with "export function " or "export declare function ", otherwise tries to parse and returns a <see cref="TSFunction"/>.</returns>
@@ -80,7 +83,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
         // FunctionName
         int openBracket = line[position..].IndexOf('(');
         if (openBracket == -1) {
-            result.Error = (DiagnosticErrors.ModuleMissingOpenBracket, position);
+            result.Error = (DiagnosticErrors.FileMissingOpenBracket, position);
             return result;
         }
         openBracket += position;
@@ -102,7 +105,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
             int bracketCount = 0;
             for (int i = position; true; i++) {
                 if (i == line.Length) {
-                    result.Error = (DiagnosticErrors.ModuleMissingClosingGenericBracket, openGenericBracket);
+                    result.Error = (DiagnosticErrors.FileMissingClosingGenericBracket, openGenericBracket);
                     return result;
                 }
 
@@ -150,17 +153,18 @@ public sealed class TSFunction : IEquatable<TSFunction> {
             position += 3; // no parameters, skip "): "
         else {
             List<TSParameter> parameterList = [];
+
             while (true) {
                 TSParameter tsParameter = new();
 
                 // parse Name
                 int colon = line[position..].IndexOf(':');
                 if (colon == -1) {
-                    result.Error = (DiagnosticErrors.ModuleMissingColon, position);
+                    result.Error = (DiagnosticErrors.FileMissingColon, position);
                     return result;
                 }
                 colon += position;
-                tsParameter.ParseName(line[position..colon]);
+                tsParameter.ParseTSName(line[position..colon]);
                 position = colon + 2; // skip ": "
 
                 // parse Type
@@ -168,7 +172,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                 int bracketCount = 0;
                 for (int i = position; true; i++) {
                     if (i == line.Length) {
-                        result.Error = (DiagnosticErrors.ModuleNoParameterEnd, position);
+                        result.Error = (DiagnosticErrors.FileNoParameterEnd, position);
                         return result;
                     }
 
@@ -211,7 +215,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
         // ReturnType/Promise
         int semicolon = line.Length - 1;
         if (line[semicolon] != ';') {
-            result.Error = (DiagnosticErrors.ModuleMissingEndingSemicolon, semicolon);
+            result.Error = (DiagnosticErrors.FileMissingEndingSemicolon, semicolon);
             return result;
         }
 
@@ -231,12 +235,100 @@ public sealed class TSFunction : IEquatable<TSFunction> {
     }
 
     /// <summary>
-    /// Parsing the TSDoc to fill <see cref="Summary"/>, <see cref="Remarks"/> and/or <see cref="TSParameter.summary"/>.
+    /// Creates a TSFunction if the given line represents a exported js-function. 
+    /// </summary>
+    /// <param name="line">An Entire line in a "js"-file.</param>
+    /// <returns>null, if not starting with "export function", otherwise tries to parse and returns a <see cref="TSFunction"/>.</returns>
+    public static TSFunction? ParseJSFunction(ReadOnlySpan<char> line) {
+        if (line is not ['e', 'x', 'p', 'o', 'r', 't', ' ', ..])
+            return null;
+
+        ReadOnlySpan<char> lineView = line[7..];
+        int position = 7; // skip "export "
+        TrimWhiteSpace(ref lineView, ref position);
+
+        if (lineView is not ['f', 'u', 'n', 'c', 't', 'i', 'o', 'n', ' ', ..])
+            return null;
+
+        lineView = lineView[9..];
+        position += 9; // skip "function "
+        TrimWhiteSpace(ref lineView, ref position);
+
+
+        TSFunction result = new();
+
+        // FunctionName
+        int openBracket = lineView.IndexOf('(');
+        if (openBracket == -1) {
+            result.Error = (DiagnosticErrors.FileMissingOpenBracket, position);
+            return result;
+        }
+        result.Name = lineView[..openBracket].TrimEnd().ToString();
+
+        // skip "("
+        if (openBracket + 1 == lineView.Length) {
+            result.Error = (DiagnosticErrors.FileNoParameterEnd, position + lineView.Length);
+            return result;
+        }
+        lineView = lineView[(openBracket + 1)..];
+        position += openBracket + 1;
+        TrimWhiteSpace(ref lineView, ref position);
+
+        // no Parameters
+        if (lineView[0] == ')')
+            return result;
+
+        // Paramters
+        List<TSParameter> parameterList = [];
+
+        while (true) {
+            TSParameter tsParameter = new() {
+                type = "object",
+                typeNullable = true
+            };
+
+            int parameterEnd = lineView.IndexOfAny([',', ')']);
+            if (parameterEnd == -1) {
+                result.Error = (DiagnosticErrors.FileNoParameterEnd, position);
+                return result;
+            }
+            
+            tsParameter.ParseJSName(lineView[..parameterEnd].TrimEnd());
+            parameterList.Add(tsParameter);
+
+            if (lineView[parameterEnd] == ')')
+                break;
+
+            if (parameterEnd + 1 == lineView.Length) {
+                result.Error = (DiagnosticErrors.FileNoParameterEnd, position + lineView.Length);
+                return result;
+            }
+            lineView = lineView[(parameterEnd + 1)..];
+            position += parameterEnd + 1;
+            TrimWhiteSpace(ref lineView, ref position);
+        }
+
+        result.ParameterList = [.. parameterList];
+
+        return result;
+
+
+
+        static void TrimWhiteSpace(ref ReadOnlySpan<char> lineView, ref int position) {
+            int length = lineView.Length;
+            lineView = lineView.TrimStart();
+            position += length - lineView.Length;
+        }
+    }
+
+
+    /// <summary>
+    /// Parsing the TSDoc to fill <see cref="Summary"/>, <see cref="Remarks"/> and <see cref="TSParameter.summary"/>.
     /// </summary>
     /// <param name="fileContent"></param>
     /// <param name="position">start of the function definition</param>
-    public void ParseTSSummary(string fileContent, int position) {
-        if (position < 5) // "/**/\n"
+    public void ParseSummary(string fileContent, int position, bool isJSDoc) {
+        if (position < 6) // at least "/***/\n"
             return;
         
         // find "*/" in the line above
@@ -291,37 +383,36 @@ public sealed class TSFunction : IEquatable<TSFunction> {
 
                     line = line[tagIndex..];
                     switch (line) {
-                        case ['@', 'p', 'a', 'r', 'a', 'm', ' ', ..]:
+                        case ['@', 'p', 'a', 'r', 'a', 'm', ' ', ..]: {
                             line = line[7..].TrimStart(); // skip "@param "
+
+                            ReadOnlySpan<char> typeSpan = isJSDoc ? FindTypeSpan(ref line) : [];
                             for (int i = 0; i < ParameterList.Length; i++)
                                 if (line.StartsWith(ParameterList[i].name.AsSpan())) {
-                                    if (line.Length == ParameterList[i].name.Length) {
-                                        CSsummary = ref ParameterList[i].summary;
-                                        unkownTag = false;
-                                        line = [];
-                                        goto double_break;
-                                    }
-                                    else if (char.IsWhiteSpace(line[ParameterList[i].name.Length])) {
-                                        CSsummary = ref ParameterList[i].summary;
-                                        unkownTag = false;
+                                    CSsummary = ref ParameterList[i].summary;
+                                    unkownTag = false;
+                                    if (typeSpan.Length > 0)
+                                        ParameterList[i].ParseType(typeSpan);
 
+                                    if (line.Length == ParameterList[i].name.Length)
+                                        line = [];
+                                    else if (char.IsWhiteSpace(line[ParameterList[i].name.Length])) {
                                         line = line[(ParameterList[i].name.Length + 1)..]; // skip "[name] "
                                         if (line.Length >= 2 && line[..2] is ['-', ' ', ..])
                                             line = line[2..]; // skip "- "
-
-                                        goto double_break;
                                     }
+                                    goto double_break;
                                 }
 
                             unkownTag = true;
                             int paramterEnd = line.IndexOf(' ');
                             if (paramterEnd != -1)
-                                line = line[paramterEnd..];
+                                line = line[paramterEnd..].TrimStart();
                             else
                                 line = []; // skip line, has nothing relevant
                             break;
-
-                        case ['@', 'r', 'e', 't', 'u', 'r', 'n', 's', ..]:
+                        }
+                        case ['@', 'r', 'e', 't', 'u', 'r', 'n', 's', ..]: {
                             if (line.Length == 8) {
                                 CSsummary = ref _returnType.summary;
                                 unkownTag = false;
@@ -336,11 +427,14 @@ public sealed class TSFunction : IEquatable<TSFunction> {
 
                             CSsummary = ref _returnType.summary;
                             unkownTag = false;
-                            line = line[9..]; // skip "@returns "
-                            line = line.TrimEnd();
-                            break;
+                            line = line[9..].TrimStart(); // skip "@returns "
 
-                        case ['@', 'r', 'e', 'm', 'a', 'r', 'k', 's', ..]:
+                            ReadOnlySpan<char> typeSpan = isJSDoc ? FindTypeSpan(ref line) : [];
+                            if (typeSpan.Length > 0)
+                                _returnType.ParseType(typeSpan);
+                            break;
+                        }
+                        case ['@', 'r', 'e', 'm', 'a', 'r', 'k', 's', ..]: {
                             if (line.Length == 8) {
                                 CSsummary = ref _remarks;
                                 unkownTag = false;
@@ -355,11 +449,10 @@ public sealed class TSFunction : IEquatable<TSFunction> {
 
                             CSsummary = ref _remarks;
                             unkownTag = false;
-                            line = line[9..]; // skip "@remarks "
-                            line = line.TrimEnd();
+                            line = line[9..].TrimStart(); // skip "@remarks "
                             break;
-
-                        default:
+                        }
+                        default: {
                             unkownTag = true;
                             for (int i = 1; i < line.Length; i++)
                                 if (char.IsWhiteSpace(line[i])) {
@@ -367,13 +460,15 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                                     goto double_break;
                                 }
 
-                            line = []; // skip line, has nothing relevant
+                            line = []; // line ends after tag
                             break;
+                        }
                     }
                     double_break:
                     tagIndex = line.IndexOf('@');
                 }
 
+                line = line.TrimEnd();
                 foreach (char c in line)
                     builder.Append(c);
             }
@@ -387,6 +482,35 @@ public sealed class TSFunction : IEquatable<TSFunction> {
 
 
 
+        static ReadOnlySpan<char> FindTypeSpan(ref ReadOnlySpan<char> line) {
+            if (line is not ['{', ..])
+                return [];
+
+            int bracketCount = 0;
+            for (int i = 1; i < line.Length; i++)
+                switch (line[i]) {
+                    case '{':
+                        bracketCount++;
+                        break;
+                    case '}':
+                        if (bracketCount > 0) {
+                            bracketCount--;
+                            break;
+                        }
+
+                        ReadOnlySpan<char> typeSpan = line[1..i].Trim();
+                        if (line.Length - 1 == i)
+                            line = []; // end of line
+                        else
+                            line = line[(i + 1)..].TrimStart(); // skip "{...}"
+                        return typeSpan;
+                }
+
+            // no matching '}'
+            line = [];
+            return [];
+        }
+        
         // removes all leading and trainling "<br/>" and then calls ToString
         static string ToSummary(StringBuilder builder) {
             while (builder.Length >= 5 && builder[^5] == '<' && builder[^4] == 'b' && builder[^3] == 'r' && builder[^2] == '/' && builder[^1] == '>')

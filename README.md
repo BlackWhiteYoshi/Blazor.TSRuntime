@@ -336,7 +336,6 @@ This package is in preview and breaking changes may occur.
 
 There are some features planned (no guarantees whatsoever):
 
-- add JSDocs Parser
 - support for non-module files
 - map callbacks <-> delegates
 
@@ -372,4 +371,5 @@ There are some features planned (no guarantees whatsoever):
   - Config.InputPath.ModulePath must end with ".js"
 - 0.7  
   Generic TS-functions are now supported.  
-  TS-function description is mapped to C# method description. Currently supported tags are &lt;summary&gt;, &lt;remarks&gt;, &lt;param&gt;, &lt;returns&gt;.
+  TS-function description is mapped to C# method description. Currently supported tags are &lt;summary&gt;, &lt;remarks&gt;, &lt;param&gt;, &lt;returns&gt;.  
+  JS-files with JSDocs type annotations are now supported.

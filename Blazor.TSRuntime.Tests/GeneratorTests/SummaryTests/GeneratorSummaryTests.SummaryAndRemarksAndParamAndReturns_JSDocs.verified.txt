@@ -22,10 +22,14 @@ public partial interface ITSRuntime {
 
 
     /// <summary>
+    /// <para>The example Summary</para>
     /// <para>Invokes in module 'module' the JS-function 'test' synchronously when supported, otherwise asynchronously.</para>
     /// </summary>
+    /// <remarks>The example remark</remarks>
+    /// <typeparam name="TNumber"></typeparam>
+    /// <param name="a">a is not B</param>
     /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
     /// <returns>a string</returns>
-    public ValueTask<string> Test(CancellationToken cancellationToken = default)
-        => InvokeTrySync<string>(GetmoduleModule(), "test", cancellationToken);
+    public ValueTask<string> Test<TNumber>(TNumber a, CancellationToken cancellationToken = default) where TNumber : INumber<TNumber>
+        => InvokeTrySync<string>(GetmoduleModule(), "test", cancellationToken, [a]);
 }

@@ -45,7 +45,7 @@ public record struct TSParameter() : IEquatable<TSParameter> {
     /// <para>Currently ignoring an optional question mark.</para>
     /// </summary>
     /// <param name="subStr"></param>
-    public void ParseName(ReadOnlySpan<char> subStr) {
+    public void ParseTSName(ReadOnlySpan<char> subStr) {
         if (subStr is [.., '?']) {
             optional = true;
             name = subStr[..^1].ToString();
@@ -53,6 +53,24 @@ public record struct TSParameter() : IEquatable<TSParameter> {
         else
             name = subStr.ToString();
     }
+
+    /// <summary>
+    /// Parses the name of the given subStr and if the subStr contains a '=', it sets <see cref="optional"/> to true.
+    /// </summary>
+    /// <param name="subStr"></param>
+    public void ParseJSName(ReadOnlySpan<char> subStr) {
+        int whiteSpaceOrEquals = subStr.IndexOfAny([' ', '=']);
+        if (whiteSpaceOrEquals == -1)
+            name = subStr.ToString();
+        else {
+            name = subStr[..whiteSpaceOrEquals].ToString();
+            subStr = subStr[whiteSpaceOrEquals..];
+
+            if (subStr.IndexOf('=') != -1)
+                optional = true;
+        }
+    }
+
 
     /// <summary>
     /// <para>Parses the type of the given subStr.</para>
@@ -69,6 +87,8 @@ public record struct TSParameter() : IEquatable<TSParameter> {
     /// </summary>
     /// <param name="subStr">Only the part of the string that represents the type of a parameter (starting after ": " and ending before ',' or ')'.</param>
     public void ParseType(ReadOnlySpan<char> subStr) {
+        // TODO Trim WhiteSpace
+
         if (subStr is ['r', 'e', 'a', 'd', 'o', 'n', 'l', 'y', ' ', ..])
             subStr = subStr[9..];
 

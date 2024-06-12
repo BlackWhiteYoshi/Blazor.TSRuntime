@@ -42,15 +42,14 @@ public sealed class TSModule : IEquatable<TSModule> {
         if (modulePath == null) {
             path = filePath.AsSpan();
 
-            // skip ".d.ts"
-            if (path.EndsWith(".d.ts".AsSpan()))
-                path = path[..^5];
-            else if (path.EndsWith(".js".AsSpan()))
-                path = path[..^3];
+            path = path switch {
+                [.., '.', 'j', 's'] => path[..^3], // skip ".js"
+                [.., '.', 'd', '.', 't', 's'] => path[..^5], // skip ".d.ts"
+                _ => throw new Exception("Unreachable: must be already filtered in InputPath.IsIncluded")
+            };
 
-            // skip "wwwroot/"
-            if (path.StartsWith($"wwwroot/".AsSpan()))
-                path = path[8..];
+            if (path is ['w', 'w', 'w', 'r', 'o', 'o', 't', '/', ..])
+                path = path[8..]; // skip "wwwroot/"
 
             if (path is ['/', ..])
                 URLPath = $"{path.ToString()}.js";
@@ -65,12 +64,10 @@ public sealed class TSModule : IEquatable<TSModule> {
             if (modulePath is ['/', ..]) {
                 URLPath = modulePath;
                 startIndex = 1;
-                //path = modulePath.AsSpan(1, modulePath.Length - 4);
             }
             else {
                 URLPath = $"/{modulePath}";
                 startIndex = 0;
-                //path = modulePath.AsSpan(0, modulePath.Length - 3);
             }
             int extensionIndex = modulePath.LastIndexOf('.');
             if (extensionIndex != -1)
@@ -88,7 +85,7 @@ public sealed class TSModule : IEquatable<TSModule> {
                 false => path
             };
 
-            if (rawModuleName.EndsWith(".razor".AsSpan()))
+            if (rawModuleName is [.., '.', 'r', 'a', 'z', 'o', 'r'])
                 rawModuleName = rawModuleName[..^6]; // skip ".razor"
 
             if (rawModuleName.Length > 0) {
@@ -134,12 +131,13 @@ public sealed class TSModule : IEquatable<TSModule> {
             if (lineEnd == -1)
                 lineEnd = fileContent.Length;
             ReadOnlySpan<char> line = fileContent.AsSpan(lineStart, lineEnd - lineStart).Trim();
+            bool isJsFile = FilePath is [.., '.', 'j', 's']; // .js or .d.ts, already filtered at InputPath.IsIncluded
             lineNumber++;
 
-            TSFunction? tsFunction = TSFunction.ParseTSFunction(line);
+            TSFunction? tsFunction = isJsFile ? TSFunction.ParseJSFunction(line) : TSFunction.ParseTSFunction(line);
             if (tsFunction is not null)
                 if (tsFunction.Error.descriptor is null) {
-                    tsFunction.ParseTSSummary(fileContent, lineStart);
+                    tsFunction.ParseSummary(fileContent, lineStart, isJsFile);
                     functionList.Add(tsFunction);
                 }
                 else
