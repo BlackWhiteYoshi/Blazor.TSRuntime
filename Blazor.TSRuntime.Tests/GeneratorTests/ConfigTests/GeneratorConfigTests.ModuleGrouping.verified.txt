@@ -23,7 +23,7 @@ namespace Microsoft.JSInterop;
 /// - NestedTestModule
 /// </para>
 /// </summary>
-[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "0.6.0")]
+[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "0.7.0")]
 public sealed class TSRuntime(IJSRuntime jsRuntime) : ITestModuleModule, INestedTestModuleModule, IDisposable, IAsyncDisposable {
     private readonly CancellationTokenSource cancellationTokenSource = new();
 
@@ -138,7 +138,7 @@ namespace Microsoft.JSInterop;
 /// <para>Interface to preload all modules.</para>
 /// <para>To invoke JS-interop methods or load a specific module, use the dedicated interface for the corresponding module.</para>
 /// </summary>
-[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "0.6.0")]
+[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "0.7.0")]
 public interface ITSRuntime {
     /// <summary>
     /// <para>Fetches all modules as javascript-modules.</para>
@@ -218,7 +218,7 @@ namespace Microsoft.JSInterop;
 /// <para>Interface to JS-interop the module 'TestModule'.</para>
 /// <para>It contains invoke-methods for the js-functions and a preload-method for loading the module of 'TestModule'.</para>
 /// </summary>
-[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "0.6.0")]
+[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "0.7.0")]
 public interface ITestModuleModule : ITSRuntime {
     protected Task<IJSObjectReference> GetTestModuleModule();
 
@@ -263,7 +263,7 @@ namespace Microsoft.JSInterop;
 /// <para>Interface to JS-interop the module 'NestedTestModule'.</para>
 /// <para>It contains invoke-methods for the js-functions and a preload-method for loading the module of 'NestedTestModule'.</para>
 /// </summary>
-[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "0.6.0")]
+[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "0.7.0")]
 public interface INestedTestModuleModule : ITSRuntime {
     protected Task<IJSObjectReference> GetNestedTestModuleModule();
 
