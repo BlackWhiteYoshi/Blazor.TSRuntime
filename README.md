@@ -8,6 +8,8 @@ An improved JSRuntime with
 
 ![InlineComposition Example](README_IMAGE.png)
 
+Works with [*JavaScript JSDoc*](#get-started) and [*TypeScript*](#get-started).
+
 
 <br></br>
 ## Available Methods
@@ -60,42 +62,7 @@ Furthermore you can prefetch your modules into JavaScript, so the Preload-method
 <br></br>
 ## Get Started
 
-### 1. Setup TypeScript - tsconfig.json
-
-If you want to use TSRuntime you have to use a TS-compiler.
-There are many different compilers and ways to get this done, but if you are using Visual Studio, you get one out of the box.
-You only need to add a tsconfig.json file.  
-Create a **tsconfig.json** file in the same folder as your .csproj-file.  
-Make sure you enable output for declaration-files: **"declaration": true**.
-
-```json
-{
-  "compileOnSave": true,
-  "compilerOptions": {
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "noEmitOnError": true,
-    "removeComments": false,
-    "sourceMap": false,
-    "declaration": true,
-    "target": "es6",
-    "lib": [
-      "es6",
-      "DOM"
-    ]
-  },
-  "exclude": [
-    "bin",
-    "obj",
-    "Properties",
-    "**/*.js",
-    "**/*.jsx"
-  ]
-}
-```
-
-
-### 2. Add Blazor.TSRuntime NuGet package
+### 1. Add NuGet package
 
 In your .csproj-file put a package reference to *Blazor.TSRuntime*.
 
@@ -106,21 +73,20 @@ In your .csproj-file put a package reference to *Blazor.TSRuntime*.
 ```
 
 
-### 3. Add tsruntime.json
+### 2. Add &lt;AdditionalFiles&gt;
 
-In your .csproj-file put an &lt;AdditionalFiles&gt; directive to *tsconfig.tsruntime.json*
-and an &lt;AdditionalFiles&gt; make all .d.ts-files available to the source-generator.
+In your .csproj-file put an &lt;AdditionalFiles&gt; directive to *tsruntime.json*
+and an &lt;AdditionalFiles&gt; to make all .js-files available to the source-generator.
 
 ```xml
 <ItemGroup>
   <PackageReference Include="Blazor.TSRuntime" Version="{latest version}" PrivateAssets="all" />
-  <AdditionalFiles Include="tsconfig.tsruntime.json" />
-  <AdditionalFiles Include="**\*.d.ts" />
+  <AdditionalFiles Include="tsruntime.json" />
+  <AdditionalFiles Include="**\*.js" />
 </ItemGroup>
 ```
 
-Create a *tsconfig.tsruntime.json*-file in the same folder as your .csproj-file.  
-Your .csproj-file, tsconfig.json, tsconfig.tsruntime.json should be all in the same folder.
+Create a *tsruntime.json*-file in the same folder as your .csproj-file.
 
 ```json
 {
@@ -151,7 +117,7 @@ Your .csproj-file, tsconfig.json, tsconfig.tsruntime.json should be all in the s
 ```
 
 
-### 4. Register ITSRuntime
+### 3. Register ITSRuntime
 
 If everything is set up correctly, the generator should already be generating the 2 files *TSRuntime*, *ITSRuntime*.  
 Register them in your dependency container.
@@ -159,17 +125,18 @@ Register them in your dependency container.
 ```csharp
 using Microsoft.JSInterop;
 
-services.AddScoped<ITSRuntime, TSRuntime>();
+// IServiceCollection services
+services.AddTSRuntime();
 ```
 
-### 5. Use It
+### 4. Hello World
 
 Now you are ready to rumble, to make a "Hello World" test you can create 2 files:
 
 - Example.razor
 
 ```razor
-<button @onclick="InvokeJS">
+<button @onclick="InvokeJS">InvokeJS</button>
 
 @code {
     [Inject]
@@ -179,7 +146,7 @@ Now you are ready to rumble, to make a "Hello World" test you can create 2 files
 }
 ```
 
-- Example.razor.ts
+- Example.razor.js
 
 ```js
 export function example() {
@@ -188,27 +155,43 @@ export function example() {
 ```
 
 
-### Troubleshooting
+### Optional
 
-make sure
+You can add a *jsconfig.json* file and rename **tsruntime.json** to **jsconfig.tsruntime.json**.  
+Here is an example *jsconfig.json*:
 
-- TypeScript is working correctly
-- you are generating decalaration(.d.ts) files
-- you have *&lt;PackageReference Blazor.TSRuntime&gt;* in .csproj
-- you have *&lt;AdditionalFiles&gt;* in .csproj
-- you have a *tsconfig.tsruntime.json*-file
-- you are using *Microsoft.JSInterop* namespace
-- restart Visual Studio to reload the generator
+```json
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "checkJs": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true
+  }
+}
+```
 
+
+### TypeScript
+
+For using TypeScript, you only need a few adjustments:
+- *tsconfig.json* instead of *jsconfig.json*
+  - rename *jsconfig.tsruntime.json* to *tsconfig.tsruntime.json*
+- change *&lt;AdditionalFiles Include="\*\*\\\*.js"* /&gt; to *&lt;AdditionalFiles Include="\*\*\\\*.ts" /&gt;*
+
+<br></br>
 Note:  
-To recognize a module, the file must end with ".d.ts".  
-Function definitions inside a module must start with "export function" or "export declare function".  
-Futhermore a function definition must not contain any line breaks
-and only the whitespace around the function is cropped, the whitespace between the tokens is important.
+To recognize a module, the file must end with ".js", ".ts" or ".d.ts".  
+Function definitions inside a module must start with "export function".  
+Futhermore a function definition must not contain any line breaks.
+
+If using TypeScript types together with JSDoc types, JSDoc takes priority,
+because JSDoc is parsed after the function declaration and overwrites the previous type.  
+But this problem should not exist in the first place as long you do not mix things up, use JS with JSDoc or TS with TSDoc.
 
 
 <br></br>
-## Config - tsconfig.tsruntime.json
+## Config - tsruntime.json
 
 All available config keys with its default value:
 
@@ -216,8 +199,8 @@ All available config keys with its default value:
 {
   "webroot path": "",
   "input path": {
-    "include": "",
-    "excludes": [ "bin", "obj", "Properties" ]
+    "include": "/",
+    "excludes": [ "/bin", "/obj", "/Properties" ]
   },
   "using statements": [ "Microsoft.AspNetCore.Components", "System.Numerics" ],
   "invoke function": {
@@ -278,7 +261,7 @@ All available config keys with its default value:
 - **[\[webroot path\]](Readme_md/InputPath.md)**:
  Relative path to the web root (starting folder 'wwwroot' is ignored).
 - **[\[input path\]](Readme_md/InputPath.md)**:
- Folder where to locate the input files. Path relative to json-file and no starting or ending slash.
+ Folder where to locate the input files. Path relative to [webroot path] and must start with '/'.
 - **[\[using statements\]](Readme_md/UsingStatements.md)**:
  List of generated using statements at the top of ITSRuntime.
 - **[\[invoke function\].\[sync enabled\]](#invoke)**:
@@ -326,7 +309,7 @@ All available config keys with its default value:
 - **[\[js runtime\].\[async enabled\]](Readme_md/JSRuntime.md)**:
  Toggles whether generic JSRuntime async invoke method should be generated.
 - **[\[service extension\]](Readme_md/ModuleGrouping.md)**:
- A service extension method is generated, which registers ITSRuntime and if available, the module interfaces.
+ A service extension method is generated, which registers ITSRuntime and if enabled, the module interfaces.
 
 
 <br></br>
@@ -344,22 +327,23 @@ There are some features planned (no guarantees whatsoever):
 ## Release Notes
 
 - 0.0.1  
-  First version. Includes all basic functionalities for generating TSRuntime.
+  - first version, includes all basic functionalities for generating TSRuntime
 - 0.1  
-  Improved declaration path: Instead of one include string, an array of objects { "include": string, "excludes": string[], "file module path": string } is now supported.
+  - improved declaration path: Instead of one include string, an array of objects { "include": string, "excludes": string[], "file module path": string } is now supported
 - 0.2  
-  Optional parameters and default parameter values are now supported.
+  - optional parameters and default parameter values are now supported
 - 0.3  
-  Breaking changes: changed config keys, defaults and properties in Config, changed Config.FromJson(string json) to new Config(string json).  
-  Added key "generate on save" and "action name" keys to config.
+  - breaking changes: changed config keys, defaults and properties in Config, changed Config.FromJson(string json) to new Config(string json)
+  - added key "generate on save" and "action name" keys to config
 - 0.4  
-  Module grouping is now supported. Small breaking change: A namespace that contains IServiceCollection is required when serviceExtension is enabled and namespace *Microsoft.Extensions.DependencyInjection* was added to the defaults.
+  - module grouping is now supported
+  - small breaking change: A namespace that contains IServiceCollection is required when serviceExtension is enabled and namespace *Microsoft.Extensions.DependencyInjection* was added to the defaults
 - 0.5  
-  Generics in type map is now supported.
+  - generics in type map is now supported
 - 0.6  
   huge Refactoring, many breaking changes:
   - renamed the project, repository and NuGet package to "Blazor.TSRuntime" (before it was "TSRuntime")
-  - dropped *Programmatically Usage* and *Visual Studio Extension*, only *Source Generator* will be continued -> reduced project structure to 2 projects.
+  - dropped *Programmatically Usage* and *Visual Studio Extension*, only *Source Generator* will be continued -> reduced project structure to 2 projects
   - changed ISourceGenerator to IIncrementalGenerator
     - *tsconfig.tsruntime.json* can now be named *\*.tsruntime.json*
     - .d.ts-files must be added with *&lt;AdditionalFiles Include="\*\*\\\*.d.ts" /&gt;*
@@ -370,6 +354,8 @@ There are some features planned (no guarantees whatsoever):
   - renamed key "append Async" to "append async"
   - Config.InputPath.ModulePath must end with ".js"
 - 0.7  
-  Generic TS-functions are now supported.  
-  TS-function description is mapped to C# method description. Currently supported tags are &lt;summary&gt;, &lt;remarks&gt;, &lt;param&gt;, &lt;returns&gt;.  
-  JS-files with JSDocs type annotations are now supported.
+  - breaking change: [input path] ('include', 'excludes', 'module path') must start with '/'
+  - generic TS-functions are now supported
+  - TS-function description is mapped to C# method description. Currently supported tags are &lt;summary&gt;, &lt;remarks&gt;, &lt;param&gt;, &lt;returns&gt;
+  - JS-files with JSDocs type annotations are now supported
+  - TS-files are now supported
