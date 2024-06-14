@@ -1,6 +1,4 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
-using System;
 using System.Text;
 
 namespace TSRuntime.Parsing;
@@ -59,70 +57,76 @@ public sealed class TSFunction : IEquatable<TSFunction> {
 
 
     /// <summary>
-    /// Creates a TSFunction if the given line represents a exported ts-function. 
+    /// Creates a TSFunction if the given line represents a exported js-function. 
     /// </summary>
-    /// <param name="line">An Entire line in a "d.ts"-file.</param>
+    /// <param name="line">An Entire line in a .js/.ts/.d.ts file.</param>
     /// <returns>null, if not starting with "export function " or "export declare function ", otherwise tries to parse and returns a <see cref="TSFunction"/>.</returns>
-    public static TSFunction? ParseTSFunction(ReadOnlySpan<char> line) {
-        int position;
-        switch (line) {
-            case ['e', 'x', 'p', 'o', 'r', 't', ' ', 'f', 'u', 'n', 'c', 't', 'i', 'o', 'n', ' ', ..]:
-                position = 16; // skip "export function "
-                break;
-            case ['e', 'x', 'p', 'o', 'r', 't', ' ', 'd', 'e', 'c', 'l', 'a', 'r', 'e', ' ', 'f', 'u', 'n', 'c', 't', 'i', 'o', 'n', ' ', ..]:
-                position = 24; // skip "export declare function "
-                break;
-            default:
-                return null;
+    public static TSFunction? ParseFunction(ReadOnlySpan<char> line) {
+        int position = 0;
+
+
+        if (line is not ['e', 'x', 'p', 'o', 'r', 't', ' ', ..])
+            return null;
+
+        line = line[7..];
+        position += 7; // skip "export "
+        TrimWhiteSpace(ref line, ref position);
+
+
+        if (line is ['d', 'e', 'c', 'l', 'a', 'r', 'e', ' ', ..]) {
+            line = line[8..];
+            position += 8; // skip "declare "
+            TrimWhiteSpace(ref line, ref position);
         }
+
+
+        if (line is not ['f', 'u', 'n', 'c', 't', 'i', 'o', 'n', ' ', ..])
+            return null;
+
+        line = line[9..];
+        position += 9; // skip "function "
+        TrimWhiteSpace(ref line, ref position);
 
 
         TSFunction result = new();
 
 
         // FunctionName
-        int openBracket = line[position..].IndexOf('(');
+        int openBracket = line.IndexOfAny(['<', '(']);
         if (openBracket == -1) {
             result.Error = (DiagnosticErrors.FileMissingOpenBracket, position);
             return result;
         }
-        openBracket += position;
 
-        int openGenericBracket = line[position..openBracket].IndexOf('<');
-        if (openGenericBracket == -1) {
-            result.Name = line[position..openBracket].ToString();
-            position = openBracket + 1; // skip "("
-        }
-        else {
-            openGenericBracket += position;
-            result.Name = line[position..openGenericBracket].ToString();
-            position = openGenericBracket + 1;
+        result.Name = line[..openBracket].TrimEnd().ToString();
 
-            // Generics
+
+        // Generics
+        if (line[openBracket] == '<') {
+            line = line[(openBracket + 1)..].TrimStart();
+            int openBracketPosition = position + openBracket;
+            position += openBracket + 1;
             List<string> generics = [];
 
-            bool ignoreWhiteSpace = false;
+            bool ignore = false;
             int bracketCount = 0;
-            for (int i = position; true; i++) {
-                if (i == line.Length) {
-                    result.Error = (DiagnosticErrors.FileMissingClosingGenericBracket, openGenericBracket);
-                    return result;
-                }
-
-                char c = line[i];
-                switch (c) {
+            for (int i = 0; i < line.Length; i++)
+                switch (line[i]) {
                     case ' ':
-                        if (!ignoreWhiteSpace) {
-                            generics.Add(line[position..i].ToString());
-                            ignoreWhiteSpace = true; // skip "extends ..."
+                        if (!ignore) {
+                            generics.Add(line[..i].ToString());
+                            ignore = true; // skip "extends ..."
                         }
                         break;
                     case ',':
                         if (bracketCount == 0) {
-                            generics.Add(line[position..i].ToString());
-                            i += 2; // skip ", "
-                            position = i;
-                            ignoreWhiteSpace = false;
+                            if (!ignore)
+                                generics.Add(line[..i].ToString());
+                            line = line[(i + 1)..]; // skip ','
+                            position = i + 1;
+                            TrimWhiteSpace(ref line, ref position);
+                            i = -1;
+                            ignore = false;
                         }
                         break;
                     case '<':
@@ -133,201 +137,195 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                             bracketCount--;
                             break;
                         }
-                        else {
-                            if (!ignoreWhiteSpace)
-                                generics.Add(line[position..i].ToString());
-                            i += 2; // skip ">("
-                            position = i;
-                            goto double_break;
+
+                        if (!ignore)
+                            generics.Add(line[..i].ToString());
+                        line = line[(i + 1)..]; // skip '>'
+                        position = i + 1;
+                        TrimWhiteSpace(ref line, ref position);
+
+                        if (line is not ['(', ..]) {
+                            result.Error = (DiagnosticErrors.FileMissingOpenBracket, position);
+                            return result;
                         }
+                        openBracket = 0;
+                        goto closing_bracket_found;
                 }
+            { // else
+                result.Error = (DiagnosticErrors.FileMissingClosingGenericBracket, openBracketPosition);
+                return result;
             }
-            double_break:
+            closing_bracket_found:
 
             result.Generics = [.. generics];
         }
 
 
         // Parameters
-        if (line[position] == ')')
-            position += 3; // no parameters, skip "): "
-        else {
+        line = line[(openBracket + 1)..];
+        position += openBracket + 1;
+        TrimWhiteSpace(ref line, ref position);
+
+        if (line is not [')', ..]) {
             List<TSParameter> parameterList = [];
 
-            while (true) {
-                TSParameter tsParameter = new();
+            char token;
+            do {
+                TSParameter tsParameter = new() {
+                    type = "object",
+                    typeNullable = true
+                };
 
-                // parse Name
-                int colon = line[position..].IndexOf(':');
-                if (colon == -1) {
-                    result.Error = (DiagnosticErrors.FileMissingColon, position);
+                // parse name
+                int tokenIndex = line.IndexOfAny([',', ')', ':', '=']);
+                if (tokenIndex == -1) {
+                    result.Error = (DiagnosticErrors.FileNoParameterEnd, position);
                     return result;
                 }
-                colon += position;
-                tsParameter.ParseTSName(line[position..colon]);
-                position = colon + 2; // skip ": "
+                token = line[tokenIndex];
 
-                // parse Type
-                int parameterTypeEnd;
-                int bracketCount = 0;
-                for (int i = position; true; i++) {
-                    if (i == line.Length) {
+                tsParameter.ParseName(line[..tokenIndex].TrimEnd());
+
+
+                line = line[(tokenIndex + 1)..]; // skip [',', ')', ':']
+                position += tokenIndex + 1;
+                TrimWhiteSpace(ref line, ref position);
+                
+                // parse type
+                if (token is ':') {
+                    int parameterTypeEnd;
+                    int bracketCount = 0;
+                    for (int i = 0; i < line.Length; i++)
+                        switch (line[i]) {
+                            case '(' or '[' or '<':
+                                bracketCount++;
+                                break;
+                            case ']' or '>':
+                                bracketCount--;
+                                break;
+                            case ')':
+                                if (bracketCount <= 0) {
+                                    parameterTypeEnd = i;
+                                    goto parameter_type_end_found;
+                                }
+                                bracketCount--;
+                                break;
+                            case ',' or '=':
+                                if (bracketCount <= 0) {
+                                    parameterTypeEnd = i;
+                                    goto parameter_type_end_found;
+                                }
+                                break;
+                        }
+                    { // else
                         result.Error = (DiagnosticErrors.FileNoParameterEnd, position);
                         return result;
                     }
+                    parameter_type_end_found:
 
-                    char c = line[i];
-                    switch (c) {
-                        case ',':
-                            parameterTypeEnd = i;
-                            goto double_break;
-                        case '(':
-                            bracketCount++;
-                            break;
-                        case ')':
-                            if (bracketCount == 0) {
-                                parameterTypeEnd = i;
-                                goto double_break;
-                            }
-                            bracketCount--;
-                            break;
-                    }
+                    tsParameter.ParseType(line[..parameterTypeEnd].TrimEnd());
+
+                    token = line[parameterTypeEnd];
+                    line = line[(parameterTypeEnd + 1)..]; // skip [',', ')']
+                    position += parameterTypeEnd + 1;
+                    TrimWhiteSpace(ref line, ref position);
                 }
-                double_break:
 
-                tsParameter.ParseType(line[position..parameterTypeEnd]);
+                // skip default value
+                if (token is '=') {
+                    int parameterEnd;
+                    int bracketCount = 0;
+                    for (int i = 0; i < line.Length; i++)
+                        switch (line[i]) {
+                            case '(' or '[' or '<':
+                                bracketCount++;
+                                break;
+                            case ']' or '>':
+                                bracketCount--;
+                                break;
+                            case ')':
+                                if (bracketCount <= 0) {
+                                    parameterEnd = i;
+                                    goto parameter_end_found;
+                                }
+                                bracketCount--;
+                                break;
+                            case ',':
+                                if (bracketCount <= 0) {
+                                    parameterEnd = i;
+                                    goto parameter_end_found;
+                                }
+                                break;
+                        }
+                    { // else
+                        result.Error = (DiagnosticErrors.FileNoParameterEnd, position);
+                        return result;
+                    }
+                    parameter_end_found:
+
+                    token = line[parameterEnd];
+                    line = line[(parameterEnd + 1)..]; // skip [',', ')']
+                    position += parameterEnd + 1;
+                    TrimWhiteSpace(ref line, ref position);
+                }
 
                 parameterList.Add(tsParameter);
-
-                position = parameterTypeEnd;
-                if (line[position] == ',')
-                    position += 2; // skip ", "
-                else {
-                    position += 3; // no parameters, skip "): "
-                    break;
-                }
-            }
+            } while (token != ')');
 
             result.ParameterList = [.. parameterList];
         }
-
-
-        // ReturnType/Promise
-        int semicolon = line.Length - 1;
-        if (line[semicolon] != ';') {
-            result.Error = (DiagnosticErrors.FileMissingEndingSemicolon, semicolon);
-            return result;
+        else {
+            line = line[1..]; // skip ')'
+            position += 1;
+            TrimWhiteSpace(ref line, ref position);
         }
 
-        if (line[position..] is ['P', 'r', 'o', 'm', 'i', 's', 'e', '<', ..]) {
-            result.ReturnPromise = true;
-            // cut "Promise<..>"
-            position += 8;
-            semicolon--;
-        }
-        else
-            result.ReturnPromise = false;
 
-        result._returnType.ParseType(line[position..semicolon]);
+        // ReturnType / ReturnPromise
+        if (line is [':', ..]) {
+            line = line[1..]; // skip ':'
+            position += 1;
+            TrimWhiteSpace(ref line, ref position);
 
+            if (line is ['P', 'r', 'o', 'm', 'i', 's', 'e', '<', ..]) {
+                result.ReturnPromise = true;
 
-        return result;
-    }
-
-    /// <summary>
-    /// Creates a TSFunction if the given line represents a exported js-function. 
-    /// </summary>
-    /// <param name="line">An Entire line in a "js"-file.</param>
-    /// <returns>null, if not starting with "export function", otherwise tries to parse and returns a <see cref="TSFunction"/>.</returns>
-    public static TSFunction? ParseJSFunction(ReadOnlySpan<char> line) {
-        if (line is not ['e', 'x', 'p', 'o', 'r', 't', ' ', ..])
-            return null;
-
-        ReadOnlySpan<char> lineView = line[7..];
-        int position = 7; // skip "export "
-        TrimWhiteSpace(ref lineView, ref position);
-
-        if (lineView is not ['f', 'u', 'n', 'c', 't', 'i', 'o', 'n', ' ', ..])
-            return null;
-
-        lineView = lineView[9..];
-        position += 9; // skip "function "
-        TrimWhiteSpace(ref lineView, ref position);
-
-
-        TSFunction result = new();
-
-        // FunctionName
-        int openBracket = lineView.IndexOf('(');
-        if (openBracket == -1) {
-            result.Error = (DiagnosticErrors.FileMissingOpenBracket, position);
-            return result;
-        }
-        result.Name = lineView[..openBracket].TrimEnd().ToString();
-
-        // skip "("
-        if (openBracket + 1 == lineView.Length) {
-            result.Error = (DiagnosticErrors.FileNoParameterEnd, position + lineView.Length);
-            return result;
-        }
-        lineView = lineView[(openBracket + 1)..];
-        position += openBracket + 1;
-        TrimWhiteSpace(ref lineView, ref position);
-
-        // no Parameters
-        if (lineView[0] == ')')
-            return result;
-
-        // Paramters
-        List<TSParameter> parameterList = [];
-
-        while (true) {
-            TSParameter tsParameter = new() {
-                type = "object",
-                typeNullable = true
-            };
-
-            int parameterEnd = lineView.IndexOfAny([',', ')']);
-            if (parameterEnd == -1) {
-                result.Error = (DiagnosticErrors.FileNoParameterEnd, position);
-                return result;
+                int closingBracket = line.LastIndexOf('>');
+                if (closingBracket == -1) {
+                    result.Error = (DiagnosticErrors.FileMissingClosingGenericBracket, position + 8);
+                    return result;
+                }
+                line = line[8..closingBracket].Trim();
             }
-            
-            tsParameter.ParseJSName(lineView[..parameterEnd].TrimEnd());
-            parameterList.Add(tsParameter);
-
-            if (lineView[parameterEnd] == ')')
-                break;
-
-            if (parameterEnd + 1 == lineView.Length) {
-                result.Error = (DiagnosticErrors.FileNoParameterEnd, position + lineView.Length);
-                return result;
+            else {
+                result.ReturnPromise = false;
+                
+                int headEnd = line.IndexOfAny(['{', ';']);
+                if (headEnd == -1)
+                    headEnd = line.Length;
+                line = line[..headEnd].TrimEnd();
             }
-            lineView = lineView[(parameterEnd + 1)..];
-            position += parameterEnd + 1;
-            TrimWhiteSpace(ref lineView, ref position);
+
+            result._returnType.ParseType(line);
         }
 
-        result.ParameterList = [.. parameterList];
 
         return result;
 
 
-
-        static void TrimWhiteSpace(ref ReadOnlySpan<char> lineView, ref int position) {
-            int length = lineView.Length;
-            lineView = lineView.TrimStart();
-            position += length - lineView.Length;
+        static void TrimWhiteSpace(ref ReadOnlySpan<char> line, ref int position) {
+            int length = line.Length;
+            line = line.TrimStart();
+            position += length - line.Length;
         }
     }
-
 
     /// <summary>
     /// Parsing the TSDoc to fill <see cref="Summary"/>, <see cref="Remarks"/> and <see cref="TSParameter.summary"/>.
     /// </summary>
     /// <param name="fileContent"></param>
     /// <param name="position">start of the function definition</param>
-    public void ParseSummary(string fileContent, int position, bool isJSDoc) {
+    public void ParseSummary(string fileContent, int position) {
         if (position < 6) // at least "/***/\n"
             return;
         
@@ -386,7 +384,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                         case ['@', 'p', 'a', 'r', 'a', 'm', ' ', ..]: {
                             line = line[7..].TrimStart(); // skip "@param "
 
-                            ReadOnlySpan<char> typeSpan = isJSDoc ? FindTypeSpan(ref line) : [];
+                            ReadOnlySpan<char> typeSpan = FindTypeSpan(ref line);
                             for (int i = 0; i < ParameterList.Length; i++)
                                 if (line.StartsWith(ParameterList[i].name.AsSpan())) {
                                     CSsummary = ref ParameterList[i].summary;
@@ -429,9 +427,16 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                             unkownTag = false;
                             line = line[9..].TrimStart(); // skip "@returns "
 
-                            ReadOnlySpan<char> typeSpan = isJSDoc ? FindTypeSpan(ref line) : [];
+                            ReadOnlySpan<char> typeSpan = FindTypeSpan(ref line);
                             if (typeSpan.Length > 0)
-                                _returnType.ParseType(typeSpan);
+                                if (typeSpan is ['P', 'r', 'o', 'm', 'i', 's', 'e', '<', ..]) {
+                                    ReturnPromise = true;
+                                    _returnType.ParseType(typeSpan[8..^1].Trim()); // cut "Promise<..>"
+                                }
+                                else {
+                                    ReturnPromise = false;
+                                    _returnType.ParseType(typeSpan);
+                                }
                             break;
                         }
                         case ['@', 'r', 'e', 'm', 'a', 'r', 'k', 's', ..]: {

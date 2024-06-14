@@ -43,8 +43,8 @@ public sealed class TSModule : IEquatable<TSModule> {
             path = filePath.AsSpan();
 
             path = path switch {
-                [.., '.', 'j', 's'] => path[..^3], // skip ".js"
                 [.., '.', 'd', '.', 't', 's'] => path[..^5], // skip ".d.ts"
+                [.., '.', 'j', 's'] or [.., '.', 't', 's'] => path[..^3], // skip ".js"/".ts"
                 _ => throw new Exception("Unreachable: must be already filtered in InputPath.IsIncluded")
             };
 
@@ -57,9 +57,6 @@ public sealed class TSModule : IEquatable<TSModule> {
                 URLPath = $"/{path.ToString()}.js";
         }
         else {
-            if (!modulePath.EndsWith(".js"))
-                errorList.AddModulePathNoJsExtensionError(filePath, modulePath);
-
             int startIndex;
             if (modulePath is ['/', ..]) {
                 URLPath = modulePath;
@@ -131,13 +128,12 @@ public sealed class TSModule : IEquatable<TSModule> {
             if (lineEnd == -1)
                 lineEnd = fileContent.Length;
             ReadOnlySpan<char> line = fileContent.AsSpan(lineStart, lineEnd - lineStart).Trim();
-            bool isJsFile = FilePath is [.., '.', 'j', 's']; // .js or .d.ts, already filtered at InputPath.IsIncluded
             lineNumber++;
 
-            TSFunction? tsFunction = isJsFile ? TSFunction.ParseJSFunction(line) : TSFunction.ParseTSFunction(line);
+            TSFunction? tsFunction = TSFunction.ParseFunction(line);
             if (tsFunction is not null)
                 if (tsFunction.Error.descriptor is null) {
-                    tsFunction.ParseSummary(fileContent, lineStart, isJsFile);
+                    tsFunction.ParseSummary(fileContent, lineStart);
                     functionList.Add(tsFunction);
                 }
                 else

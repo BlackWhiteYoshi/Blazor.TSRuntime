@@ -41,34 +41,16 @@ public record struct TSParameter() : IEquatable<TSParameter> {
 
 
     /// <summary>
-    /// <para>Parses the name of the given subStr.</para>
-    /// <para>Currently ignoring an optional question mark.</para>
+    /// Parses the name of the given subStr.
     /// </summary>
     /// <param name="subStr"></param>
-    public void ParseTSName(ReadOnlySpan<char> subStr) {
+    public void ParseName(ReadOnlySpan<char> subStr) {
         if (subStr is [.., '?']) {
             optional = true;
             name = subStr[..^1].ToString();
         }
         else
             name = subStr.ToString();
-    }
-
-    /// <summary>
-    /// Parses the name of the given subStr and if the subStr contains a '=', it sets <see cref="optional"/> to true.
-    /// </summary>
-    /// <param name="subStr"></param>
-    public void ParseJSName(ReadOnlySpan<char> subStr) {
-        int whiteSpaceOrEquals = subStr.IndexOfAny([' ', '=']);
-        if (whiteSpaceOrEquals == -1)
-            name = subStr.ToString();
-        else {
-            name = subStr[..whiteSpaceOrEquals].ToString();
-            subStr = subStr[whiteSpaceOrEquals..];
-
-            if (subStr.IndexOf('=') != -1)
-                optional = true;
-        }
     }
 
 
@@ -87,71 +69,102 @@ public record struct TSParameter() : IEquatable<TSParameter> {
     /// </summary>
     /// <param name="subStr">Only the part of the string that represents the type of a parameter (starting after ": " and ending before ',' or ')'.</param>
     public void ParseType(ReadOnlySpan<char> subStr) {
-        // TODO Trim WhiteSpace
-
-        if (subStr is ['r', 'e', 'a', 'd', 'o', 'n', 'l', 'y', ' ', ..])
+        if (subStr is ['r', 'e', 'a', 'd', 'o', 'n', 'l', 'y', ' ', ..]) {
             subStr = subStr[9..];
+            subStr = subStr.TrimStart();
+        }
 
         // array or type
         (typeNullable, optional) = ParseNullUndefined(ref subStr);
 
-        if (subStr is [.., '[', ']']) {
-            array = true;
-            arrayNullable = typeNullable;
-            subStr = subStr[..^2];   // cut "..[]"
-            if (subStr[0] == '(') {
-                subStr = subStr[1..^1]; // cut "(..)"
-                (bool nullable, bool optional) = ParseNullUndefined(ref subStr);
-                typeNullable = nullable | optional;
+        if (subStr is [.., ']']) {
+            ReadOnlySpan<char> view = subStr[..^1].TrimEnd();
+            if (view is [.., '[']) {
+                subStr = view[..^1].TrimEnd();
+                array = true;
+                arrayNullable = typeNullable;
+
+                if (subStr is ['(', .., ')']) {
+                    subStr = subStr[1..^1].Trim(); // cut "(..)"
+                    (bool nullable, bool optional) = ParseNullUndefined(ref subStr);
+                    typeNullable = nullable | optional;
+                }
+                else
+                    typeNullable = false;
+
+                type = subStr.ToString();
+                return;
             }
-            else
-                typeNullable = false;
         }
-        else if (subStr is ['A', 'r', 'r', 'a', 'y', '<', ..]) {
+        
+        if (subStr is ['A', 'r', 'r', 'a', 'y', '<', .., '>']) {
             array = true;
             arrayNullable = typeNullable;
-            subStr = subStr[6..^1];   // cut "Array<..>"
+            subStr = subStr[6..^1].Trim();   // cut "Array<..>"
 
             (bool nullable, bool optional) = ParseNullUndefined(ref subStr);
             typeNullable = nullable | optional;
-        }
 
+            type = subStr.ToString();
+            return;
+        }
+        
         type = subStr.ToString();
         return;
 
 
         static (bool nullable, bool optional) ParseNullUndefined(ref ReadOnlySpan<char> subStr) {
-            switch (subStr) {
-                case [.., '|', ' ', 'n', 'u', 'l', 'l', ' ', '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd']
-                or [.., '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', ' ', 'n', 'u', 'l', 'l']:
-                    subStr = subStr[..^19]; // cut " | null | undefined" or " | undefined | null"
-                    return (true, true);
-                case ['n', 'u', 'l', 'l', ' ', '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', ..]
-                or ['u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', ' ', 'n', 'u', 'l', 'l', ' ', '|', ..]:
-                    subStr = subStr[19..]; // cut "null | undefined | " or "undefined | null | "
-                    return (true, true);
-                case ['n', 'u', 'l', 'l', ' ', '|', .., '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd']:
-                    subStr = subStr[7..^12]; // cut "null | .. | undefined"
-                    return (true, true);
-                case ['u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', .., '|', ' ', 'n', 'u', 'l', 'l']:
-                    subStr = subStr[12..^7]; // cut "undefined | .. | null"
-                    return (true, true);
-
-                case [.., '|', ' ', 'n', 'u', 'l', 'l']:
-                    subStr = subStr[..^7]; // cut " | null"
-                    return (true, false);
-                case ['n', 'u', 'l', 'l', ' ', '|', ..]:
-                    subStr = subStr[7..]; // cut "null | "
-                    return (true, false);
-                case [.., '|', ' ', 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd']:
-                    subStr = subStr[..^12]; // cut " | undefined"
-                    return (false, true);
-                case ['u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ' ', '|', ..]:
-                    subStr = subStr[12..]; // cut "undefined | "
-                    return (false, true);
-            }
+            if (IsNullable(ref subStr))
+                return (true, IsUndefinedable(ref subStr));
+            else if (IsUndefinedable(ref subStr))
+                return (IsNullable(ref subStr), true);
 
             return (false, false);
+
+
+            static bool IsNullable(ref ReadOnlySpan<char> subStr) {
+                if (subStr is ['n', 'u', 'l', 'l', ..]) {
+                    ReadOnlySpan<char> view = subStr[4..];
+                    view = view.TrimStart();
+                    if (view is ['|', ..]) {
+                        subStr = view[1..].TrimStart();
+                        return true;
+                    }
+                }
+
+                if (subStr is [.., 'n', 'u', 'l', 'l']) {
+                    ReadOnlySpan<char> view = subStr[..^4];
+                    view = view.TrimEnd();
+                    if (view is [.., '|']) {
+                        subStr = view[..^1].TrimEnd();
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            static bool IsUndefinedable(ref ReadOnlySpan<char> subStr) {
+                if (subStr is ['u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', ..]) {
+                    ReadOnlySpan<char> view = subStr[9..];
+                    view = view.TrimStart();
+                    if (view is ['|', ..]) {
+                        subStr = view[1..].TrimStart();
+                        return true;
+                    }
+                }
+
+                if (subStr is [.., 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd']) {
+                    ReadOnlySpan<char> view = subStr[..^9];
+                    view = view.TrimEnd();
+                    if (view is [.., '|']) {
+                        subStr = view[..^1].TrimEnd();
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         }
     }
 }

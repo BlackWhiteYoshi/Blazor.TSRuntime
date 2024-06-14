@@ -19,7 +19,7 @@ public sealed class Config : IEquatable<Config> {
     /// Declares the input source. It contains folder and file paths where each paths can have some more properties.
     /// </summary>
     public InputPath[] InputPath { get; init; } = InputPathDefault;
-    private static readonly InputPath[] InputPathDefault = [new InputPath("", ["bin", "obj", "Properties"])];
+    private static readonly InputPath[] InputPathDefault = [new InputPath("/", ["/bin", "/obj", "/Properties"])];
 
 
     /// <summary>
@@ -200,6 +200,7 @@ public sealed class Config : IEquatable<Config> {
             return;
         }
 
+        // WebRootPath
         string relativePath = root.ParseValue("webroot path", ErrorList, "[webroot path]", string.Empty);
         string absolutePathNotEvaluated = Path.Combine(filePath, relativePath);
         string absolutePath = Path.GetFullPath(absolutePathNotEvaluated);
@@ -208,185 +209,228 @@ public sealed class Config : IEquatable<Config> {
 
         // InputPath
         switch (root["input path"]) {
-            case JsonArray jsonArray:
+            case JsonArray jsonArray: {
                 InputPath = jsonArray.Select((JsonNode? node, int index) => {
                     switch (node) {
-                        case JsonObject jsonObject:
+                        case JsonObject jsonObject: {
                             string include;
                             switch (jsonObject["include"]) {
-                                case JsonValue jsonValue:
+                                case JsonValue jsonValue: {
                                     string? str = jsonValue.ParseValue<string?>(ErrorList, $"[input path (index {index})].[include]", null);
                                     if (str is null)
                                         return null;
                                     include = Normalize(str);
+                                    if (include is not ['/', ..] and { Length: > 0 })
+                                        ErrorList.AddInputPathNoStartingSlashError($"[input path (index {index})].[include]");
                                     break;
-
-                                case null:
+                                }
+                                case null: {
                                     ErrorList.AddConfigKeyNotFoundError($"[input path (index {index})].[include]");
                                     return null;
-
-                                case not null:
+                                }
+                                case not null: {
                                     ErrorList.AddConfigUnexpectedTypeError($"[input path (index {index})].[include]");
                                     return null;
+                                }
                             }
 
                             string[] excludes;
                             switch (jsonObject["excludes"]) {
-                                case JsonArray jsonArray:
+                                case JsonArray jsonArray: {
                                     excludes = jsonArray.Select((JsonNode? node, int excludeIndex) => {
                                         string? result = node.ParseValue<string?>(ErrorList, $"[input path (index {index})].[excludes (index {excludeIndex})]", null);
-                                        if (result is not null)
+                                        if (result is not null) {
                                             result = Normalize(result);
+                                            if (result is not ['/', ..] and { Length: > 0 })
+                                                ErrorList.AddInputPathNoStartingSlashError($"[input path (index {index})].[excludes (index {excludeIndex})]");
+                                        }
                                         return result;
                                     });
                                     break;
-
-                                case JsonValue jsonValue:
-                                    if (jsonValue.TryGetValue(out string? str))
-                                        excludes = [Normalize(str)];
+                                }
+                                case JsonValue jsonValue: {
+                                    if (jsonValue.TryGetValue(out string? str)) {
+                                        str = Normalize(str);
+                                        if (str is not ['/', ..] and { Length: > 0 })
+                                            ErrorList.AddInputPathNoStartingSlashError($"[input path (index {index})].[excludes]");
+                                        excludes = [str];
+                                    }
                                     else {
                                         ErrorList.AddConfigStringExpectedError($"[input path (index {index})].[excludes]");
                                         excludes = [];
                                     }
                                     break;
-
-                                case not null:
+                                }
+                                case not null: {
                                     ErrorList.AddConfigUnexpectedTypeError($"[input path (index {index})].[excludes]");
                                     goto case null;
-
-                                case null:
+                                }
+                                case null: {
                                     excludes = [];
                                     break;
+                                }
                             }
 
-                            string? fileModulePath;
+                            string? modulePath;
                             switch (jsonObject["module path"]) {
-                                case JsonValue jsonValue:
-                                    fileModulePath = jsonValue.ParseValue<string?>(ErrorList, $"[input path (index {index})].[module path]", null);
-                                    if (fileModulePath is not null)
-                                        fileModulePath = Normalize(fileModulePath);
+                                case JsonValue jsonValue: {
+                                    modulePath = jsonValue.ParseValue<string?>(ErrorList, $"[input path (index {index})].[module path]", null);
+                                    if (modulePath is not null) {
+                                        modulePath = Normalize(modulePath);
+                                        if (modulePath is not ['/', ..] and { Length: > 0 })
+                                            ErrorList.AddInputPathNoStartingSlashError($"[input path (index {index})].[module path]");
+                                        if (modulePath is not [.., '.', 'j', 's'])
+                                            ErrorList.AddModulePathNoJsExtensionError($"[input path (index {index})].[module path]");
+                                    }
                                     break;
-
-                                case not null:
+                                }
+                                case not null: {
                                     ErrorList.AddConfigUnexpectedTypeError($"[input path (index {index})].[module path]");
                                     goto case null;
-
-                                case null:
-                                    fileModulePath = null;
+                                }
+                                case null: {
+                                    modulePath = null;
                                     break;
+                                }
                             }
 
-                            return new InputPath(include, excludes, fileModulePath);
-
-                        case JsonValue jsonValue:
-                            if (jsonValue.TryGetValue(out string? value))
-                                return new InputPath(Normalize(value));
+                            return new InputPath(include, excludes, modulePath);
+                        }
+                        case JsonValue jsonValue: {
+                            if (jsonValue.TryGetValue(out string? include)) {
+                                include = Normalize(include);
+                                if (include is not ['/', ..] and { Length: > 0 })
+                                    ErrorList.AddInputPathNoStartingSlashError($"[input path (index {index})]");
+                                return new InputPath(include);
+                            }
                             else {
                                 ErrorList.AddConfigStringExpectedError($"[input path (index {index})]");
                                 return null;
                             }
-
-                        default:
+                        }
+                        default: {
                             ErrorList.AddConfigUnexpectedTypeError($"[input path (index {index})]");
                             return null;
+                        }
                     }
                 });
                 break;
-            
-            case JsonObject jsonObject:
+            }
+            case JsonObject jsonObject: {
                 string include;
                 switch (jsonObject["include"]) {
-                    case JsonValue jsonValue:
+                    case JsonValue jsonValue: {
                         include = Normalize(jsonValue.ParseValue(ErrorList, "[input path].[include]", string.Empty));
+                        if (include is not ['/', ..] and { Length: > 0 })
+                            ErrorList.AddInputPathNoStartingSlashError("[input path].[include]");
                         break;
-
-                    case null:
+                    }
+                    case null: {
                         ErrorList.AddConfigKeyNotFoundError("[input path].[include]");
                         include = string.Empty;
                         break;
-
-                    case not null:
+                    }
+                    case not null: {
                         ErrorList.AddConfigUnexpectedTypeError("[input path].[include]");
                         include = string.Empty;
                         break;
+                    }
                 }
 
                 string[] excludes;
                 switch (jsonObject["excludes"]) {
-                    case JsonArray jsonArray:
+                    case JsonArray jsonArray: {
                         excludes = jsonArray.Select((JsonNode? node, int index) => {
                             string? result = node.ParseValue<string?>(ErrorList, $"[input path].[excludes (index {index})]", null);
-                            if (result is not null)
+                            if (result is not null) {
                                 result = Normalize(result);
+                                if (result is not ['/', ..] and { Length: > 0 })
+                                    ErrorList.AddInputPathNoStartingSlashError($"[input path].[excludes (index {index})]");
+                            }
                             return result;
                         });
                         break;
-                    
-                    case JsonValue jsonValue:
-                        if (jsonValue.TryGetValue(out string? value))
-                            excludes = [Normalize(value)];
+                    }
+                    case JsonValue jsonValue: {
+                        if (jsonValue.TryGetValue(out string? value)) {
+                            value = Normalize(value);
+                            if (value is not ['/', ..] and { Length: > 0 })
+                                ErrorList.AddInputPathNoStartingSlashError("[input path].[excludes]");
+                            excludes = [value];
+                        }
                         else {
                             ErrorList.AddConfigStringExpectedError("[input path].[excludes]");
                             excludes = [];
                         }
                         break;
-
-                    case not null:
+                    }
+                    case not null: {
                         ErrorList.AddConfigUnexpectedTypeError("[input path].[excludes]");
                         goto case null;
-
-                    case null:
+                    }
+                    case null: {
                         excludes = [];
                         break;
+                    }
                 }
 
-                string? fileModulePath;
+                string? modulePath;
                 switch (jsonObject["module path"]) {
-                    case JsonValue jsonValue:
-                        fileModulePath = jsonValue.ParseValue<string?>(ErrorList, "[input path].[module path]", null);
-                        if (fileModulePath is not null)
-                            fileModulePath = Normalize(fileModulePath);
+                    case JsonValue jsonValue: {
+                        modulePath = jsonValue.ParseValue<string?>(ErrorList, "[input path].[module path]", null);
+                        if (modulePath is not null) {
+                            modulePath = Normalize(modulePath);
+                            if (modulePath is not ['/', ..] and { Length: > 0 })
+                                ErrorList.AddInputPathNoStartingSlashError("[input path].[module path]");
+                            if (modulePath is not [.., '.', 'j', 's'])
+                                ErrorList.AddModulePathNoJsExtensionError("[input path].[module path]");
+                        }
                         break;
-
-                    case not null:
+                    }
+                    case not null: {
                         ErrorList.AddConfigUnexpectedTypeError("[input path].[module path]");
                         goto case null;
-
-                    case null:
-                        fileModulePath = null;
+                    }
+                    case null: {
+                        modulePath = null;
                         break;
+                    }
                 }
 
-                InputPath = [new InputPath(include, excludes, fileModulePath)];
+                InputPath = [new InputPath(include, excludes, modulePath)];
                 break;
-
+            }
             case JsonValue jsonValue: {
-                if (jsonValue.TryGetValue(out string? value))
-                    InputPath = [new InputPath(Normalize(value))];
+                if (jsonValue.TryGetValue(out string? include)) {
+                    include = Normalize(include);
+                    if (include is not ['/', ..] and { Length: > 0 })
+                        ErrorList.AddInputPathNoStartingSlashError("[input path]");
+                    InputPath = [new InputPath(include)];
+                }
                 else {
                     ErrorList.AddConfigStringExpectedError("[input path]");
                     InputPath = InputPathDefault;
                 }
                 break;
             }
-                
-            case not null:
+            case not null: {
                 ErrorList.AddConfigUnexpectedTypeError("[input path]");
                 goto case null;
-            
-            case null:
+            }
+            case null: {
                 InputPath = InputPathDefault;
                 break;
+            }
         }
 
 
         // UsingStatements
         switch (root["using statements"]) {
-            case JsonArray array:
+            case JsonArray array: {
                 UsingStatements = array.Select((JsonNode? node, int index) => node.ParseValue<string?>(ErrorList, $"[using statements (index {index})]", null));
                 break;
-
-            case JsonValue jsonValue:
+            }
+            case JsonValue jsonValue: {
                 if (jsonValue.TryGetValue(out string? value))
                     UsingStatements = [value];
                 else {
@@ -394,14 +438,15 @@ public sealed class Config : IEquatable<Config> {
                     UsingStatements = UsingStatementsDefault;
                 }
                 break;
-
-            case not null:
+            }
+            case not null: {
                 ErrorList.AddConfigUnexpectedTypeError("[using statements]");
                 goto case null;
-
-            case null:
+            }
+            case null: {
                 UsingStatements = UsingStatementsDefault;
                 break;
+            }
         }
 
 
@@ -411,13 +456,13 @@ public sealed class Config : IEquatable<Config> {
         // PromiseOnlyAsync, PromiseAppendAsync
         // TypeMap
         switch (root["invoke function"]) {
-            case JsonObject jsonObject:
+            case JsonObject jsonObject: {
                 InvokeFunctionSyncEnabled = jsonObject.ParseValue("sync enabled", ErrorList, "[invoke function].[sync enabled]", INVOKE_FUNCTION_SYNC_ENABLED);
                 InvokeFunctionTrySyncEnabled = jsonObject.ParseValue("trysync enabled", ErrorList, "[invoke function].[trysync enabled]", INVOKE_FUNCTION_TRYSYNC_ENABLED);
                 InvokeFunctionAsyncEnabled = jsonObject.ParseValue("async enabled", ErrorList, "[invoke function].[async enabled]", INVOKE_FUNCTION_ASYNC_ENABLED);
 
                 switch (jsonObject["name pattern"]) {
-                    case JsonObject namePatternJsonObject:
+                    case JsonObject namePatternJsonObject: {
                         string namePattern = namePatternJsonObject.ParseValue("pattern", ErrorList, "[invoke function].[name pattern].[pattern]", INVOKE_FUNCTION_NAME_PATTERN);
                         NameTransform moduleTransform = namePatternJsonObject.ParseNameTransform("module transform", ErrorList, "[invoke function].[name pattern].[module transform]", INVOKE_FUNCTION_MODULE_TRANSFORM);
                         NameTransform functionTransform = namePatternJsonObject.ParseNameTransform("function transform", ErrorList, "[invoke function].[name pattern].[function transform]", INVOKE_FUNCTION_FUNCTION_TRANSFORM);
@@ -425,126 +470,132 @@ public sealed class Config : IEquatable<Config> {
                         InvokeFunctionNamePattern = new FunctionNamePattern(namePattern, moduleTransform, functionTransform, actionTransform, ErrorList);
 
                         switch (namePatternJsonObject["action name"]) {
-                            case JsonObject actionNameJsonObject:
+                            case JsonObject actionNameJsonObject: {
                                 InvokeFunctionActionNameSync = actionNameJsonObject.ParseValue("sync", ErrorList, "[invoke function].[name pattern].[sync]", INVOKE_FUNCTION_ACTION_NAME_SYNC);
                                 InvokeFunctionActionNameTrySync = actionNameJsonObject.ParseValue("trysync", ErrorList, "[invoke function].[name pattern].[trysync]", INVOKE_FUNCTION_ACTION_NAME_TRYSYNC);
                                 InvokeFunctionActionNameAsync = actionNameJsonObject.ParseValue("async", ErrorList, "[invoke function].[name pattern].[async]", INVOKE_FUNCTION_ACTION_NAME_ASYNC);
                                 break;
-
-                            case not null:
+                            }
+                            case not null: {
                                 ErrorList.AddConfigUnexpectedTypeError("[invoke function].[name pattern].[action name]");
                                 goto case null;
-
-                            case null:
+                            }
+                            case null: {
                                 InvokeFunctionActionNameSync = INVOKE_FUNCTION_ACTION_NAME_SYNC;
                                 InvokeFunctionActionNameTrySync = INVOKE_FUNCTION_ACTION_NAME_TRYSYNC;
                                 InvokeFunctionActionNameAsync = INVOKE_FUNCTION_ACTION_NAME_ASYNC;
                                 break;
+                            }
                         }
                         break;
-
-                    case not null:
+                    }
+                    case not null: {
                         ErrorList.AddConfigUnexpectedTypeError("[invoke function].[name pattern]");
                         goto case null;
-
-                    case null:
+                    }
+                    case null: {
                         InvokeFunctionNamePattern = new FunctionNamePattern(INVOKE_FUNCTION_NAME_PATTERN, INVOKE_FUNCTION_MODULE_TRANSFORM, INVOKE_FUNCTION_FUNCTION_TRANSFORM, INVOKE_FUNCTION_ACTION_TRANSFORM, null!);
 
                         InvokeFunctionActionNameSync = INVOKE_FUNCTION_ACTION_NAME_SYNC;
                         InvokeFunctionActionNameTrySync = INVOKE_FUNCTION_ACTION_NAME_TRYSYNC;
                         InvokeFunctionActionNameAsync = INVOKE_FUNCTION_ACTION_NAME_ASYNC;
                         break;
+                    }
                 }
 
                 switch (jsonObject["promise"]) {
-                    case JsonObject promiseJsonObject:
+                    case JsonObject promiseJsonObject: {
                         PromiseOnlyAsync = promiseJsonObject.ParseValue("only async enabled", ErrorList, "[invoke function].[promise].[only async enabled]", PROMISE_ONLY_ASYNC);
                         PromiseAppendAsync = promiseJsonObject.ParseValue("append async", ErrorList, "[invoke function].[promise].[append async]", PROMISE_APPEND_ASYNC);
                         break;
-
-                    case not null:
+                    }
+                    case not null: {
                         ErrorList.AddConfigUnexpectedTypeError("[invoke function].[promise]");
                         goto case null;
-
-                    case null:
+                    }
+                    case null: {
                         PromiseOnlyAsync = PROMISE_ONLY_ASYNC;
                         PromiseAppendAsync = PROMISE_APPEND_ASYNC;
                         break;
+                    }
                 }
 
                 // TypeMap
                 switch (jsonObject["type map"]) {
-                    case JsonObject typeMapJsonObject:
+                    case JsonObject typeMapJsonObject: {
                         TypeMap = new Dictionary<string, MappedType>(typeMapJsonObject.Count);
 
                         foreach (KeyValuePair<string, JsonNode?> item in typeMapJsonObject) {
                             switch (typeMapJsonObject[item.Key]) {
-                                case JsonValue mapJsonValue:
+                                case JsonValue mapJsonValue: {
                                     string? value = mapJsonValue.ParseValue<string?>(ErrorList, $"[invoke function].[type map].[key ({item.Key})]", null);
                                     if (value is null)
                                         break;
 
                                     TypeMap.Add(item.Key, new MappedType(value));
                                     break;
-
-                                case JsonObject mapJsonObject:
+                                }
+                                case JsonObject mapJsonObject: {
                                     string type;
                                     switch (mapJsonObject["type"]) {
-                                        case JsonValue typeValue:
+                                        case JsonValue typeValue: {
                                             string? typeString = typeValue.ParseValue<string?>(ErrorList, $"[invoke function].[type map].[key ({item.Key})].[type]", null);
                                             if (typeString is null)
                                                 continue;
 
                                             type = typeString;
                                             break;
-
-                                        case null:
+                                        }
+                                        case null: {
                                             ErrorList.AddConfigKeyNotFoundError($"[invoke function].[type map].[key ({item.Key})].[type]");
                                             continue;
-
-                                        case not null:
+                                        }
+                                        case not null: {
                                             ErrorList.AddConfigUnexpectedTypeError($"[invoke function].[type map].[key ({item.Key})].[type]");
                                             continue;
+                                        }
                                     }
 
                                     GenericType[] genericTypes;
                                     switch (mapJsonObject["generic types"]) {
-                                        case JsonArray gTypeArray:
+                                        case JsonArray gTypeArray: {
                                             genericTypes = gTypeArray.Select(item.Key, (JsonNode? node, string key, int index) => {
                                                 switch (node) {
                                                     case JsonObject gTypeJsonObject: {
                                                         string gTypeName;
                                                         switch (gTypeJsonObject["name"]) {
-                                                            case JsonValue gTypeJsonValue:
+                                                            case JsonValue gTypeJsonValue: {
                                                                 string? gTypeString = gTypeJsonValue.ParseValue<string?>(ErrorList, $"[invoke function].[type map].[key ({key})].[generic types (index {index})].[name]", null);
                                                                 if (gTypeString is null)
                                                                     return null;
 
                                                                 gTypeName = gTypeString;
                                                                 break;
-
-                                                            case null:
+                                                            }
+                                                            case null: {
                                                                 ErrorList.AddConfigKeyNotFoundError($"[invoke function].[type map].[key ({key})].[generic types (index {index})].[name]");
                                                                 return null;
-
-                                                            case not null:
+                                                            }
+                                                            case not null: {
                                                                 ErrorList.AddConfigUnexpectedTypeError($"[invoke function].[type map].[key ({key})].[generic types (index {index})].[name]");
                                                                 return null;
+                                                            }
                                                         }
 
                                                         string? gTypeConstraint;
                                                         switch (gTypeJsonObject["constraint"]) {
-                                                            case JsonValue gTypeJsonValue:
+                                                            case JsonValue gTypeJsonValue: {
                                                                 gTypeConstraint = gTypeJsonValue.ParseValue<string?>(ErrorList, $"[invoke function].[type map].[key ({key})].[generic types (index {index})].[constraint]", null);
                                                                 break;
-
-                                                            case null:
+                                                            }
+                                                            case null: {
                                                                 gTypeConstraint = null;
                                                                 break;
-
-                                                            case not null:
+                                                            }
+                                                            case not null: {
                                                                 ErrorList.AddConfigUnexpectedTypeError($"[invoke function].[type map].[key ({key})].[generic types (index {index})].[constraint]");
                                                                 return null;
+                                                            }
                                                         }
 
                                                         return new GenericType(gTypeName) { Constraint = gTypeConstraint };
@@ -556,46 +607,49 @@ public sealed class Config : IEquatable<Config> {
 
                                                         return new GenericType(gTypeName);
                                                     }
-                                                    default:
+                                                    default: {
                                                         ErrorList.AddConfigUnexpectedTypeError($"[invoke function].[type map].[key ({key})].[generic types (index {index})]");
                                                         return null;
+                                                    }
                                                 }
                                             });
                                             break;
-
+                                        }
                                         case JsonObject gTypeJsonObject: {
                                             string gTypeName;
                                             switch (gTypeJsonObject["name"]) {
-                                                case JsonValue gTypeJsonValue:
+                                                case JsonValue gTypeJsonValue: {
                                                     string? gTypeString = gTypeJsonValue.ParseValue<string?>(ErrorList, $"[invoke function].[type map].[key ({item.Key})].[generic types].[name]", null);
                                                     if (gTypeString is null)
                                                         continue;
 
                                                     gTypeName = gTypeString;
                                                     break;
-
-                                                case null:
+                                                }
+                                                case null: {
                                                     ErrorList.AddConfigKeyNotFoundError($"[invoke function].[type map].[key ({item.Key})].[generic types].[name]");
                                                     continue;
-
-                                                case not null:
+                                                }
+                                                case not null: {
                                                     ErrorList.AddConfigUnexpectedTypeError($"[invoke function].[type map].[key ({item.Key})].[generic types].[name]");
                                                     continue;
+                                                }
                                             }
 
                                             string? gTypeConstraint;
                                             switch (gTypeJsonObject["constraint"]) {
-                                                case JsonValue gTypeJsonValue:
+                                                case JsonValue gTypeJsonValue: {
                                                     gTypeConstraint = gTypeJsonValue.ParseValue<string?>(ErrorList, $"[invoke function].[type map].[key ({item.Key})].[generic types].[constraint]", null);
                                                     break;
-
-                                                case null:
+                                                }
+                                                case null: {
                                                     gTypeConstraint = null;
                                                     break;
-
-                                                case not null:
+                                                }
+                                                case not null: {
                                                     ErrorList.AddConfigUnexpectedTypeError($"[invoke function].[type map].[key ({item.Key})].[generic types].[constraint]");
                                                     continue;
+                                                }
                                             }
 
                                             genericTypes = [new GenericType(gTypeName) { Constraint = gTypeConstraint }];
@@ -609,40 +663,43 @@ public sealed class Config : IEquatable<Config> {
                                             genericTypes = [new GenericType(gTypeName)];
                                             break;
                                         }
-                                        case not null:
+                                        case not null: {
                                             ErrorList.AddConfigUnexpectedTypeError($"[invoke function].[type map].[key ({item.Key})].[generic types]");
                                             goto case null;
-
-                                        case null:
+                                        }
+                                        case null: {
                                             genericTypes = [];
                                             break;
+                                        }
                                     }
 
                                     TypeMap.Add(item.Key, new MappedType(type, genericTypes));
                                     break;
-
-                                default:
+                                }
+                                default: {
                                     ErrorList.AddConfigUnexpectedTypeError($"[invoke function].[type map].[key ({item.Key})]");
                                     break;
+                                }
                             }
                         }
                         break;
-
-                    case not null:
+                    }
+                    case not null: {
                         ErrorList.AddConfigUnexpectedTypeError("[invoke function].[type map]");
                         goto case null;
-
-                    case null:
+                    }
+                    case null: {
                         TypeMap = TypeMapDefault;
                         break;
+                    }
                 }
                 break;
-
-            case not null:
+            }
+            case not null: {
                 ErrorList.AddConfigUnexpectedTypeError("[invoke function]");
                 goto case null;
-
-            case null:
+            }
+            case null: {
                 InvokeFunctionSyncEnabled = INVOKE_FUNCTION_SYNC_ENABLED;
                 InvokeFunctionTrySyncEnabled = INVOKE_FUNCTION_TRYSYNC_ENABLED;
                 InvokeFunctionAsyncEnabled = INVOKE_FUNCTION_ASYNC_ENABLED;
@@ -658,96 +715,103 @@ public sealed class Config : IEquatable<Config> {
 
                 TypeMap = TypeMapDefault;
                 break;
+            }
         }
 
 
         // PreloadNamePattern, PreloadAllModulesName
         switch (root["preload function"]) {
-            case JsonObject jsonObject:
+            case JsonObject jsonObject: {
                 switch (jsonObject["name pattern"]) {
-                    case JsonObject namePatternJsonObject:
+                    case JsonObject namePatternJsonObject: {
                         string namePattern = namePatternJsonObject.ParseValue("pattern", ErrorList, "[preload function].[name pattern].[pattern]", PRELOAD_NAME_PATTERN);
                         NameTransform moduleTransform = namePatternJsonObject.ParseNameTransform("module transform", ErrorList, "[preload function].[name pattern].[module transform]", PRELOAD_MODULE_TRANSFORM);
                         PreloadNamePattern = new ModuleNamePattern(namePattern, moduleTransform, ErrorList);
                         break;
-
-                    case not null:
+                    }
+                    case not null: {
                         ErrorList.AddConfigUnexpectedTypeError("[preload function].[name pattern]");
                         goto case null;
-
-                    case null:
+                    }
+                    case null: {
                         PreloadNamePattern = new ModuleNamePattern(PRELOAD_NAME_PATTERN, PRELOAD_MODULE_TRANSFORM, null!);
                         break;
+                    }
                 }
 
                 PreloadAllModulesName = jsonObject.ParseValue("all modules name", ErrorList, "[preload function].[all modules name]", PRELOAD_ALL_MODULES_NAME);
                 break;
-
-            case not null:
+            }
+            case not null: {
                 ErrorList.AddConfigUnexpectedTypeError("[preload function]");
                 goto case null;
-
-            case null:
+            }
+            case null: {
                 PreloadNamePattern = new ModuleNamePattern(PRELOAD_NAME_PATTERN, PRELOAD_MODULE_TRANSFORM, null!);
                 PreloadAllModulesName = PRELOAD_ALL_MODULES_NAME;
                 break;
+            }
         }
 
 
         // ModuleGrouping, ModuleGroupingNamePattern
         switch (root["module grouping"]) {
-            case JsonValue valueNode:
+            case JsonValue valueNode: {
                 ModuleGrouping = valueNode.ParseValue(ErrorList, "[module grouping]", MODULE_GROUPING);
                 ModuleGroupingNamePattern = new ModuleNamePattern(MODULE_GROUPING_NAME_PATTERN, MODULE_GROUPING_MODULE_TRANSFORM, null!);
                 break;
-            case JsonObject jsonObject:
+            }
+            case JsonObject jsonObject: {
                 ModuleGrouping = jsonObject.ParseValue("enabled", ErrorList, "[module grouping].[enabled]", MODULE_GROUPING);
 
                 switch (jsonObject["interface name pattern"]) {
-                    case JsonObject namePatternJsonObject:
+                    case JsonObject namePatternJsonObject: {
                         string namePattern = namePatternJsonObject.ParseValue("pattern", ErrorList, "[module grouping].[interface name pattern].pattern", MODULE_GROUPING_NAME_PATTERN);
                         NameTransform moduleTransform = namePatternJsonObject.ParseNameTransform("module transform", ErrorList, "[module grouping].[interface name pattern].[module transform]", MODULE_GROUPING_MODULE_TRANSFORM);
                         ModuleGroupingNamePattern = new ModuleNamePattern(namePattern, moduleTransform, ErrorList);
                         break;
-
-                    case not null:
+                    }
+                    case not null: {
                         ErrorList.AddConfigUnexpectedTypeError("[module grouping].[interface name pattern]");
                         goto case null;
-
-                    case null:
+                    }
+                    case null: {
                         ModuleGroupingNamePattern = new ModuleNamePattern(MODULE_GROUPING_NAME_PATTERN, MODULE_GROUPING_MODULE_TRANSFORM, null!);
                         break;
+                    }
                 }
                 break;
-
-            case not null:
+            }
+            case not null: {
                 ErrorList.AddConfigUnexpectedTypeError("[module grouping]");
                 goto case null;
-
-            case null:
+            }
+            case null: {
                 ModuleGrouping = MODULE_GROUPING;
                 ModuleGroupingNamePattern = new ModuleNamePattern(MODULE_GROUPING_NAME_PATTERN, MODULE_GROUPING_MODULE_TRANSFORM, null!);
                 break;
+            }
         }
 
 
         // JSRuntimeSyncEnabled, JSRuntimeTrySyncEnabled, JSRuntimeAsyncEnabled
         switch (root["js runtime"]) {
-            case JsonObject jsonObject:
+            case JsonObject jsonObject: {
                 JSRuntimeSyncEnabled = jsonObject.ParseValue("sync enabled", ErrorList, "[js runtime].[sync enabled]", JSRUNTIME_SYNC_ENABLED);
                 JSRuntimeTrySyncEnabled = jsonObject.ParseValue("trysync enabled", ErrorList, "[js runtime].[trysync enabled]", JSRUNTIME_TRYSYNC_ENABLED);
                 JSRuntimeAsyncEnabled = jsonObject.ParseValue("async enabled", ErrorList, "[js runtime].[async enabled]", JSRUNTIME_ASYNC_ENABLED);
                 break;
-
-            case not null:
+            }
+            case not null: {
                 ErrorList.AddConfigUnexpectedTypeError("[js runtime]");
                 goto case null;
-
-            case null:
+            }
+            case null: {
                 JSRuntimeSyncEnabled = JSRUNTIME_SYNC_ENABLED;
                 JSRuntimeTrySyncEnabled = JSRUNTIME_TRYSYNC_ENABLED;
                 JSRuntimeAsyncEnabled = JSRUNTIME_ASYNC_ENABLED;
                 break;
+            }
         }
 
 

@@ -65,22 +65,20 @@ public readonly struct InputPath(string include, string[] excludes, string? modu
     /// <param name="filePath"></param>
     /// <returns></returns>
     public bool IsIncluded(string filePath) {
-        if (!filePath.StartsWith(Include) || filePath is not ([.., '.', 'j', 's'] or [.., '.', 'd', '.', 't', 's']))
+        if (!filePath.StartsWith(Include) || filePath is not ([.., '.', 'j', 's'] or [.., '.', 't', 's'])) // ".d.ts" ends with ".ts"
             return false;
 
         foreach (string exclude in Excludes) {
             if (exclude.Length == 0)
                 return false;
 
-            ReadOnlySpan<char> filePathSpan = (exclude[0] == '/') ? filePath.AsSpan() : filePath.AsSpan(1);
-            ReadOnlySpan<char> excludeSpan = exclude.AsSpan();
-            if (filePathSpan.StartsWith(excludeSpan)) {
+            if (filePath.StartsWith(exclude)) {
                 // exclude is file
-                if (filePathSpan.Length == excludeSpan.Length)
+                if (filePath.Length == exclude.Length)
                     return false;
 
                 // exclude is folder
-                if (filePathSpan[excludeSpan.Length] == '/')
+                if (filePath[exclude.Length] == '/')
                     return false;
             }
         }

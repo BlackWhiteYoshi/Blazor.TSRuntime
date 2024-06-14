@@ -135,29 +135,40 @@ public static class DiagnosticErrors {
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    #endregion
 
+    public static void AddInputPathNoStartingSlashError(this List<Diagnostic> errorList, string jsonKey)
+        => errorList.Add(Diagnostic.Create(InputPathNoStartingSlash, null, [jsonKey]));
 
-
-    #region Parsing
-
-    public static void AddModulePathNoJsExtensionError(this List<Diagnostic> errorList, string filePath, string modulePath)
-        => errorList.Add(Diagnostic.Create(ModulePathNoJsExtension, null, [filePath, modulePath]));
-
-    private static DiagnosticDescriptor ModulePathNoJsExtension { get; } = new(
+    private static DiagnosticDescriptor InputPathNoStartingSlash { get; } = new(
         id: "BTS012",
-        title: "fileModulePath has no '.js' extension",
-        messageFormat: "bad input path: {{ include: '{0}', fileModulePath: '{1}' }}. fileModulePath should end with '.js'",
+        title: "config 'input path' has no starting slash",
+        messageFormat: "malformed config: '{0}' should start with '/'",
         category: "Blazor.TSRuntime",
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
 
+    public static void AddModulePathNoJsExtensionError(this List<Diagnostic> errorList, string jsonKey)
+        => errorList.Add(Diagnostic.Create(ModulePathNoJsExtension, null, [jsonKey]));
+
+    private static DiagnosticDescriptor ModulePathNoJsExtension { get; } = new(
+        id: "BTS013",
+        title: "config 'module path' has no '.js' extension",
+        messageFormat: "malformed config: '{0}' should end with '.js'",
+        category: "Blazor.TSRuntime",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    #endregion
+
+
+    #region Parsing
+
     public static void AddFunctionParseError(this List<Diagnostic> errorList, DiagnosticDescriptor descriptor, string filePath, int lineNumber, int position)
         => errorList.Add(Diagnostic.Create(descriptor, null, [filePath, lineNumber, position]));
 
     public static DiagnosticDescriptor FileMissingOpenBracket { get; } = new(
-        id: "BTS013",
+        id: "BTS014",
         title: "invalid file: missing '('",
         messageFormat: "invalid file: '{0}' at line {1}: missing '(' after column {2} (the token that indicates the start of function parameters)",
         category: "Blazor.TSRuntime",
@@ -165,17 +176,9 @@ public static class DiagnosticErrors {
         isEnabledByDefault: true);
 
     public static DiagnosticDescriptor FileMissingClosingGenericBracket { get; } = new(
-        id: "BTS014",
+        id: "BTS015",
         title: "invalid file: missing '('",
         messageFormat: "invalid file: '{0}' at line {1}: missing '>' after column {2} (the token that marks the end of generics)",
-        category: "Blazor.TSRuntime",
-        DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
-    public static DiagnosticDescriptor FileMissingColon { get; } = new(
-        id: "BTS015",
-        title: "invalid file: missing ':'",
-        messageFormat: "invalid file: '{0}' at line {1}: missing ':' after column {2} (the token that seperates name and type)",
         category: "Blazor.TSRuntime",
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
@@ -184,14 +187,6 @@ public static class DiagnosticErrors {
         id: "BTS016",
         title: "invalid file: no end of parameter",
         messageFormat: "invalid file: '{0}' at line {1}: missing ')' after column {2} (the token that marks end of parameters)",
-        category: "Blazor.TSRuntime",
-        DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
-    public static DiagnosticDescriptor FileMissingEndingSemicolon { get; } = new(
-        id: "BTS017",
-        title: "invalid file: missing ending ';'",
-        messageFormat: "invalid file: '{0}' at line {1}: missing ';' at at column {2}",
         category: "Blazor.TSRuntime",
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true);

@@ -89,23 +89,6 @@ public static class InputPathTests {
     }
 
     [Fact]
-    public static void FilterExcludesFileWithoutLeadingSlash() {
-        const string jsonConfig = """
-            {
-                "input path": {
-                    "include": "",
-                    "excludes": "TestModule.d.ts"
-                },
-                "service extension": false
-            }
-            """;
-        ImmutableArray<GeneratedSourceResult> result = jsonConfig.GenerateSourceResult([testModule, nestedTestModule], out _, out _);
-        IEnumerable<string> hintNames = result.Select((GeneratedSourceResult source) => source.HintName);
-
-        Assert.Equal(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs", "ITSRuntime_NestedTestModule.g.cs"], hintNames);
-    }
-
-    [Fact]
     public static void MultipleIncludes() {
         const string jsonConfig = """
             {
