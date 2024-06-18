@@ -12,7 +12,7 @@ namespace TSRuntime.Generation;
 /// </summary>
 public static class Builder {
     private const string ASSEMBLY_NAME = "Blazor.TSRuntime";
-    private const string ASSEMBLY_VERSION = "0.7.0";
+    private const string ASSEMBLY_VERSION = "0.8.0";
 
 
     /// <summary>
