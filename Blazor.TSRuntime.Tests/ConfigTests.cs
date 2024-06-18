@@ -90,62 +90,273 @@ public static class ConfigTests {
     }
 
 
-    [Theory]
-    [InlineData("""{ "input path": "" }""", new string?[3] { "", "", null })]
-    [InlineData("""{ "input path": "\\test" }""", new string?[3] { "/test", "", null })]
-    [InlineData("""{ "input path": { "include": "\\test" } }""", new string?[3] { "/test", "", null })]
-    [InlineData("""{ "input path": [{ "include": "\\test" }] }""", new string?[3] { "/test", "", null })]
-    [InlineData("""{ "input path": { "include": "\\test", "excludes": "as\\df" } }""", new string?[3] { "/test", "as/df", null })]
-    [InlineData("""{ "input path": { "include": "\\test", "excludes": [ "as\\df", "ghjk" ] } }""", new string?[3] { "/test", "as/df,ghjk", null })]
-    [InlineData("""{ "input path": { "include": "\\test", "module path": "yx\\cv" } }""", new string?[3] { "/test", "", "yx/cv" })]
-    [InlineData("""{ "input path": { "include": "\\test", "excludes": "as\\df", "module path": "yx\\cv" } }""", new string?[3] { "/test", "as/df", "yx/cv" })]
-    [InlineData("""{ "input path": [{ "include": "\\test", "excludes": "as\\df", "module path": "yx\\cv" }, { "include": "q", "excludes": ["w", "ww" ] } ] }""", new string?[6] { "/test", "as/df", "yx/cv", "q", "w,ww", null })]
-    public static void Config_FromJson_InputPathWorks(string json, string?[] expected) {
-        // expected = [include1, exclude1, fileModulePath1, include2, exclude2, fileModulePath2, ...]
+    #region InputPath
 
-        Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, json);
+    [Fact]
+    public static void Config_FromJson_InputPath_Empty() {
+        const string JSON = """
+            {
+                "input path": ""
+            }
+            """;
+        Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
 
-        string?[] result = new string[config.InputPath.Length * 3];
-        for (int i = 0; i < config.InputPath.Length; i++) {
-            InputPath inputPath = config.InputPath[i];
+        Assert.Single(config.InputPath);
+        InputPath inputPath = config.InputPath[0];
 
-            result[i * 3 + 0] = inputPath.Include;
-            result[i * 3 + 1] = string.Join(",", inputPath.Excludes);
-            result[i * 3 + 2] = inputPath.ModulePath;
-        }
-
-        for (int i = 0; i < result.Length; i++)
-            Assert.Equal(expected[i], result[i]);
+        Assert.Equal("", inputPath.Include);
+        Assert.Empty(inputPath.Excludes);
+        Assert.True(inputPath.ModuleFiles);
+        Assert.Null(inputPath.ModulePath);
     }
 
-    [Theory]
-    [InlineData("", new string[0], null, """
-        [
+    [Fact]
+    public static void Config_FromJson_InputPath_IncludeShorthand() {
+        const string JSON = """
             {
-              "include": "",
-              "excludes": []
+                "input path": "\\test"
             }
-          ]
-        """)]
-    [InlineData("", new string[0], "", """
+            """;
+        Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
+
+        Assert.Single(config.InputPath);
+        InputPath inputPath = config.InputPath[0];
+
+        Assert.Equal("/test", inputPath.Include);
+        Assert.Empty(inputPath.Excludes);
+        Assert.True(inputPath.ModuleFiles);
+        Assert.Null(inputPath.ModulePath);
+    }
+
+    [Fact]
+    public static void Config_FromJson_InputPath_IncludeSingle() {
+        const string JSON = """
+            {
+                "input path": {
+                    "include": "\\test"
+                }
+            }
+            """;
+        Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
+
+        Assert.Single(config.InputPath);
+        InputPath inputPath = config.InputPath[0];
+
+        Assert.Equal("/test", inputPath.Include);
+        Assert.Empty(inputPath.Excludes);
+        Assert.True(inputPath.ModuleFiles);
+        Assert.Null(inputPath.ModulePath);
+    }
+
+    [Fact]
+    public static void Config_FromJson_InputPath_IncludeArray() {
+        const string JSON = """
+            {
+                "input path": [
+                    {
+                        "include": "\\test"
+                    }
+                ]
+            }
+            """;
+        Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
+
+        Assert.Single(config.InputPath);
+        InputPath inputPath = config.InputPath[0];
+
+        Assert.Equal("/test", inputPath.Include);
+        Assert.Empty(inputPath.Excludes);
+        Assert.True(inputPath.ModuleFiles);
+        Assert.Null(inputPath.ModulePath);
+    }
+
+    [Fact]
+    public static void Config_FromJson_InputPath_ExcludesSingle() {
+        const string JSON = """
+            {
+                "input path": [
+                    {
+                        "include": "\\test",
+                        "excludes": "as\\df"
+                    }
+                ]
+            }
+            """;
+        Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
+
+        Assert.Single(config.InputPath);
+        InputPath inputPath = config.InputPath[0];
+
+        Assert.Equal("/test", inputPath.Include);
+        Assert.Equal("as/df", inputPath.Excludes[0]);
+        Assert.True(inputPath.ModuleFiles);
+        Assert.Null(inputPath.ModulePath);
+    }
+
+    [Fact]
+    public static void Config_FromJson_InputPath_ExcludesMultiple() {
+        const string JSON = """
+            {
+                "input path": [
+                    {
+                        "include": "\\test",
+                        "excludes": [ "as\\df", "ghjk" ]
+                    }
+                ]
+            }
+            """;
+        Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
+
+        Assert.Single(config.InputPath);
+        InputPath inputPath = config.InputPath[0];
+
+        Assert.Equal("/test", inputPath.Include);
+        Assert.True(inputPath.Excludes.SequenceEqual(["as/df", "ghjk"]));
+        Assert.True(inputPath.ModuleFiles);
+        Assert.Null(inputPath.ModulePath);
+    }
+
+    [Fact]
+    public static void Config_FromJson_InputPath_ModuleFiles() {
+        const string JSON = """
+            {
+                "input path": [
+                    {
+                        "include": "\\test",
+                        "module files": false
+                    }
+                ]
+            }
+            """;
+        Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
+
+        Assert.Single(config.InputPath);
+        InputPath inputPath = config.InputPath[0];
+
+        Assert.Equal("/test", inputPath.Include);
+        Assert.Empty(inputPath.Excludes);
+        Assert.False(inputPath.ModuleFiles);
+        Assert.Null(inputPath.ModulePath);
+    }
+
+    [Fact]
+    public static void Config_FromJson_InputPath_ModulePath() {
+        const string JSON = """
+            {
+                "input path": [
+                    {
+                        "include": "\\test",
+                        "module path": "yx\\cv"
+                    }
+                ]
+            }
+            """;
+        Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
+
+        Assert.Single(config.InputPath);
+        InputPath inputPath = config.InputPath[0];
+
+        Assert.Equal("/test", inputPath.Include);
+        Assert.Empty(inputPath.Excludes);
+        Assert.True(inputPath.ModuleFiles);
+        Assert.Equal("yx/cv", inputPath.ModulePath);
+    }
+
+    [Fact]
+    public static void Config_FromJson_InputPath_ExcludeAndModuleFileAndModulePath() {
+        const string JSON = """
+            {
+                "input path": [
+                    {
+                        "include": "\\test",
+                        "excludes": "as\\df",
+                        "module files": false,
+                        "module path": "yx\\cv"
+                    }
+                ]
+            }
+            """;
+        Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
+
+        Assert.Single(config.InputPath);
+        InputPath inputPath = config.InputPath[0];
+
+        Assert.Equal("/test", inputPath.Include);
+        Assert.Equal("as/df", inputPath.Excludes[0]);
+        Assert.False(inputPath.ModuleFiles);
+        Assert.Equal("yx/cv", inputPath.ModulePath);
+    }
+
+    [Fact]
+    public static void Config_FromJson_InputPath_Multiple() {
+        const string JSON = """
+            {
+                "input path": [
+                    {
+                        "include": "\\test",
+                        "excludes": "as\\df",
+                        "module path": "yx\\cv"
+                    },
+                    {
+                        "include": "q",
+                        "excludes": ["w", "ww" ],
+                        "module files": false
+                    }
+                ]
+            }
+            """;
+        Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
+
+        Assert.Equal(2, config.InputPath.Length);
+        {
+            InputPath inputPath = config.InputPath[0];
+            Assert.Equal("/test", inputPath.Include);
+            Assert.Equal("as/df", inputPath.Excludes[0]);
+            Assert.True(inputPath.ModuleFiles);
+            Assert.Equal("yx/cv", inputPath.ModulePath);
+        }
+        {
+            InputPath inputPath = config.InputPath[1];
+            Assert.Equal("q", inputPath.Include);
+            Assert.True(inputPath.Excludes.SequenceEqual(["w", "ww"]));
+            Assert.False(inputPath.ModuleFiles);
+            Assert.Null(inputPath.ModulePath);
+        }
+    }
+
+    #endregion
+
+    [Theory]
+    [InlineData("", (string[])[], true, null, """
         [
             {
               "include": "",
               "excludes": [],
+              "module files": true
+            }
+          ]
+        """)]
+    [InlineData("", (string[])[], false, "", """
+        [
+            {
+              "include": "",
+              "excludes": [],
+              "module files": false,
               "module path": ""
             }
           ]
         """)]
-    [InlineData("qwer", new string[1] { "asdf" }, "yxcv", """
+    [InlineData("qwer", (string[])["asdf"], true, "yxcv", """
         [
             {
               "include": "qwer",
               "excludes": [ "asdf" ],
+              "module files": true,
               "module path": "yxcv"
             }
           ]
         """)]
-    [InlineData("qwer", new string[2] { "asdf", "ghjk" }, "yxcv", """
+    [InlineData("qwer", (string[])["asdf", "ghjk"], false, "yxcv", """
         [
             {
               "include": "qwer",
@@ -153,13 +364,14 @@ public static class ConfigTests {
                 "asdf",
                 "ghjk"
               ],
+              "module files": false,
               "module path": "yxcv"
             }
           ]
         """)]
-    public static void Config_ToJson_InputPathWorks(string include, string[] excludes, string? fileModulePath, string expected) {
+    public static void Config_ToJson_InputPathWorks(string include, string[] excludes, bool moduleFiles, string? fileModulePath, string expected) {
         Config config = new() {
-            InputPath = [new InputPath(include, excludes, fileModulePath)]
+            InputPath = [new InputPath(include, excludes, moduleFiles, fileModulePath)]
         };
         string json = config.ToJson();
 
@@ -181,6 +393,7 @@ public static class ConfigTests {
                 {
                   "include": "qwer",
                   "excludes": [ "asdf" ],
+                  "module files": true,
                   "module path": "yxcv"
                 },
                 {
@@ -189,6 +402,7 @@ public static class ConfigTests {
                     "fdsa",
                     "kjhg"
                   ],
+                  "module files": true,
                   "module path": "vcxy"
                 }
               ],
@@ -208,11 +422,11 @@ public static class ConfigTests {
 
 
     [Theory]
-    [InlineData(""" "" """, new string[1] { "" })]
-    [InlineData(""" "Something" """, new string[1] { "Something" })]
-    [InlineData(""" [] """, new string[0])]
-    [InlineData(""" ["Something"] """, new string[1] { "Something" })]
-    [InlineData(""" ["Something", "More"] """, new string[2] { "Something", "More" })]
+    [InlineData(""" "" """, (string[])[""])]
+    [InlineData(""" "Something" """, (string[])["Something"])]
+    [InlineData(""" [] """, (string[])[])]
+    [InlineData(""" ["Something"] """, (string[])["Something"])]
+    [InlineData(""" ["Something", "More"] """, (string[])["Something", "More"])]
     public static void Config_FromJson_UsingStatementsWork(string usingStatementsValue, string[] expected) {
         string json = $$"""
             {
@@ -226,9 +440,9 @@ public static class ConfigTests {
     }
 
     [Theory]
-    [InlineData(new string[0], """[]""")]
-    [InlineData(new string[1] { "Microsoft.AspNetCore.Components" }, """[ "Microsoft.AspNetCore.Components" ]""")]
-    [InlineData(new string[3] { "qwer", "asdf", "yxcv" }, """
+    [InlineData((string[])[], """[]""")]
+    [InlineData((string[])["Microsoft.AspNetCore.Components"], """[ "Microsoft.AspNetCore.Components" ]""")]
+    [InlineData((string[])["qwer", "asdf", "yxcv"], """
                                                         [
                                                             "qwer",
                                                             "asdf",
@@ -246,14 +460,14 @@ public static class ConfigTests {
 
 
     [Theory]
-    [InlineData(""" "test": "Test" """, "test", "Test", new string?[0])]
-    [InlineData(""" "test": { "type": "Test" } """, "test", "Test", new string?[0])]
-    [InlineData(""" "test": { "type": "Test", "generic types": [] } """, "test", "Test", new string?[0])]
-    [InlineData(""" "test": { "type": "Test", "generic types": "TTest" } """, "test", "Test", new string?[2] { "TTest", null })]
-    [InlineData(""" "test": { "type": "Test", "generic types": { "name": "TTest" } } """, "test", "Test", new string?[2] { "TTest", null })]
-    [InlineData(""" "test": { "type": "Test", "generic types": { "name": "TTest", "constraint": "ITest" } } """, "test", "Test", new string?[2] { "TTest", "ITest" })]
-    [InlineData(""" "test": { "type": "Test", "generic types": [ { "name": "TTest", "constraint": "ITest" } ] } """, "test", "Test", new string?[2] { "TTest", "ITest" })]
-    [InlineData(""" "test": { "type": "Test", "generic types": [ { "name": "TTest1", "constraint": "ITest1" }, { "name": "TTest2", "constraint": "ITest2" } ] } """, "test", "Test", new string?[4] { "TTest1", "ITest1", "TTest2", "ITest2" })]
+    [InlineData(""" "test": "Test" """, "test", "Test", (string?[])[])]
+    [InlineData(""" "test": { "type": "Test" } """, "test", "Test", (string?[])[])]
+    [InlineData(""" "test": { "type": "Test", "generic types": [] } """, "test", "Test", (string?[])[])]
+    [InlineData(""" "test": { "type": "Test", "generic types": "TTest" } """, "test", "Test", (string?[])["TTest", null])]
+    [InlineData(""" "test": { "type": "Test", "generic types": { "name": "TTest" } } """, "test", "Test", (string?[])["TTest", null])]
+    [InlineData(""" "test": { "type": "Test", "generic types": { "name": "TTest", "constraint": "ITest" } } """, "test", "Test", (string?[])["TTest", "ITest"])]
+    [InlineData(""" "test": { "type": "Test", "generic types": [ { "name": "TTest", "constraint": "ITest" } ] } """, "test", "Test", (string?[])["TTest", "ITest"])]
+    [InlineData(""" "test": { "type": "Test", "generic types": [ { "name": "TTest1", "constraint": "ITest1" }, { "name": "TTest2", "constraint": "ITest2" } ] } """, "test", "Test", (string?[])["TTest1", "ITest1", "TTest2", "ITest2"])]
     public static void Config_FromJson_TypeMapWorks(string typeMapItemJson, string expectedKey, string expectedType, string?[] expectedGenericTypes) {
         // expected = [genericType1, constraint1, genericType2, constraint2, ...]
 
@@ -275,20 +489,20 @@ public static class ConfigTests {
     }
 
     [Theory]
-    [InlineData(new string[0], """{ }""")]
-    [InlineData(new string[2] { "key", "value" }, """
+    [InlineData((string?[])[], """{ }""")]
+    [InlineData((string?[])["key", "value"], """
                                                 {
                                                       "key": "value"
                                                     }
                                                 """)]
-    [InlineData(new string[6] { "a", "b", "c", "d", "e", "f" }, """
+    [InlineData((string?[])["a", "b", "c", "d", "e", "f"], """
                                                             {
                                                                   "a": "b",
                                                                   "c": "d",
                                                                   "e": "f"
                                                                 }
                                                             """)]
-    public static void Config_ToJson_TypeMapSimpleMappingWorks(string[] types , string expected) {
+    public static void Config_ToJson_TypeMapSimpleMappingWorks(string[] types, string expected) {
         // types = [key1, value1, key2, value2, ...]
 
         Dictionary<string, MappedType> map = new(types.Length / 2);
@@ -304,7 +518,7 @@ public static class ConfigTests {
     }
 
     [Theory]
-    [InlineData("test", "Test", new string?[2] { "TTest", null }, """
+    [InlineData("test", "Test", (string?[])["TTest", null], """
                                                                       "test": {
                                                                         "type": "Test",
                                                                         "generic types": [
@@ -315,7 +529,7 @@ public static class ConfigTests {
                                                                         ]
                                                                       }
                                                                 """)]
-    [InlineData("test", "Test", new string?[2] { "TTest", "ITest" }, """
+    [InlineData("test", "Test", (string?[])["TTest", "ITest"], """
                                                                       "test": {
                                                                         "type": "Test",
                                                                         "generic types": [
@@ -326,7 +540,7 @@ public static class ConfigTests {
                                                                         ]
                                                                       }
                                                                 """)]
-    [InlineData("test", "Test", new string?[4] { "TTest1", "ITest1", "TTest2", "ITest2" }, """
+    [InlineData("test", "Test", (string?[])["TTest1", "ITest1", "TTest2", "ITest2"], """
                                                                                               "test": {
                                                                                                 "type": "Test",
                                                                                                 "generic types": [
@@ -444,7 +658,6 @@ public static class ConfigTests {
             ServiceExtension = expected
         };
         string json = config.ToJson();
-        string temp = $""" "service extension": {(expected ? "true" : "false")}""";
         Assert.Contains($""" "service extension": {(expected ? "true" : "false")}""", json);
     }
 

@@ -273,11 +273,12 @@ public static class ParserTests {
     #endregion
 
 
-    #region TSModule
+    #region TSFile
 
     private const string RootFolder = "/CorePaserTestData";
     private const string MODULE = "TestModule";
     private const string MODULE_CONTENT = "export declare function Test(a: number, b: string): number;\n";
+    private const string SCRIPT_CONTENT = "               function Test(a: number, b: string): number;\n";
 
     [Fact]
     public static void ParsingModule_MetadataOnlyHasEmptyFunctionList() {
@@ -291,13 +292,8 @@ public static class ParserTests {
 
     [Fact]
     public static void ParsingModule_FunctionsOnlyHasEmptyMetaData() {
-        TSModule module = new($"{RootFolder}/{MODULE}.d.ts", null, []);
-        module = module.ParseFunctions(MODULE_CONTENT, null!);
-
-        Assert.Equal($"{RootFolder}/{MODULE}.d.ts", module.FilePath);
-        Assert.Equal($"{RootFolder}/TestModule.js", module.URLPath);
-        Assert.Equal("TestModule", module.Name);
-        Assert.NotEmpty(module.FunctionList);
+        List<TSFunction> moduleFunctions = TSFunction.ParseFile(MODULE_CONTENT, isModule: true, null!, $"{RootFolder}/{MODULE}.d.ts");
+        Assert.NotEmpty(moduleFunctions);
     }
 
     [Fact]
@@ -310,7 +306,6 @@ public static class ParserTests {
         Assert.Equal(modulePath, module.Name);
     }
 
-
     [Theory]
     [InlineData("test.d.ts")]
     [InlineData("/test.d.ts")]
@@ -321,6 +316,16 @@ public static class ParserTests {
 
         Assert.Equal($"/test.js", tSModule.URLPath);
         Assert.Equal("test", tSModule.Name);
+    }
+
+
+    [Fact]
+    public static void PasingScript() {
+        List<TSFunction> moduleFunctions = TSFunction.ParseFile(MODULE_CONTENT, isModule: false, null!, $"{RootFolder}/{MODULE}.d.ts");
+        Assert.Empty(moduleFunctions);
+
+        List<TSFunction> scriptFunctions = TSFunction.ParseFile(SCRIPT_CONTENT, isModule: false, null!, $"{RootFolder}/{MODULE}.d.ts");
+        Assert.NotEmpty(scriptFunctions);
     }
 
     #endregion

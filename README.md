@@ -200,7 +200,8 @@ All available config keys with its default value:
   "webroot path": "",
   "input path": {
     "include": "/",
-    "excludes": [ "/bin", "/obj", "/Properties" ]
+    "excludes": [ "/bin", "/obj", "/Properties" ],
+    "module files": true
   },
   "using statements": [ "Microsoft.AspNetCore.Components", "System.Numerics" ],
   "invoke function": {
@@ -315,11 +316,9 @@ All available config keys with its default value:
 <br></br>
 ## Preview
 
-This package is in preview and breaking changes may occur.
+This package is in preview and breaking changes may occur (but at this point it is unlikely).
 
-There are some features planned (no guarantees whatsoever):
-
-- support for non-module files
+There is only 1 feature left before release version:
 - map callbacks <-> delegates
 
 
@@ -359,3 +358,5 @@ There are some features planned (no guarantees whatsoever):
   - TS-function description is mapped to C# method description. Currently supported tags are &lt;summary&gt;, &lt;remarks&gt;, &lt;param&gt;, &lt;returns&gt;
   - JS-files with JSDocs type annotations are now supported
   - TS-files are now supported
+- 0.8
+  - support for scripts (non-module-files: js-files that are included via &lt;script&gt; tag)

@@ -271,6 +271,22 @@ public sealed class Config : IEquatable<Config> {
                                 }
                             }
 
+                            bool moduleFiles;
+                            switch (jsonObject["module files"]) {
+                                case JsonValue jsonValue: {
+                                    moduleFiles = jsonValue.ParseValue(ErrorList, $"[input path (index {index})].[module files]", true);
+                                    break;
+                                }
+                                case not null: {
+                                    ErrorList.AddConfigUnexpectedTypeError($"[input path (index {index})].[module files]");
+                                    goto case null;
+                                }
+                                case null: {
+                                    moduleFiles = true;
+                                    break;
+                                }
+                            }
+
                             string? modulePath;
                             switch (jsonObject["module path"]) {
                                 case JsonValue jsonValue: {
@@ -294,7 +310,7 @@ public sealed class Config : IEquatable<Config> {
                                 }
                             }
 
-                            return new InputPath(include, excludes, modulePath);
+                            return new InputPath(include, excludes, moduleFiles, modulePath);
                         }
                         case JsonValue jsonValue: {
                             if (jsonValue.TryGetValue(out string? include)) {
@@ -374,6 +390,22 @@ public sealed class Config : IEquatable<Config> {
                     }
                 }
 
+                bool moduleFiles;
+                switch (jsonObject["module files"]) {
+                    case JsonValue jsonValue: {
+                        moduleFiles = jsonValue.ParseValue(ErrorList, $"[input path].[module files]", true);
+                        break;
+                    }
+                    case not null: {
+                        ErrorList.AddConfigUnexpectedTypeError($"[input path].[module files]");
+                        goto case null;
+                    }
+                    case null: {
+                        moduleFiles = true;
+                        break;
+                    }
+                }
+
                 string? modulePath;
                 switch (jsonObject["module path"]) {
                     case JsonValue jsonValue: {
@@ -397,7 +429,7 @@ public sealed class Config : IEquatable<Config> {
                     }
                 }
 
-                InputPath = [new InputPath(include, excludes, modulePath)];
+                InputPath = [new InputPath(include, excludes, moduleFiles, modulePath)];
                 break;
             }
             case JsonValue jsonValue: {
@@ -831,12 +863,8 @@ public sealed class Config : IEquatable<Config> {
         else {
             builder.Clear();
 
-            foreach ((string include, string[] excludes, string? fileModulePath) in InputPath) {
-                builder.Append($$"""
-                    
-                        {
-                          "include": "{{include}}",
-                          "excludes": {{excludes.Length switch {
+            foreach ((string include, string[] excludes, bool moduleFiles, string? fileModulePath) in InputPath) {
+                string excludesJson = excludes.Length switch {
                     0 => "[]",
                     1 => $"""[ "{excludes[0]}" ]""",
                     _ => $"""
@@ -844,7 +872,13 @@ public sealed class Config : IEquatable<Config> {
                                 "{string.Join("\",\n        \"", excludes)}"
                               ]
                         """
-                }}}
+                };
+                builder.Append($$"""
+                    
+                        {
+                          "include": "{{include}}",
+                          "excludes": {{excludesJson}},
+                          "module files": {{(moduleFiles ? "true" : "false")}}
                     """);
                 if (fileModulePath is not null)
                     builder.Append($"""

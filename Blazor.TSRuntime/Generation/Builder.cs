@@ -150,18 +150,36 @@ public static class Builder {
         builder.Append("]);\n");
         builder.Append("    }\n\n\n");
 
+        // script invoke methods
+        builder.Append("""
+                TResult ITSRuntime.TSInvoke<TResult>(string identifier, object?[]? args) => ((IJSInProcessRuntime)jsRuntime).Invoke<TResult>(identifier, args);
+
+                ValueTask<TValue> ITSRuntime.TSInvokeTrySync<TValue>(string identifier, object?[]? args, CancellationToken cancellationToken) {
+                    if (jsRuntime is IJSInProcessRuntime jsInProcessRuntime)
+                        return ValueTask.FromResult(jsInProcessRuntime.Invoke<TValue>(identifier, args));
+                    else
+                        return jsRuntime.InvokeAsync<TValue>(identifier, cancellationToken, args);
+                }
+
+                ValueTask<TValue> ITSRuntime.TSInvokeAsync<TValue>(string identifier, object?[]? args, CancellationToken cancellationToken)
+                    => jsRuntime.InvokeAsync<TValue>(identifier, cancellationToken, args);
+
+
+
+            """);
+
         // BuildClassJsRuntime
         int builderLength = builder.Length;
         if (config.JSRuntimeSyncEnabled)
             builder.Append("""
-                public TResult Invoke<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] TResult>(string identifier, params object?[]? args)
+                public TResult Invoke<TResult>(string identifier, params object?[]? args)
                     => ((IJSInProcessRuntime)jsRuntime).Invoke<TResult>(identifier, args);
 
 
             """);
         if (config.JSRuntimeTrySyncEnabled)
             builder.Append("""
-                public ValueTask<TValue> InvokeTrySync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] TValue>(string identifier, CancellationToken cancellationToken, params object?[]? args) {
+                public ValueTask<TValue> InvokeTrySync<TValue>(string identifier, CancellationToken cancellationToken, params object?[]? args) {
                     if (jsRuntime is IJSInProcessRuntime jsInProcessRuntime)
                         return ValueTask.FromResult(jsInProcessRuntime.Invoke<TValue>(identifier, args));
                     else
@@ -172,7 +190,7 @@ public static class Builder {
             """);
         if (config.JSRuntimeAsyncEnabled)
             builder.Append("""
-                public ValueTask<TValue> InvokeAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] TValue>(string identifier, CancellationToken cancellationToken, params object?[]? args)
+                public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, params object?[]? args)
                     => jsRuntime.InvokeAsync<TValue>(identifier, cancellationToken, args);
 
 
@@ -262,9 +280,6 @@ public static class Builder {
         context.AddSource("TSRuntime.g.cs", source);
         stringBuilderPool.Return(builder);
     }
-
-
-    #region BuildInterface
 
     /// <summary>
     /// The basic content of the interface is added:<br />
@@ -455,16 +470,44 @@ public static class Builder {
                 {{jsRuntimeMethods}}
 
                 /// <summary>
+                /// <para>Invokes the specified JavaScript function synchronously.</para>
+                /// </summary>
+                /// <typeparam name="TResult"></typeparam>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <returns></returns>
+                protected TResult TSInvoke<TResult>(string identifier, object?[]? args);
+
+                /// <summary>
+                /// Invokes the specified JavaScript function synchronously when supported, otherwise asynchronously.
+                /// </summary>
+                /// <typeparam name="TValue"></typeparam>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
+                /// <returns></returns>
+                protected ValueTask<TValue> TSInvokeTrySync<TValue>(string identifier, object?[]? args, CancellationToken cancellationToken);
+
+                /// <summary>
+                /// Invokes the specified JavaScript function asynchronously.
+                /// </summary>
+                /// <typeparam name="TValue"></typeparam>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
+                /// <returns></returns>
+                protected ValueTask<TValue> TSInvokeAsync<TValue>(string identifier, object?[]? args, CancellationToken cancellationToken);
+
+                /// <summary>
                 /// <para>Invokes the specified JavaScript function in the specified module synchronously.</para>
                 /// <para>If module is not loaded, it returns without any invoking. If synchronous is not supported, it fails with an exception.</para>
                 /// </summary>
-                /// <typeparam name="T"></typeparam>
-                /// <param name="moduleUrl">complete path of the module, e.g. "/Pages/Example.razor.js"</param>
+                /// <typeparam name="TResult"></typeparam>
+                /// <param name="moduleTask">The loading task of a module</param>
                 /// <param name="identifier">name of the javascript function</param>
-                /// <param name="success">false when the module is not loaded, otherwise true</param>
                 /// <param name="args">parameter passing to the JS-function</param>
-                /// <returns>default when the module is not loaded, otherwise result of the JS-function</returns>
-                {{privateOrProtected}} TResult Invoke<TResult>(Task<IJSObjectReference> moduleTask, string identifier, params object?[]? args) {
+                /// <returns></returns>
+                {{privateOrProtected}} TResult TSInvoke<TResult>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args) {
                     if (!moduleTask.IsCompletedSuccessfully)
                         throw new JSException("JS-module is not loaded. Use and await the Preload-method to ensure the module is loaded.");
 
@@ -474,13 +517,13 @@ public static class Builder {
                 /// <summary>
                 /// Invokes the specified JavaScript function in the specified module synchronously when supported, otherwise asynchronously.
                 /// </summary>
-                /// <typeparam name="T"></typeparam>
-                /// <param name="moduleUrl">complete path of the module, e.g. "/Pages/Example.razor.js"</param>
+                /// <typeparam name="TValue"></typeparam>
+                /// <param name="moduleTask">The loading task of a module</param>
                 /// <param name="identifier">name of the javascript function</param>
-                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
                 /// <param name="args">parameter passing to the JS-function</param>
+                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
                 /// <returns></returns>
-                {{privateOrProtected}} async ValueTask<TValue> InvokeTrySync<TValue>(Task<IJSObjectReference> moduleTask, string identifier, CancellationToken cancellationToken, params object?[]? args) {
+                {{privateOrProtected}} async ValueTask<TValue> TSInvokeTrySync<TValue>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args, CancellationToken cancellationToken) {
                     IJSObjectReference module = await moduleTask;
                     if (module is IJSInProcessObjectReference inProcessModule)
                         return inProcessModule.Invoke<TValue>(identifier, args);
@@ -491,13 +534,13 @@ public static class Builder {
                 /// <summary>
                 /// Invokes the specified JavaScript function in the specified module asynchronously.
                 /// </summary>
-                /// <typeparam name="T"></typeparam>
-                /// <param name="moduleUrl">complete path of the module, e.g. "/Pages/Example.razor.js"</param>
+                /// <typeparam name="TValue"></typeparam>
+                /// <param name="moduleTask">The loading task of a module</param>
                 /// <param name="identifier">name of the javascript function</param>
-                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
                 /// <param name="args">parameter passing to the JS-function</param>
+                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
                 /// <returns></returns>
-                {{privateOrProtected}} async ValueTask<TValue> InvokeAsync<TValue>(Task<IJSObjectReference> moduleTask, string identifier, CancellationToken cancellationToken, params object?[]? args) {
+                {{privateOrProtected}} async ValueTask<TValue> TSInvokeAsync<TValue>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args, CancellationToken cancellationToken) {
                     IJSObjectReference module = await moduleTask;
                     return await module.InvokeAsync<TValue>(identifier, cancellationToken, args);
                 }
@@ -507,6 +550,9 @@ public static class Builder {
 
         context.AddSource("ITSRuntime_Core.g.cs", source);
     }
+
+
+    #region BuildInterface Module/Script
 
     /// <summary>
     /// Builds the content of a module:
@@ -519,19 +565,34 @@ public static class Builder {
     public static void BuildInterfaceModule(this ObjectPool<StringBuilder> stringBuilderPool, SourceProductionContext context, (TSModule module, Config config) parameters) {
         StringBuilder builder = stringBuilderPool.Get();
 
-        (string hintName, string source) = new BuildInterfaceModuleCore(builder, parameters.module, parameters.config).Build();
+        (string hintName, string source) = new BuildInterfaceFileCore(builder, parameters.config).Build(parameters.module);
 
         context.AddSource(hintName, source);
         stringBuilderPool.Return(builder);
     }
 
     /// <summary>
-    /// Datastructure used in <see cref="BuildInterfaceModule"/>.
+    /// Builds the content of a script file by creating wrappers for each function.
+    /// </summary>
+    /// <param name="stringBuilderPool"></param>
+    /// <param name="context"></param>
+    /// <param name="parameters"></param>
+    public static void BuildInterfaceScript(this ObjectPool<StringBuilder> stringBuilderPool, SourceProductionContext context, (TSScript script, Config config) parameters) {
+        StringBuilder builder = stringBuilderPool.Get();
+
+        (string hintName, string source) = new BuildInterfaceFileCore(builder, parameters.config).Build(parameters.script);
+
+        context.AddSource(hintName, source);
+        stringBuilderPool.Return(builder);
+    }
+
+    /// <summary>
+    /// Datastructure used in <see cref="BuildInterfaceModule"/> and <see cref="BuildInterfaceScript"/>.
     /// </summary>
     /// <param name="builder"></param>
-    /// <param name="module"></param>
     /// <param name="config"></param>
-    private struct BuildInterfaceModuleCore(StringBuilder builder, TSModule module, Config config) {
+    private struct BuildInterfaceFileCore(StringBuilder builder, Config config) {
+        private string scriptName;
         private TSFunction function;
         private readonly List<GenericType> genericParameterList = [];
         private readonly List<MappedType> mappedParameterList = [];
@@ -541,28 +602,13 @@ public static class Builder {
 
 
         /// <summary>
-        /// Builds the interface module.
+        /// Builds the interface for a module.
         /// </summary>
         /// <returns></returns>
-        public (string hintName, string source) Build() {
-            builder.Append("""
-            // <auto-generated/>
-            #pragma warning disable
-            #nullable enable annotations
+        public (string hintName, string source) Build(TSModule module) {
+            scriptName = module.Name;
 
-
-            using System.Threading;
-            using System.Threading.Tasks;
-
-            """);
-            foreach (string usingStatement in config.UsingStatements) {
-                builder.Append("using ");
-                builder.Append(usingStatement);
-                builder.Append(";\n");
-            }
-            builder.Append('\n');
-
-            builder.Append("namespace Microsoft.JSInterop;\n\n");
+            AppendUsingsAndNamespace();
 
             // head
             if (!config.ModuleGrouping)
@@ -608,11 +654,98 @@ public static class Builder {
                 builder.Append("Module();\n\n\n");
             }
 
-            if (module.FunctionList.Count > 0) {
+            AppendFunctionList(module.FunctionList, isModule: true);
+
+            builder.Length -= 2;
+            builder.Append("}\n");
+
+
+            string source = builder.ToString();
+
+            builder.Clear();
+            if (!config.ModuleGrouping) {
+                builder.Append("ITSRuntime_");
+                builder.Append(module.Name);
+            }
+            else
+                config.ModuleGroupingNamePattern.AppendNaming(builder, module.Name);
+            builder.Append(".g.cs");
+            string hintName = builder.ToString();
+
+            return (hintName, source);
+        }
+
+        /// <summary>
+        /// Builds the interface for a script.
+        /// </summary>
+        /// <returns></returns>
+        public (string hintName, string source) Build(TSScript script) {
+            scriptName = script.Name;
+
+
+            AppendUsingsAndNamespace();
+
+            // head
+            builder.Append("public partial interface ITSRuntime {\n");
+
+            AppendFunctionList(script.FunctionList, isModule: false);
+
+            builder.Length -= 2;
+            builder.Append("}\n");
+
+
+            string source = builder.ToString();
+
+            builder.Clear();
+            builder.Append("ITSRuntime_");
+            builder.Append(scriptName);
+            builder.Append(".g.cs");
+            string hintName = builder.ToString();
+
+
+            return (hintName, source);
+        }
+
+
+        /// <summary>
+        /// Builds top declaration of the source file<br />
+        /// Ends with 2 line breaks.
+        /// </summary>
+        private readonly void AppendUsingsAndNamespace() {
+            builder.Append("""
+            // <auto-generated/>
+            #pragma warning disable
+            #nullable enable annotations
+
+
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            """);
+            foreach (string usingStatement in config.UsingStatements) {
+                builder.Append("using ");
+                builder.Append(usingStatement);
+                builder.Append(";\n");
+            }
+            builder.Append('\n');
+
+            builder.Append("namespace Microsoft.JSInterop;\n\n");
+        }
+
+        /// <summary>
+        /// <para>
+        /// For each function it initializes the paramters (<see cref="mappedParameterList"/>, <see cref="mappedReturnType"/>, <see cref="genericParameterList"/>, <see cref="returnType"/>, <see cref="returnModifiers"/>)<br />
+        /// and calls the <see cref="AppendInvokeSyncMethod"/> / <see cref="AppendInvokeAsyncMethod"/>.
+        /// </para>
+        /// Ends with 3 line break.
+        /// </summary>
+        /// <param name="functionList"></param>
+        private void AppendFunctionList(IReadOnlyList<TSFunction> functionList, bool isModule) {
+            if (functionList.Count > 0) {
                 mappedParameterList.Clear();
                 genericParameterList.Clear();
-                for (int i = 0; i < module.FunctionList.Count; i++) {
-                    function = module.FunctionList[i];
+                for (int i = 0; i < functionList.Count; i++) {
+                    function = functionList[i];
 
                     mappedParameterList.Clear();
                     for (int j = 0; j < function.ParameterList.Length; j++)
@@ -635,36 +768,18 @@ public static class Builder {
                     };
 
                     if (function.ReturnPromise && config.PromiseOnlyAsync)
-                        AppendInvokeAsyncMethod("asynchronously.", config.InvokeFunctionActionNameAsync, "InvokeAsync");
+                        AppendInvokeAsyncMethod("asynchronously.", config.InvokeFunctionActionNameAsync, "TSInvokeAsync", isModule);
                     else {
                         if (config.InvokeFunctionSyncEnabled)
-                            AppendInvokeSyncMethod("synchronously.", config.InvokeFunctionActionNameSync, "Invoke");
+                            AppendInvokeSyncMethod("synchronously.", config.InvokeFunctionActionNameSync, "TSInvoke", isModule);
                         if (config.InvokeFunctionTrySyncEnabled)
-                            AppendInvokeAsyncMethod("synchronously when supported, otherwise asynchronously.", config.InvokeFunctionActionNameTrySync, "InvokeTrySync");
+                            AppendInvokeAsyncMethod("synchronously when supported, otherwise asynchronously.", config.InvokeFunctionActionNameTrySync, "TSInvokeTrySync", isModule);
                         if (config.InvokeFunctionAsyncEnabled)
-                            AppendInvokeAsyncMethod("asynchronously.", config.InvokeFunctionActionNameAsync, "InvokeAsync");
+                            AppendInvokeAsyncMethod("asynchronously.", config.InvokeFunctionActionNameAsync, "TSInvokeAsync", isModule);
                     }
                 }
                 builder.Append('\n');
             }
-
-            builder.Length -= 2;
-            builder.Append("}\n");
-
-
-            string source = builder.ToString();
-
-            builder.Clear();
-            if (!config.ModuleGrouping) {
-                builder.Append("ITSRuntime_");
-                builder.Append(module.Name);
-            }
-            else
-                config.ModuleGroupingNamePattern.AppendNaming(builder, module.Name);
-            builder.Append(".g.cs");
-            string hintName = builder.ToString();
-
-            return (hintName, source);
         }
 
 
@@ -679,8 +794,8 @@ public static class Builder {
         /// <param name="summaryAction"></param>
         /// <param name="invokeFunctionActionName"></param>
         /// <param name="invokeFunction"></param>
-        private readonly void AppendInvokeSyncMethod(string summaryAction, string invokeFunctionActionName, string invokeFunction)
-            => AppendInvokeMethodCore(summaryAction, invokeFunctionActionName, invokeFunction, isSync: true);
+        private readonly void AppendInvokeSyncMethod(string summaryAction, string invokeFunctionActionName, string invokeFunction, bool isModule)
+            => AppendInvokeMethodCore(summaryAction, invokeFunctionActionName, invokeFunction, isModule, isSync: true);
 
         /// <summary>
         /// <para>Appends the invoke method for a js function.</para>
@@ -693,8 +808,8 @@ public static class Builder {
         /// <param name="summaryAction"></param>
         /// <param name="invokeFunctionActionName"></param>
         /// <param name="invokeFunction"></param>
-        private readonly void AppendInvokeAsyncMethod(string summaryAction, string invokeFunctionActionName, string invokeFunction)
-            => AppendInvokeMethodCore(summaryAction, invokeFunctionActionName, invokeFunction, isSync: false);
+        private readonly void AppendInvokeAsyncMethod(string summaryAction, string invokeFunctionActionName, string invokeFunction, bool isModule)
+            => AppendInvokeMethodCore(summaryAction, invokeFunctionActionName, invokeFunction, isModule, isSync: false);
 
         /// <summary>
         /// Core method for <see cref="AppendInvokeSyncMethod"/> and <see cref="AppendInvokeAsyncMethod"/>.
@@ -703,7 +818,7 @@ public static class Builder {
         /// <param name="invokeFunctionActionName"></param>
         /// <param name="invokeFunction"></param>
         /// <param name="isSync"></param>
-        private readonly void AppendInvokeMethodCore(string summaryAction, string invokeFunctionActionName, string invokeFunction, bool isSync) {
+        private readonly void AppendInvokeMethodCore(string summaryAction, string invokeFunctionActionName, string invokeFunction, bool isModule, bool isSync) {
             int lastIndex = function.ParameterList.Length;
             do {
                 lastIndex--;
@@ -724,15 +839,26 @@ public static class Builder {
                     builder.Append(function.Summary);
                     builder.Append("</para>\n");
                 }
-                builder.Append("    /// <para>Invokes in module '");
-                builder.Append(module.Name);
-                builder.Append("' the JS-function '");
-                builder.Append(function.Name);
-                builder.Append("' ");
-                builder.Append(summaryAction);
-                builder.Append("</para>\n");
-                if (isSync)
-                    builder.Append("    /// <para>If module is not loaded or synchronous is not supported, it fails with an exception.</para>\n");
+                if (isModule) {
+                    builder.Append("    /// <para>Invokes in module '");
+                    builder.Append(scriptName);
+                    builder.Append("' the JS-function '");
+                    builder.Append(function.Name);
+                    builder.Append("' ");
+                    builder.Append(summaryAction);
+                    builder.Append("</para>\n");
+                    if (isSync)
+                        builder.Append("    /// <para>If module is not loaded or synchronous is not supported, it fails with an exception.</para>\n");
+                }
+                else {
+                    builder.Append("    /// <para>Invokes in script '");
+                    builder.Append(scriptName);
+                    builder.Append("' the JS-function '");
+                    builder.Append(function.Name);
+                    builder.Append("' ");
+                    builder.Append(summaryAction);
+                    builder.Append("</para>\n");
+                }
                 builder.Append("    /// </summary>\n");
                 // <remarks>
                 if (function.Remarks != string.Empty) {
@@ -787,7 +913,7 @@ public static class Builder {
                 }
 
                 // method name
-                config.InvokeFunctionNamePattern.AppendNaming(builder, module.Name, function.Name, invokeFunctionActionName);
+                config.InvokeFunctionNamePattern.AppendNaming(builder, scriptName, function.Name, invokeFunctionActionName);
                 if (function.ReturnPromise && config.PromiseAppendAsync)
                     builder.Append("Async");
 
@@ -846,22 +972,25 @@ public static class Builder {
                     builder.Append(returnType);
                     builder.Append(returnModifiers);
                 }
-                builder.Append(">(Get");
-                builder.Append(module.Name);
-                builder.Append("Module(), \"");
-                builder.Append(function.Name);
+                builder.Append(">(");
+                if (isModule) {
+                    builder.Append("Get");
+                    builder.Append(scriptName);
+                    builder.Append("Module(), ");
+                }
                 builder.Append('"');
-                if (!isSync)
-                    builder.Append(", cancellationToken");
+                builder.Append(function.Name);
+                builder.Append("\", [");
                 if (lastIndex >= 0) {
-                    builder.Append(", [");
                     for (int i = 0; i < lastIndex; i++) {
                         builder.Append(function.ParameterList[i].name);
                         builder.Append(", ");
                     }
                     builder.Append(function.ParameterList[lastIndex].name);
-                    builder.Append(']');
                 }
+                builder.Append(']');
+                if (!isSync)
+                    builder.Append(", cancellationToken");
                 builder.Append(')');
 
                 if (!isSync)

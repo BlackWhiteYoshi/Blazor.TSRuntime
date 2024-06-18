@@ -1,6 +1,6 @@
 ﻿namespace TSRuntime.Configs;
 
-public readonly struct InputPath(string include, string[] excludes, string? modulePath) : IEquatable<InputPath>
+public readonly struct InputPath(string include, string[] excludes) : IEquatable<InputPath>
 {
     /// <summary>
     /// <para>Path to a folder. Every .d.ts-file in that folder will be included.</para>
@@ -19,40 +19,44 @@ public readonly struct InputPath(string include, string[] excludes, string? modu
     public string[] Excludes { get; init; } = excludes;
 
     /// <summary>
+    /// Indicates if the files in located at this path are modules or scripts.
+    /// </summary>
+    public bool ModuleFiles { get; init; } = true;
+
+    /// <summary>
     /// <para>
     /// Relative Path/URL to load the module.<br />
     /// e.g. "Pages/Footer/Contacts.razor.js"
     /// </para>
     /// <para>If <see cref="Include"/> is a folder path, this does nothing.</para>
     /// </summary>
-    public string? ModulePath { get; init; } = modulePath;
+    public string? ModulePath { get; init; } = null;
 
 
     /// <summary>
     /// Sets <see cref="Include"/> to given string and <see cref="Excludes"/> to an empty array.
     /// </summary>
     /// <param name="include"></param>
-    public InputPath(string include) : this(include, [], null) { }
+    public InputPath(string include) : this(include, []) { }
 
     /// <summary>
-    /// Sets <see cref="Include"/> and <see cref="Excludes"/> to the given values.
+    /// Sets all parameters of this data structure.
     /// </summary>
     /// <param name="include"></param>
     /// <param name="excludes"></param>
-    public InputPath(string include, string[] excludes) : this(include, excludes, null) { }
-
-    /// <summary>
-    /// Sets <see cref="Include"/> and <see cref="ModulePath"/> to the given values and <see cref="Excludes"/> to an empty array.
-    /// </summary>
-    /// <param name="include"></param>
-    /// <param name="fileModulePath"></param>
-    public InputPath(string include, string? fileModulePath) : this(include, [], fileModulePath) { }
+    /// <param name="moduleFiles"></param>
+    /// <param name="modulePath"></param>
+    public InputPath(string include, string[] excludes, bool moduleFiles, string? modulePath) : this(include, excludes) {
+        ModuleFiles = moduleFiles;
+        ModulePath = modulePath;
+    }
 
 
-    public void Deconstruct(out string include, out string[] excludes, out string? modulePath)
+    public void Deconstruct(out string include, out string[] excludes, out bool moduleFiles, out string? modulePath)
     {
         include = Include;
         excludes = Excludes;
+        moduleFiles = ModuleFiles;
         modulePath = ModulePath;
     }
 
@@ -106,6 +110,9 @@ public readonly struct InputPath(string include, string[] excludes, string? modu
         if (!Excludes.SequenceEqual(other.Excludes))
             return false;
 
+        if (!ModuleFiles != other.ModuleFiles)
+            return false;
+
         if (ModulePath != other.ModulePath)
             return false;
 
@@ -117,6 +124,8 @@ public readonly struct InputPath(string include, string[] excludes, string? modu
 
         foreach (string exclude in Excludes)
             hash = Combine(hash, exclude.GetHashCode());
+
+        hash = Combine(hash, ModuleFiles.GetHashCode());
 
         hash = Combine(hash, ModulePath?.GetHashCode() ?? 0);
 

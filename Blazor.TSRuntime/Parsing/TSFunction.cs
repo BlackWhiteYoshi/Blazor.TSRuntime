@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using System.Text;
+using TSRuntime.Configs;
 
 namespace TSRuntime.Parsing;
 
@@ -57,26 +58,62 @@ public sealed class TSFunction : IEquatable<TSFunction> {
 
 
     /// <summary>
+    /// <para>Parses the given file and adds the found functions to a list.</para>
+    /// </summary>
+    /// <param name="fileContent"></param>
+    /// <param name="isModule"></param>
+    /// <param name="config">only used for appending errors.</param>
+    /// <param name="filePath">only used for appending errors.</param>
+    public static List<TSFunction> ParseFile(string fileContent, bool isModule, Config config, string filePath) {
+        List<TSFunction> functionList = [];
+
+        int lineNumber = 0;
+        int lineStart = 0;
+        while (lineStart < fileContent.Length) {
+            int lineEnd = fileContent.IndexOf('\n', lineStart);
+            if (lineEnd == -1)
+                lineEnd = fileContent.Length;
+            ReadOnlySpan<char> line = fileContent.AsSpan(lineStart, lineEnd - lineStart).Trim();
+            lineNumber++;
+
+            TSFunction? tsFunction = ParseFunction(line, isModule);
+            if (tsFunction is not null)
+                if (tsFunction.Error.descriptor is null) {
+                    tsFunction.ParseSummary(fileContent, lineStart);
+                    functionList.Add(tsFunction);
+                }
+                else
+                    config.ErrorList.AddFunctionParseError(tsFunction.Error.descriptor, filePath, lineNumber, tsFunction.Error.position);
+
+            lineStart = lineEnd + 1;
+        }
+
+        return functionList;
+    }
+    
+    /// <summary>
     /// Creates a TSFunction if the given line represents a exported js-function. 
     /// </summary>
     /// <param name="line">An Entire line in a .js/.ts/.d.ts file.</param>
     /// <returns>null, if not starting with "export function " or "export declare function ", otherwise tries to parse and returns a <see cref="TSFunction"/>.</returns>
-    public static TSFunction? ParseFunction(ReadOnlySpan<char> line) {
+    public static TSFunction? ParseFunction(ReadOnlySpan<char> line, bool isModule = true) {
         int position = 0;
 
 
-        if (line is not ['e', 'x', 'p', 'o', 'r', 't', ' ', ..])
-            return null;
+        if (isModule) {
+            if (line is not ['e', 'x', 'p', 'o', 'r', 't', ' ', ..])
+                return null;
 
-        line = line[7..];
-        position += 7; // skip "export "
-        TrimWhiteSpace(ref line, ref position);
-
-
-        if (line is ['d', 'e', 'c', 'l', 'a', 'r', 'e', ' ', ..]) {
-            line = line[8..];
-            position += 8; // skip "declare "
+            line = line[7..];
+            position += 7; // skip "export "
             TrimWhiteSpace(ref line, ref position);
+
+
+            if (line is ['d', 'e', 'c', 'l', 'a', 'r', 'e', ' ', ..]) {
+                line = line[8..];
+                position += 8; // skip "declare "
+                TrimWhiteSpace(ref line, ref position);
+            }
         }
 
 

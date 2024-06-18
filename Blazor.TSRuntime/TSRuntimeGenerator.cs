@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.Extensions.ObjectPool;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Text;
 using TSRuntime.Configs;
 using TSRuntime.Generation;
@@ -26,18 +27,22 @@ public sealed class TSRuntimeGenerator : IIncrementalGenerator {
 
                 AdditionalText textFile = textFiles[0];
                 string configPath = Path.GetDirectoryName(textFile.Path);
-                
+
                 SourceText? configContent = textFile.GetText(cancellationToken);
                 if (configContent is null)
                     return (string.Empty, string.Empty, DiagnosticErrors.CreateFileReadingError(textFile.Path));
 
                 return (configPath, configContent.ToString(), (Diagnostic?)null);
             })
-            .Select(((string path, string content, Diagnostic? error) file, CancellationToken cancellationToken) => file.error is null ? (new Config(file.path, file.content), (Diagnostic?)null) : ((Config?)null, file.error));
+            .Select(((string path, string content, Diagnostic? error) file, CancellationToken cancellationToken) => file.error switch {
+                null => (new Config(file.path, file.content), (Diagnostic?)null),
+                _ => ((Config?)null, file.error)
+            });
 
-        IncrementalValuesProvider<(TSModule, Config)> moduleList = context.AdditionalTextsProvider
+        
+        IncrementalValuesProvider<(TSFile? file, string content, Config? config)> fileList = context.AdditionalTextsProvider
             .Combine(configProvider)
-            .Select<(AdditionalText, ConfigOrError), (TSModule?, string, Config?)> (((AdditionalText textFile, ConfigOrError configOrError) parameters, CancellationToken cancellationToken) => {
+            .Select<(AdditionalText, ConfigOrError), (TSFile?, string, Config?)>(((AdditionalText textFile, ConfigOrError configOrError) parameters, CancellationToken cancellationToken) => {
                 if (parameters.configOrError.error is not null)
                     return (null, string.Empty, null);
 
@@ -48,24 +53,58 @@ public sealed class TSRuntimeGenerator : IIncrementalGenerator {
                 if (!modulePath.StartsWith(config.WebRootPath))
                     return (null, string.Empty, config);
                 modulePath = modulePath[config.WebRootPath.Length..];
-                
+
                 foreach (InputPath inputPath in config.InputPath)
                     if (inputPath.IsIncluded(modulePath)) {
-                        TSModule module = new(modulePath, inputPath.ModulePath, config.ErrorList);
+                        if (inputPath.ModuleFiles) {
+                            TSModule module = new(modulePath, inputPath.ModulePath, config.ErrorList);
 
-                        SourceText? content = textFile.GetText(cancellationToken);
-                        if (content is null) {
-                            Diagnostic error = DiagnosticErrors.CreateFileReadingError(textFile.Path);
-                            return (module, string.Empty, config);
+                            SourceText? content = textFile.GetText(cancellationToken);
+                            if (content is null) {
+                                Diagnostic error = DiagnosticErrors.CreateFileReadingError(textFile.Path);
+                                return (module, string.Empty, config);
+                            }
+
+                            return (module, content.ToString(), config);
                         }
+                        else {
+                            TSScript script = new(modulePath, config.ErrorList);
 
-                        return (module, content.ToString(), config);
+                            SourceText? content = textFile.GetText(cancellationToken);
+                            if (content is null) {
+                                Diagnostic error = DiagnosticErrors.CreateFileReadingError(textFile.Path);
+                                return (script, string.Empty, config);
+                            }
+
+                            return (script, content.ToString(), config);
+                        }
                     }
 
                 return (null, string.Empty, config);
-            })
-            .Where(((TSModule? module, string content, Config? config) source) => source.module is not null)!
-            .Select(((TSModule module, string content, Config config) source, CancellationToken _) => (source.module.ParseFunctions(source.content, source.config), source.config));
+            });
+
+        IncrementalValuesProvider<(TSModule, Config)> moduleList = fileList
+            .Where(((TSFile? file, string content, Config? config) source) => source.file is TSModule)
+            .Select(((TSFile? file, string content, Config? config) source, CancellationToken _) => {
+                Debug.Assert(source.file is TSModule && source.config is not null);
+                TSModule module = (TSModule)source.file!;
+                Config config = source.config!;
+
+                TSModule moduleWithFunctionsParsed = new(module.FilePath, module.URLPath, module.Name, TSFunction.ParseFile(source.content, isModule: true, config, module.FilePath));
+                return (moduleWithFunctionsParsed, config);
+            });
+
+        IncrementalValuesProvider<(TSScript, Config)> scriptList = fileList
+            .Where(((TSFile? file, string content, Config? config) source) => source.file is TSScript)
+            .Select(((TSFile? file, string content, Config? config) source, CancellationToken _) => {
+                Debug.Assert(source.file is TSScript && source.config is not null);
+                TSScript script = (TSScript)source.file!;
+                Config config = source.config!;
+
+                TSScript scriptWithFunctionsParsed = new(script.FilePath, script.URLPath, script.Name, TSFunction.ParseFile(source.content, isModule: false, config, script.FilePath));
+                return (scriptWithFunctionsParsed, config);
+            });
+
 
         IncrementalValueProvider<(ImmutableArray<TSModule> moduleList, ConfigOrError configOrError)> moduleCollectionWithConfig = moduleList
             .Select(((TSModule module, Config config) tuple, CancellationToken _) => tuple.module)
@@ -77,6 +116,7 @@ public sealed class TSRuntimeGenerator : IIncrementalGenerator {
 
         context.RegisterSourceOutput(configProvider, Builder.BuildInterfaceCore);
         context.RegisterSourceOutput(moduleList, stringBuilderPool.BuildInterfaceModule);
+        context.RegisterSourceOutput(scriptList, stringBuilderPool.BuildInterfaceScript);
 
         context.RegisterSourceOutput(moduleCollectionWithConfig, stringBuilderPool.BuildServiceExtension);
     }

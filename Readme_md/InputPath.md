@@ -31,6 +31,7 @@ But if you want you can also be more accurate. The previous example is just a sh
     {
       "include": "/jsFolder",
       "excludes": [],
+      "module files": true,
       "module path": null
     }
   ]
@@ -61,12 +62,41 @@ The preceding configuration has two include paths "/jsFolder" and "/otherInputFo
 and inside "/jsFolder" the folder "private" and inside "wwwroot" the file "service-worker.js" will not be included.
 
 
+### Module Files
+
+A flag that can be set to false to read in a folder/file where global scripts are located
+(files that are placed in html with the &lt;script&gt; tag).
+
+**Example**:
+```html
+<head>
+  <script src="/js/site.js" defer></script>
+</head>
+```
+
+```json
+{
+  "input path": {
+    "include": "/wwwroot/js",
+    "module files": false
+  }
+}
+```
+
+In the preceding example all files located in the *wwwroot/js* folder are included as global scripts.
+
+Note:  
+To recognize a function in a global script as callable function, the line must start with "function", other types of declarations are ignored.  
+If you have multiple *input path* and they intersect, the first one in the list has priority.
+So put the specific rules at the top and the general rules at the bottom. Or make sure to exclude sections that intersect.
+
+
 ### Module Path
 
 If your include path is a file, the module path will be the same as your include path.
 If that path does not fit, you can set it explicit with [module path].
 
-**Example**:  
+**Example**:
 ```json
 {
   "input path": {

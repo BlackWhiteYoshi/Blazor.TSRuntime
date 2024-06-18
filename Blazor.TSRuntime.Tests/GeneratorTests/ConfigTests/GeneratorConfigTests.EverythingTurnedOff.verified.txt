@@ -53,6 +53,19 @@ public sealed class TSRuntime(IJSRuntime jsRuntime) : ITSRuntime, IDisposable, I
     }
 
 
+    TResult ITSRuntime.TSInvoke<TResult>(string identifier, object?[]? args) => ((IJSInProcessRuntime)jsRuntime).Invoke<TResult>(identifier, args);
+
+    ValueTask<TValue> ITSRuntime.TSInvokeTrySync<TValue>(string identifier, object?[]? args, CancellationToken cancellationToken) {
+        if (jsRuntime is IJSInProcessRuntime jsInProcessRuntime)
+            return ValueTask.FromResult(jsInProcessRuntime.Invoke<TValue>(identifier, args));
+        else
+            return jsRuntime.InvokeAsync<TValue>(identifier, cancellationToken, args);
+    }
+
+    ValueTask<TValue> ITSRuntime.TSInvokeAsync<TValue>(string identifier, object?[]? args, CancellationToken cancellationToken)
+        => jsRuntime.InvokeAsync<TValue>(identifier, cancellationToken, args);
+
+
     /// <summary>
     /// Releases each module synchronously if possible, otherwise asynchronously per fire and forget.
     /// </summary>
@@ -149,16 +162,44 @@ public partial interface ITSRuntime {
     
 
     /// <summary>
+    /// <para>Invokes the specified JavaScript function synchronously.</para>
+    /// </summary>
+    /// <typeparam name="TResult"></typeparam>
+    /// <param name="identifier">name of the javascript function</param>
+    /// <param name="args">parameter passing to the JS-function</param>
+    /// <returns></returns>
+    protected TResult TSInvoke<TResult>(string identifier, object?[]? args);
+
+    /// <summary>
+    /// Invokes the specified JavaScript function synchronously when supported, otherwise asynchronously.
+    /// </summary>
+    /// <typeparam name="TValue"></typeparam>
+    /// <param name="identifier">name of the javascript function</param>
+    /// <param name="args">parameter passing to the JS-function</param>
+    /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
+    /// <returns></returns>
+    protected ValueTask<TValue> TSInvokeTrySync<TValue>(string identifier, object?[]? args, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Invokes the specified JavaScript function asynchronously.
+    /// </summary>
+    /// <typeparam name="TValue"></typeparam>
+    /// <param name="identifier">name of the javascript function</param>
+    /// <param name="args">parameter passing to the JS-function</param>
+    /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
+    /// <returns></returns>
+    protected ValueTask<TValue> TSInvokeAsync<TValue>(string identifier, object?[]? args, CancellationToken cancellationToken);
+
+    /// <summary>
     /// <para>Invokes the specified JavaScript function in the specified module synchronously.</para>
     /// <para>If module is not loaded, it returns without any invoking. If synchronous is not supported, it fails with an exception.</para>
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="moduleUrl">complete path of the module, e.g. "/Pages/Example.razor.js"</param>
+    /// <typeparam name="TResult"></typeparam>
+    /// <param name="moduleTask">The loading task of a module</param>
     /// <param name="identifier">name of the javascript function</param>
-    /// <param name="success">false when the module is not loaded, otherwise true</param>
     /// <param name="args">parameter passing to the JS-function</param>
-    /// <returns>default when the module is not loaded, otherwise result of the JS-function</returns>
-    private TResult Invoke<TResult>(Task<IJSObjectReference> moduleTask, string identifier, params object?[]? args) {
+    /// <returns></returns>
+    private TResult TSInvoke<TResult>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args) {
         if (!moduleTask.IsCompletedSuccessfully)
             throw new JSException("JS-module is not loaded. Use and await the Preload-method to ensure the module is loaded.");
 
@@ -168,13 +209,13 @@ public partial interface ITSRuntime {
     /// <summary>
     /// Invokes the specified JavaScript function in the specified module synchronously when supported, otherwise asynchronously.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="moduleUrl">complete path of the module, e.g. "/Pages/Example.razor.js"</param>
+    /// <typeparam name="TValue"></typeparam>
+    /// <param name="moduleTask">The loading task of a module</param>
     /// <param name="identifier">name of the javascript function</param>
-    /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
     /// <param name="args">parameter passing to the JS-function</param>
+    /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
     /// <returns></returns>
-    private async ValueTask<TValue> InvokeTrySync<TValue>(Task<IJSObjectReference> moduleTask, string identifier, CancellationToken cancellationToken, params object?[]? args) {
+    private async ValueTask<TValue> TSInvokeTrySync<TValue>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args, CancellationToken cancellationToken) {
         IJSObjectReference module = await moduleTask;
         if (module is IJSInProcessObjectReference inProcessModule)
             return inProcessModule.Invoke<TValue>(identifier, args);
@@ -185,13 +226,13 @@ public partial interface ITSRuntime {
     /// <summary>
     /// Invokes the specified JavaScript function in the specified module asynchronously.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="moduleUrl">complete path of the module, e.g. "/Pages/Example.razor.js"</param>
+    /// <typeparam name="TValue"></typeparam>
+    /// <param name="moduleTask">The loading task of a module</param>
     /// <param name="identifier">name of the javascript function</param>
-    /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
     /// <param name="args">parameter passing to the JS-function</param>
+    /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
     /// <returns></returns>
-    private async ValueTask<TValue> InvokeAsync<TValue>(Task<IJSObjectReference> moduleTask, string identifier, CancellationToken cancellationToken, params object?[]? args) {
+    private async ValueTask<TValue> TSInvokeAsync<TValue>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args, CancellationToken cancellationToken) {
         IJSObjectReference module = await moduleTask;
         return await module.InvokeAsync<TValue>(identifier, cancellationToken, args);
     }

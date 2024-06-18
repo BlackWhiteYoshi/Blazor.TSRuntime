@@ -33,5 +33,5 @@ public partial interface ITSRuntime {
     /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
     /// <returns>Result of the JS-function.</returns>
     public ValueTask<number> Test(number a, string b, CancellationToken cancellationToken = default)
-        => InvokeTrySync<number>(GetTestModuleModule(), "Test", cancellationToken, [a, b]);
+        => TSInvokeTrySync<number>(GetTestModuleModule(), "Test", [a, b], cancellationToken);
 }
