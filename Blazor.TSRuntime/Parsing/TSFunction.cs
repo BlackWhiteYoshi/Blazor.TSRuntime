@@ -95,6 +95,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
     /// Creates a TSFunction if the given line represents a exported js-function. 
     /// </summary>
     /// <param name="line">An Entire line in a .js/.ts/.d.ts file.</param>
+    /// <param name="isModule"></param>
     /// <returns>null, if not starting with "export function " or "export declare function ", otherwise tries to parse and returns a <see cref="TSFunction"/>.</returns>
     public static TSFunction? ParseFunction(ReadOnlySpan<char> line, bool isModule = true) {
         int position = 0;

@@ -740,6 +740,7 @@ public static class Builder {
         /// Ends with 3 line break.
         /// </summary>
         /// <param name="functionList"></param>
+        /// <param name="isModule"></param>
         private void AppendFunctionList(IReadOnlyList<TSFunction> functionList, bool isModule) {
             if (functionList.Count > 0) {
                 mappedParameterList.Clear();
@@ -794,6 +795,7 @@ public static class Builder {
         /// <param name="summaryAction"></param>
         /// <param name="invokeFunctionActionName"></param>
         /// <param name="invokeFunction"></param>
+        /// <param name="isModule"></param>
         private readonly void AppendInvokeSyncMethod(string summaryAction, string invokeFunctionActionName, string invokeFunction, bool isModule)
             => AppendInvokeMethodCore(summaryAction, invokeFunctionActionName, invokeFunction, isModule, isSync: true);
 
@@ -808,6 +810,7 @@ public static class Builder {
         /// <param name="summaryAction"></param>
         /// <param name="invokeFunctionActionName"></param>
         /// <param name="invokeFunction"></param>
+        /// <param name="isModule"></param>
         private readonly void AppendInvokeAsyncMethod(string summaryAction, string invokeFunctionActionName, string invokeFunction, bool isModule)
             => AppendInvokeMethodCore(summaryAction, invokeFunctionActionName, invokeFunction, isModule, isSync: false);
 
@@ -817,6 +820,7 @@ public static class Builder {
         /// <param name="summaryAction"></param>
         /// <param name="invokeFunctionActionName"></param>
         /// <param name="invokeFunction"></param>
+        /// <param name="isModule"></param>
         /// <param name="isSync"></param>
         private readonly void AppendInvokeMethodCore(string summaryAction, string invokeFunctionActionName, string invokeFunction, bool isModule, bool isSync) {
             int lastIndex = function.ParameterList.Length;

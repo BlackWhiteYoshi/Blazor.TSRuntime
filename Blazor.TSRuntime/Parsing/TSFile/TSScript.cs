@@ -7,7 +7,7 @@ namespace TSRuntime.Parsing;
 /// </summary>
 public sealed class TSScript : TSFile {
     /// <summary>
-    /// Creates an object with <see cref="FilePath"/>, <see cref="URLPath"/> and <see cref="Name"/> filled and an empty <see cref="FunctionList"/>.
+    /// Creates an object with <see cref="TSFile.FilePath"/>, <see cref="TSFile.URLPath"/> and <see cref="TSFile.Name"/> filled and an empty <see cref="TSFile.FunctionList"/>.
     /// </summary>
     /// <param name="filePath"></param>
     /// <param name="errorList"></param>
