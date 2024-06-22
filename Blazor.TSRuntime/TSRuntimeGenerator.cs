@@ -114,7 +114,7 @@ public sealed class TSRuntimeGenerator : IIncrementalGenerator {
 
         context.RegisterSourceOutput(moduleCollectionWithConfig, stringBuilderPool.BuildClass);
 
-        context.RegisterSourceOutput(configProvider, Builder.BuildInterfaceCore);
+        context.RegisterSourceOutput(configProvider, InterfaceCoreBuilder.BuildInterfaceCore);
         context.RegisterSourceOutput(moduleList, stringBuilderPool.BuildInterfaceModule);
         context.RegisterSourceOutput(scriptList, stringBuilderPool.BuildInterfaceScript);
 

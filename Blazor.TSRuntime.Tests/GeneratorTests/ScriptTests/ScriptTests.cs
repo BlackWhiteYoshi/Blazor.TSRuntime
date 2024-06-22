@@ -1,6 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
 using System.Collections.Immutable;
-using TSRuntime.Parsing;
 
 namespace TSRuntime.Tests;
 
