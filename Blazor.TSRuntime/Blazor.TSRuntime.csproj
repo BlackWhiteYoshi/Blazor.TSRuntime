@@ -9,7 +9,7 @@
     <Title>Blazor.TSRuntime</Title>
     <Description>TSRuntime is an improved JSRuntime with automatic JS-module loading and caching, compile time errors instead of runtime errors and nice IntelliSense guidance.</Description>
     <Authors>BlackWhiteYoshi</Authors>
-    <PackageTags>C#;.Net;Blazor;JSRuntime;TS;TypeScript;Interop</PackageTags>
+    <PackageTags>C#;.Net;Blazor;JS;JavaScript;TS;TypeScript;JSRuntime;Interop</PackageTags>
 
     <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/BlackWhiteYoshi/Blazor.TSRuntime</PackageProjectUrl>

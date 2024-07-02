@@ -18,8 +18,9 @@ public partial interface ITSRuntime {
     /// <param name="str"></param>
     /// <param name="a"></param>
     /// <returns>Result of the JS-function.</returns>
-    public TNumber TestInvoke<TNumber>(string str, bool a) where TNumber : INumber<TNumber>
-        => TSInvoke<TNumber>("Test", [str, a]);
+    public TNumber TestInvoke<TNumber>(string str, bool a) where TNumber : INumber<TNumber> {
+        return TSInvoke<TNumber>("Test", [str, a]);
+    }
 
     /// <summary>
     /// <para>Invokes in script 'site' the JS-function 'Test' synchronously when supported, otherwise asynchronously.</para>
@@ -29,8 +30,9 @@ public partial interface ITSRuntime {
     /// <param name="a"></param>
     /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
     /// <returns>Result of the JS-function.</returns>
-    public ValueTask<TNumber> TestInvokeTrySync<TNumber>(string str, bool a, CancellationToken cancellationToken = default) where TNumber : INumber<TNumber>
-        => TSInvokeTrySync<TNumber>("Test", [str, a], cancellationToken);
+    public async ValueTask<TNumber> TestInvokeTrySync<TNumber>(string str, bool a, CancellationToken cancellationToken = default) where TNumber : INumber<TNumber> {
+        return await TSInvokeTrySync<TNumber>("Test", [str, a], cancellationToken);
+    }
 
     /// <summary>
     /// <para>Invokes in script 'site' the JS-function 'Test' asynchronously.</para>
@@ -40,6 +42,7 @@ public partial interface ITSRuntime {
     /// <param name="a"></param>
     /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
     /// <returns>Result of the JS-function.</returns>
-    public ValueTask<TNumber> TestInvokeAsync<TNumber>(string str, bool a, CancellationToken cancellationToken = default) where TNumber : INumber<TNumber>
-        => TSInvokeAsync<TNumber>("Test", [str, a], cancellationToken);
+    public async ValueTask<TNumber> TestInvokeAsync<TNumber>(string str, bool a, CancellationToken cancellationToken = default) where TNumber : INumber<TNumber> {
+        return await TSInvokeAsync<TNumber>("Test", [str, a], cancellationToken);
+    }
 }

@@ -653,7 +653,21 @@ public static class GeneratorConfigTests {
 
     [Fact]
     public static Task PromiseOnlyAsync() {
-        const string jsonConfig = """{ "invoke function": { "sync enabled": true, "trysync enabled": true, "async enabled": true, "promise": { "only async enabled": true } } }""";
+        const string jsonConfig = """
+            {
+                "invoke function": {
+                    "sync enabled": true,
+                    "trysync enabled": true,
+                    "async enabled": true,
+                    "name pattern": {
+                        "pattern": "#function##action#"
+                    },
+                    "promise": {
+                        "only async enabled": true
+                    }
+                }
+            }
+            """;
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
         Assert.Empty(diagnostics);
 

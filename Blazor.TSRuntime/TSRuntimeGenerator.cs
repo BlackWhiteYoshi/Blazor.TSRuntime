@@ -111,8 +111,13 @@ public sealed class TSRuntimeGenerator : IIncrementalGenerator {
             .Collect()
             .Combine(configProvider);
 
+        IncrementalValueProvider<(ImmutableArray<TSScript> scriptList, (ImmutableArray<TSModule> moduleList, ConfigOrError configOrError) tuple)> scriptModuleCollectionWithConfig = scriptList
+            .Select(((TSScript script, Config config) tuple, CancellationToken _) => tuple.script)
+            .Collect()
+            .Combine(moduleCollectionWithConfig);
 
-        context.RegisterSourceOutput(moduleCollectionWithConfig, stringBuilderPool.BuildClass);
+
+        context.RegisterSourceOutput(scriptModuleCollectionWithConfig, stringBuilderPool.BuildClass);
 
         context.RegisterSourceOutput(configProvider, InterfaceCoreBuilder.BuildInterfaceCore);
         context.RegisterSourceOutput(moduleList, stringBuilderPool.BuildInterfaceModule);

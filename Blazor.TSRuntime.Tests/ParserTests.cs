@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using TSRuntime.Parsing;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TSRuntime.Tests;
 
@@ -14,7 +15,6 @@ public static class ParserTests {
     [InlineData("asdf?", "asdf", true)]
     public static void ParsingParameterName(string input, string name, bool optional) {
         TSParameter parameter = new();
-
         parameter.ParseName(input);
 
         Assert.Equal(name, parameter.name);
@@ -66,7 +66,6 @@ public static class ParserTests {
     [InlineData("(   number    |null|     undefined     )   [ ]|null|undefined", "number", true, true, true, true)]
     public static void ParsingParameterType(string input, string type, bool typeNullable, bool array, bool arrayNullable, bool optional) {
         TSParameter parameter = new();
-
         parameter.ParseType(input);
 
         Assert.Equal(type, parameter.type);
@@ -74,6 +73,76 @@ public static class ParserTests {
         Assert.Equal(array, parameter.array);
         Assert.Equal(arrayNullable, parameter.arrayNullable);
         Assert.Equal(optional, parameter.optional);
+    }
+
+    [Theory]
+    [InlineData("(str: string) => number", (string[])["string", "number"], false)]
+    [InlineData("() => void", (string[])["void"], false)]
+    [InlineData("(str: string) => Promise<number>", (string[])["string", "number"], true)]
+    [InlineData("(a: boolean, b: number) => void", (string[])["boolean", "number", "void"], false)]
+    [InlineData("(a:boolean,b:number)=>void", (string[])["boolean", "number", "void"], false)]
+    [InlineData("(   a :      boolean ,  b  :   number    ) =>    void", (string[])["boolean", "number", "void"], false)]
+    public static void ParsingParameterTypeCallback(string input, string[] callbackTypes, bool typeCallbackPromise) {
+        TSParameter parameter = new();
+        parameter.ParseType(input);
+
+
+        Assert.Null(parameter.type);
+        Assert.Equal(callbackTypes.Length, parameter.typeCallback.Length);
+        for (int i = 0; i < parameter.typeCallback.Length; i++)
+            Assert.Equal(callbackTypes[i], parameter.typeCallback[i].type);
+        Assert.Equal(typeCallbackPromise, parameter.typeCallbackPromise);
+    }
+
+    [Fact]
+    public static void ParsingParameterTypeCallbackWithArrayAndNull() {
+        TSParameter parameter = new();
+        parameter.ParseType("(str: (string | null)[] | null) => void");
+
+        Assert.Null(parameter.type);
+        Assert.False(parameter.typeCallbackPromise);
+        Assert.Equal(2, parameter.typeCallback.Length);
+        Assert.Equal("void", parameter.typeCallback[1].type);
+
+        Assert.Equal("string", parameter.typeCallback[0].type);
+        Assert.True(parameter.typeCallback[0].typeNullable);
+        Assert.True(parameter.typeCallback[0].array);
+        Assert.True(parameter.typeCallback[0].arrayNullable);
+    }
+
+    [Fact]
+    public static void ParsingParameterTypeCallbackNested() {
+        TSParameter parameter = new();
+        parameter.ParseType("(str: () => () => number) => () => void");
+
+        Assert.Null(parameter.type);
+        Assert.False(parameter.typeCallbackPromise);
+
+        Assert.Equal(2, parameter.typeCallback.Length);
+        
+        {
+            TSParameter nestedParameter = parameter.typeCallback[0];
+            Assert.Null(nestedParameter.type);
+            Assert.False(nestedParameter.typeCallbackPromise);
+
+            Assert.Single(nestedParameter.typeCallback);
+
+            {
+                TSParameter nestednestedParameter = nestedParameter.typeCallback[0];
+                Assert.Null(nestednestedParameter.type);
+                Assert.False(nestednestedParameter.typeCallbackPromise);
+                Assert.Single(nestednestedParameter.typeCallback);
+                Assert.Equal("number", nestednestedParameter.typeCallback[0].type);
+            }
+        }
+
+        {
+            TSParameter nestedParameter = parameter.typeCallback[1];
+            Assert.Null(nestedParameter.type);
+            Assert.False(nestedParameter.typeCallbackPromise);
+            Assert.Single(nestedParameter.typeCallback);
+            Assert.Equal("void", nestedParameter.typeCallback[0].type);
+        }
     }
 
     #endregion
@@ -224,6 +293,67 @@ public static class ParserTests {
         Assert.Equal(parameterSummary, function.ParameterList[0].summary);
         Assert.Equal(returnType, function.ReturnType.type);
         Assert.Equal(returnSummary, function.ReturnType.summary);
+    }
+
+    [Theory]
+    [InlineData("/** @param {string} str */\n", false)]
+    [InlineData("/** @param {string} [str] */\n", true)]
+    public static void ParsingSummaryOptional(string input, bool optional) {
+        const string FUNCTION_DECLARATION = "export function test(str): void;";
+        TSFunction function = TSFunction.ParseFunction(FUNCTION_DECLARATION)!;
+        function.ParseSummary($"{input}{FUNCTION_DECLARATION}", input.Length);
+
+        Assert.Single(function.ParameterList);
+        Assert.Equal("str", function.ParameterList[0].name);
+        Assert.Equal("string", function.ParameterList[0].type);
+        Assert.Equal(optional, function.ParameterList[0].optional);
+    }
+
+
+    [Fact]
+    public static void ParsingTSFunctionWithCallback() {
+        TSFunction function = TSFunction.ParseFunction("export function asdf(a: () => qwer): yxcv;")!;
+
+        Assert.Equal("asdf", function.Name);
+        Assert.Equal("yxcv", function.ReturnType.type);
+
+        Assert.Single(function.ParameterList);
+        {
+            TSParameter parameter = function.ParameterList[0];
+            Assert.Null(parameter.type);
+
+            Assert.Single(parameter.typeCallback);
+            {
+                TSParameter callback = parameter.typeCallback[0];
+                Assert.Equal("qwer", callback.type);
+            }
+        }
+
+        Assert.True(function.HasCallback);
+    }
+
+    [Fact]
+    public static void ParsingSummaryWithCallback() {
+        const string input = "/**\n * @param {() => qwer} a\n * @returns {yxcv}\n */\n";
+        TSFunction function = TSFunction.ParseFunction("export function asdf(a) { }")!;
+        function.ParseSummary(input, input.Length);
+
+        Assert.Equal("asdf", function.Name);
+        Assert.Equal("yxcv", function.ReturnType.type);
+
+        Assert.Single(function.ParameterList);
+        {
+            TSParameter parameter = function.ParameterList[0];
+            Assert.Null(parameter.type);
+
+            Assert.Single(parameter.typeCallback);
+            {
+                TSParameter callback = parameter.typeCallback[0];
+                Assert.Equal("qwer", callback.type);
+            }
+        }
+
+        Assert.True(function.HasCallback);
     }
 
 

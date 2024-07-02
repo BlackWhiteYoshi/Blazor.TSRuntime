@@ -54,9 +54,10 @@ public static class InterfaceBuilder {
     private struct BuildInterfaceFileCore(StringBuilder builder, Config config) {
         private string scriptName;
         private TSFunction function;
-        private readonly List<GenericType> genericParameterList = [];
-        private readonly List<MappedType> mappedParameterList = [];
+        private readonly List<(MappedType parameter, MappedType[]? callback)> mappedParameterList = [];
         private MappedType mappedReturnType;
+        private readonly List<GenericType> genericParameterList = [];
+        private readonly List<GenericType> genericCallbackList = [];
         private string returnType;
         private string returnModifiers;
 
@@ -150,7 +151,8 @@ public static class InterfaceBuilder {
 
             AppendFunctionList(script.FunctionList, isModule: false);
 
-            builder.Length -= 2;
+            if (builder[^2] is '\n')
+                builder.Length -= 2;
             builder.Append("}\n");
 
 
@@ -203,20 +205,43 @@ public static class InterfaceBuilder {
         /// <param name="isModule"></param>
         private void AppendFunctionList(IReadOnlyList<TSFunction> functionList, bool isModule) {
             if (functionList.Count > 0) {
-                mappedParameterList.Clear();
-                genericParameterList.Clear();
                 for (int i = 0; i < functionList.Count; i++) {
                     function = functionList[i];
 
                     mappedParameterList.Clear();
-                    for (int j = 0; j < function.ParameterList.Length; j++)
-                        if (config.TypeMap.TryGetValue(function.ParameterList[j].type, out MappedType mappedType))
-                            mappedParameterList.Add(mappedType);
-                        else
-                            mappedParameterList.Add(new MappedType(function.ParameterList[j].type));
+                    for (int j = 0; j < function.ParameterList.Length; j++) {
+                        string? type = function.ParameterList[j].type;
+                        if (type is not null)
+                            if (config.TypeMap.TryGetValue(type, out MappedType mappedType))
+                                mappedParameterList.Add((mappedType, null));
+                            else
+                                mappedParameterList.Add((new MappedType(type), null));
+                        else {
+                            MappedType[] mappedCallbackTypeList = new MappedType[function.ParameterList[j].typeCallback.Length];
 
-                    if (!config.TypeMap.TryGetValue(function.ReturnType.type, out mappedReturnType))
-                        mappedReturnType = new(function.ReturnType.type);
+                            for (int k = 0; k < function.ParameterList[j].typeCallback.Length; k++) {
+                                string callbackType = function.ParameterList[j].typeCallback[k].type ?? "CALLBACK_INSIDE_CALLBACK_NOT_SUPPORTED";
+                                if (config.TypeMap.TryGetValue(callbackType, out MappedType mappedType))
+                                    mappedCallbackTypeList[k] = new MappedType(mappedType.Type, mappedType.GenericTypes);
+                                else
+                                    mappedCallbackTypeList[k] = new MappedType(callbackType);
+                            }
+
+                            mappedParameterList.Add((default, mappedCallbackTypeList));
+                        }
+                    }
+
+                    genericCallbackList.Clear();
+                    for (int j = 0; j < function.ParameterList.Length; j++)
+                        if (mappedParameterList[j].callback is not null)
+                            for (int k = 0; k < mappedParameterList[j].callback!.Length; k++)
+                                for (int l = 0; l < mappedParameterList[j].callback![k].GenericTypes.Length; l++)
+                                    if (!genericCallbackList.Contains(mappedParameterList[j].callback![k].GenericTypes[l]))
+                                        genericCallbackList.Add(mappedParameterList[j].callback![k].GenericTypes[l]);
+
+                    string rawReturnType = function.ReturnType.type ?? "CALLBACK_RETURN_TYPE_NOT_SUPPORTED";
+                    if (!config.TypeMap.TryGetValue(rawReturnType, out mappedReturnType))
+                        mappedReturnType = new(rawReturnType);
 
                     returnType = mappedReturnType.Type;
                     returnModifiers = (function.ReturnType.typeNullable, function.ReturnType.array, function.ReturnType.arrayNullable) switch {
@@ -227,6 +252,117 @@ public static class InterfaceBuilder {
                         (true, true, false) => "?[]",
                         (true, true, true) => "?[]?"
                     };
+
+                    // private callback class
+                    if (function.HasCallback) {
+                        // attribute
+                        for (int k = 0; k < function.ParameterList.Length; k++)
+                            if (function.ParameterList[k].typeCallback.Length > 0) {
+                                builder.Append("    [method: DynamicDependency(nameof(_");
+                                builder.Append(function.ParameterList[k].name);
+                                builder.Append("))]\n");
+                            }
+                        // class head beginning
+                        builder.Append("    private sealed class ");
+                        config.InvokeFunctionNamePattern.AppendNaming(builder, scriptName, function.Name, string.Empty);
+                        builder.Append("Callback");
+                        // generics
+                        if (genericCallbackList.Count > 0) {
+                            builder.Append('<');
+                            builder.Append(genericCallbackList[0].Name);
+                            for (int k = 1; k < genericCallbackList.Count; k++) {
+                                builder.Append(genericCallbackList[k].Name);
+                                builder.Append(" ,");
+                            }
+                            builder.Append('>');
+                        }
+                        // generic constraints
+                        foreach (GenericType genericType in genericCallbackList)
+                            if (genericType.Constraint is not null) {
+                                builder.Append(" where ");
+                                builder.Append(genericType.Name);
+                                builder.Append(" : ");
+                                builder.Append(genericType.Constraint);
+                            }
+                        builder.Append(" {\n");
+                        
+                        for (int k = 0; k < function.ParameterList.Length; k++)
+                            if (mappedParameterList[k].callback is MappedType[] callbackTypeList) {
+                                builder.Append("        public ");
+                                {
+                                    if (function.ParameterList[k].typeCallback[^1].type is "void" && !function.ParameterList[k].typeCallbackPromise) {
+                                        builder.Append("Action");
+                                        if (callbackTypeList.Length > 1) {
+                                            builder.Append('<');
+                                            builder.Append(callbackTypeList[0].Type);
+                                            for (int l = 1; l < callbackTypeList.Length - 1; l++) { // last parameter is returnType
+                                                builder.Append(", ");
+                                                builder.Append(callbackTypeList[l].Type);
+                                            }
+                                            builder.Append('>');
+                                        }
+                                    }
+                                    else {
+                                        builder.Append("Func<");
+                                        for (int l = 0; l < callbackTypeList.Length - 1; l++) {
+                                            builder.Append(callbackTypeList[l].Type);
+                                            builder.Append(", ");
+                                        }
+                                        if (!function.ParameterList[k].typeCallbackPromise)
+                                            builder.Append(callbackTypeList[^1].Type);
+                                        else {
+                                            builder.Append("ValueTask");
+                                            if (function.ParameterList[k].typeCallback[^1].type is not "void") {
+                                                builder.Append('<');
+                                                builder.Append(callbackTypeList[^1].Type);
+                                                builder.Append('>');
+                                            }
+                                        }
+                                        builder.Append('>');
+                                    }
+                                }
+                                builder.Append(" _");
+                                builder.Append(function.ParameterList[k].name);
+                                builder.Append(";\n");
+
+                                builder.Append("        [JSInvokable] public ");
+
+                                if (!function.ParameterList[k].typeCallbackPromise)
+                                    builder.Append(callbackTypeList[^1].Type);
+                                else {
+                                    builder.Append("ValueTask");
+                                    if (function.ParameterList[k].typeCallback[^1].type is not "void") {
+                                        builder.Append('<');
+                                        builder.Append(callbackTypeList[^1].Type);
+                                        builder.Append('>');
+                                    }
+                                }
+                                
+                                builder.Append(' ');
+                                builder.Append(function.ParameterList[k].name);
+                                builder.Append('(');
+                                for (int l = 0; l < callbackTypeList.Length - 1; l++) { // last parameter is returnType
+                                    builder.Append(callbackTypeList[l].Type);
+                                    builder.Append(' ');
+                                    builder.Append(function.ParameterList[k].typeCallback[l].name);
+                                    builder.Append(", ");
+                                }
+                                if (builder[^1] is ' ')
+                                    builder.Length -= 2;
+                                builder.Append(") => _");
+                                builder.Append(function.ParameterList[k].name);
+                                builder.Append('(');
+                                for (int l = 0; l < function.ParameterList[k].typeCallback.Length - 1; l++) { // last parameter is returnType
+                                    builder.Append(function.ParameterList[k].typeCallback[l].name);
+                                    builder.Append(", ");
+                                }
+                                if (builder[^1] is ' ')
+                                    builder.Length -= 2;
+                                builder.Append(");\n\n");
+                            }
+                        builder.Length--;
+                        builder.Append("    }\n");
+                    }
 
                     if (function.ReturnPromise && config.PromiseOnlyAsync)
                         AppendInvokeAsyncMethod("asynchronously.", config.InvokeFunctionActionNameAsync, "TSInvokeAsync", isModule);
@@ -288,10 +424,12 @@ public static class InterfaceBuilder {
                 lastIndex--;
 
                 genericParameterList.Clear();
+                genericParameterList.AddRange(genericCallbackList);
                 for (int i = 0; i <= lastIndex; i++)
-                    for (int j = 0; j < mappedParameterList[i].GenericTypes.Length; j++)
-                        if (!genericParameterList.Contains(mappedParameterList[i].GenericTypes[j]))
-                            genericParameterList.Add(mappedParameterList[i].GenericTypes[j]);
+                    if (mappedParameterList[i].callback is null)
+                        for (int j = 0; j < mappedParameterList[i].parameter.GenericTypes.Length; j++)
+                            if (!genericParameterList.Contains(mappedParameterList[i].parameter.GenericTypes[j]))
+                                genericParameterList.Add(mappedParameterList[i].parameter.GenericTypes[j]);
                 for (int i = 0; i < mappedReturnType.GenericTypes.Length; i++)
                     if (!genericParameterList.Contains(mappedReturnType.GenericTypes[i]))
                         genericParameterList.Add(mappedReturnType.GenericTypes[i]);
@@ -336,6 +474,11 @@ public static class InterfaceBuilder {
                     builder.Append(genericType.Name);
                     builder.Append("\"></typeparam>\n");
                 }
+                foreach (string genericType in function.Generics) {
+                    builder.Append("    /// <typeparam name=\"");
+                    builder.Append(genericType);
+                    builder.Append("\"></typeparam>\n");
+                }
                 // <param>
                 for (int i = 0; i <= lastIndex; i++) {
                     builder.Append("    /// <param name=\"");
@@ -365,15 +508,14 @@ public static class InterfaceBuilder {
                     builder.Append(' ');
                 }
                 else {
-                    builder.Append("    public ");
-                    if (returnType == "void")
-                        builder.Append("Task ");
-                    else {
-                        builder.Append("ValueTask<");
+                    builder.Append("    public async ValueTask");
+                    if (returnType is not "void") {
+                        builder.Append('<');
                         builder.Append(returnType);
                         builder.Append(returnModifiers);
-                        builder.Append("> ");
+                        builder.Append('>');
                     }
+                    builder.Append(' ');
                 }
 
                 // method name
@@ -400,7 +542,41 @@ public static class InterfaceBuilder {
                 builder.Append('(');
                 if (lastIndex >= 0) {
                     for (int i = 0; i <= lastIndex; i++) {
-                        builder.Append(mappedParameterList[i].Type);
+                        if (mappedParameterList[i].callback is null)
+                            builder.Append(mappedParameterList[i].parameter.Type);
+                        else {
+                            MappedType[] callbackTypeList = mappedParameterList[i].callback!;
+                            if (function.ParameterList[i].typeCallback[^1].type is "void" && !function.ParameterList[i].typeCallbackPromise) {
+                                builder.Append("Action");
+                                if (callbackTypeList.Length > 1) {
+                                    builder.Append('<');
+                                    builder.Append(callbackTypeList[0].Type);
+                                    for (int j = 1; j < callbackTypeList.Length - 1; j++) { // last parameter is returnType
+                                        builder.Append(", ");
+                                        builder.Append(callbackTypeList[j].Type);
+                                    }
+                                    builder.Append('>');
+                                }
+                            }
+                            else {
+                                builder.Append("Func<");
+                                for (int j = 0; j < callbackTypeList.Length - 1; j++) {
+                                    builder.Append(callbackTypeList[j].Type);
+                                    builder.Append(", ");
+                                }
+                                if (!function.ParameterList[i].typeCallbackPromise)
+                                    builder.Append(callbackTypeList[^1].Type);
+                                else {
+                                    builder.Append("ValueTask");
+                                    if (function.ParameterList[i].typeCallback[^1].type is not "void") {
+                                        builder.Append('<');
+                                        builder.Append(callbackTypeList[^1].Type);
+                                        builder.Append('>');
+                                    }
+                                }
+                                builder.Append('>');
+                            }
+                        }
                         if (function.ParameterList[i].typeNullable)
                             builder.Append('?');
                         if (function.ParameterList[i].array)
@@ -420,21 +596,82 @@ public static class InterfaceBuilder {
 
                 // generic constraints
                 foreach (GenericType genericType in genericParameterList)
-                    if (genericType.Constraint != null) {
+                    if (genericType.Constraint is not null) {
                         builder.Append(" where ");
                         builder.Append(genericType.Name);
                         builder.Append(" : ");
                         builder.Append(genericType.Constraint);
                     }
 
-                builder.Append("\n        => ");
+                builder.Append(" {\n");
+
+
+                // body
+                if (function.HasCallback) {
+                    builder.Append("        using DotNetObjectReference<");
+                    config.InvokeFunctionNamePattern.AppendNaming(builder, scriptName, function.Name, string.Empty);
+                    builder.Append("Callback");
+                    if (genericCallbackList.Count > 0) {
+                        builder.Append('<');
+                        builder.Append(genericCallbackList[0].name);
+                        for (int i = 1; i < genericCallbackList.Count; i++) {
+                            builder.Append(", ");
+                            builder.Append(genericCallbackList[i].name);
+                        }
+                        builder.Append('>');
+                    }
+                    builder.Append("> __callback");
+                    builder.Append(" = DotNetObjectReference.Create(new ");
+                    config.InvokeFunctionNamePattern.AppendNaming(builder, scriptName, function.Name, string.Empty);
+                    builder.Append("Callback");
+                    if (genericCallbackList.Count > 0) {
+                        builder.Append('<');
+                        builder.Append(genericCallbackList[0].name);
+                        for (int i = 1; i < genericCallbackList.Count; i++) {
+                            builder.Append(", ");
+                            builder.Append(genericCallbackList[i].name);
+                        }
+                        builder.Append('>');
+                    }
+                    builder.Append("() { ");
+                    for (int i = 0; i < function.ParameterList.Length; i++)
+                        if (function.ParameterList[i].typeCallback.Length > 0) {
+                            builder.Append('_');
+                            builder.Append(function.ParameterList[i].name);
+                            builder.Append(" = ");
+                            builder.Append(function.ParameterList[i].name);
+                            builder.Append(", ");
+                        }
+                    builder.Length -= 2;
+                    builder.Append(" });\n");
+                }
+
+                builder.Append("        ");
+                if (returnType is not "void")
+                    builder.Append("return ");
+                if (!isSync)
+                    builder.Append("await ");
                 builder.Append(invokeFunction);
                 builder.Append('<');
-                if (returnType == "void")
+                if (returnType is "void")
                     builder.Append("Infrastructure.IJSVoidResult");
                 else {
                     builder.Append(returnType);
                     builder.Append(returnModifiers);
+                }
+                if (function.HasCallback) {
+                    builder.Append(", ");
+                    config.InvokeFunctionNamePattern.AppendNaming(builder, scriptName, function.Name, string.Empty);
+                    builder.Append("Callback");
+                    if (genericCallbackList.Count > 0) {
+                        builder.Append('<');
+                        builder.Append(genericCallbackList[0].name);
+                        for (int i = 1; i < genericCallbackList.Count; i++) {
+                            builder.Append(", ");
+                            builder.Append(genericCallbackList[i].name);
+                        }
+                        builder.Append('>');
+                    }
                 }
                 builder.Append(">(");
                 if (isModule) {
@@ -444,42 +681,25 @@ public static class InterfaceBuilder {
                 }
                 builder.Append('"');
                 builder.Append(function.Name);
-                builder.Append("\", [");
+                builder.Append("\", ");
+                if (function.HasCallback)
+                    builder.Append("__callback, ");
+                builder.Append('[');
                 if (lastIndex >= 0) {
-                    for (int i = 0; i < lastIndex; i++) {
-                        builder.Append(function.ParameterList[i].name);
-                        builder.Append(", ");
+                    for (int i = 0; i <= lastIndex; i++) {
+                        if (function.ParameterList[i].type is not null) {
+                            builder.Append(function.ParameterList[i].name);
+                            builder.Append(", ");
+                        }
                     }
-                    builder.Append(function.ParameterList[lastIndex].name);
+                    if (builder[^1] is ' ')
+                        builder.Length -= 2;
                 }
                 builder.Append(']');
                 if (!isSync)
                     builder.Append(", cancellationToken");
-                builder.Append(')');
-
-                if (!isSync)
-                    if (returnType == "void") {
-                        builder.Append(" switch {\n");
-                        builder.Append("            ValueTask<");
-                        if (returnType == "void")
-                            builder.Append("Infrastructure.IJSVoidResult");
-                        else {
-                            builder.Append(returnType);
-                            builder.Append(returnModifiers);
-                        }
-                        builder.Append("> { IsCompleted: true } => Task.CompletedTask,\n");
-                        builder.Append("            ValueTask<");
-                        if (returnType == "void")
-                            builder.Append("Infrastructure.IJSVoidResult");
-                        else {
-                            builder.Append(returnType);
-                            builder.Append(returnModifiers);
-                        }
-                        builder.Append("> task => task.AsTask()\n");
-                        builder.Append("        }");
-                    }
-
-                builder.Append(";\n\n");
+                builder.Append(");\n");
+                builder.Append("    }\n\n");
             } while (lastIndex >= 0 && function.ParameterList[lastIndex].optional);
         }
     }

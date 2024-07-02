@@ -17,14 +17,15 @@ public static class ClassBuilder {
     /// <param name="stringBuilderPool"></param>
     /// <param name="context"></param>
     /// <param name="parameters"></param>
-    public static void BuildClass(this ObjectPool<StringBuilder> stringBuilderPool, SourceProductionContext context, (ImmutableArray<TSModule> moduleList, (Config? config, Diagnostic? error) configOrError) parameters) {
-        if (parameters.configOrError.error is not null) {
-            context.ReportDiagnostic(parameters.configOrError.error);
+    public static void BuildClass(this ObjectPool<StringBuilder> stringBuilderPool, SourceProductionContext context, (ImmutableArray<TSScript> scriptList, (ImmutableArray<TSModule> moduleList, (Config? config, Diagnostic? error) configOrError) tuple) parameters) {
+        if (parameters.tuple.configOrError.error is not null) {
+            context.ReportDiagnostic(parameters.tuple.configOrError.error);
             return;
         }
 
-        ImmutableArray<TSModule> moduleList = parameters.moduleList;
-        Config config = parameters.configOrError.config!;
+        ImmutableArray<TSScript> scriptList = parameters.scriptList;
+        ImmutableArray<TSModule> moduleList = parameters.tuple.moduleList;
+        Config config = parameters.tuple.configOrError.config!;
 
 
         foreach (Diagnostic error in config.ErrorList)
@@ -89,7 +90,106 @@ public static class ClassBuilder {
         }
         builder.Append("IDisposable, IAsyncDisposable {\n");
 
-        builder.Append("    private readonly CancellationTokenSource cancellationTokenSource = new();\n\n");
+
+        builder.Append("    private readonly CancellationTokenSource cancellationTokenSource = new();\n");
+
+        // has any function with a callback
+        bool hasCallback = false;
+        IReadOnlyList<TSFile> callbackCurrentList = null!;
+        (int loopIndex, int fileIndex, int functionIndex) firstCallback = (-1, -1, -1);
+        for (int i = 0; i < scriptList.Length; i++)
+            for (int j = 0; j < scriptList[i].FunctionList.Count; j++)
+                if (scriptList[i].FunctionList[j].HasCallback) {
+                    hasCallback = true;
+                    callbackCurrentList = scriptList;
+                    firstCallback = (0, i, j);
+                    goto callback_search_end;
+                }
+        for (int i = 0; i < moduleList.Length; i++)
+            for (int j = 0; j < moduleList[i].FunctionList.Count; j++)
+                if (moduleList[i].FunctionList[j].HasCallback) {
+                    hasCallback = true;
+                    callbackCurrentList = moduleList;
+                    firstCallback = (1, i, j);
+                    goto callback_search_end;
+                }
+        callback_search_end:
+
+        // callback module
+        if (hasCallback) {
+            builder.Append('\n');
+            builder.Append("    private Task<IJSObjectReference>? callbackModule;\n");
+            builder.Append("    private Task<IJSObjectReference> CallbackModule => callbackModule ??= jsRuntime.InvokeAsync<IJSObjectReference>(\"import\", \"data:text/javascript,");
+
+            for (int loopIndex = firstCallback.loopIndex; loopIndex < 2; loopIndex++) { // iterating over 2 lists: scriptList and moduleList
+                for (int fileIndex = firstCallback.fileIndex; fileIndex < callbackCurrentList.Count; fileIndex++) {
+                    TSFile file = callbackCurrentList[fileIndex];
+                    for (int functionIndex = 0; functionIndex < file.FunctionList.Count; functionIndex++) {
+                        TSFunction function = file.FunctionList[functionIndex];
+                        if (function.HasCallback) {
+                            builder.Append("export function ");
+                            builder.Append(function.Name);
+                            // parameters
+                            builder.Append("(");
+                            if (loopIndex is 1) // loopIndex == 1 corresponds to callbackCurrentList == moduleList;
+                                builder.Append("__module,");
+                            builder.Append("__callback");
+                            for (int i = 0; i < function.ParameterList.Length; i++) {
+                                if (function.ParameterList[i].type is not null) {
+                                    builder.Append(',');
+                                    builder.Append(function.ParameterList[i].name);
+                                }
+                            }
+                            builder.Append("){return ");
+                            if (loopIndex == 1) // loopIndex == 1 corresponds to callbackCurrentList == moduleList;
+                                builder.Append("__module.");
+                            else
+                                builder.Append("window.");
+                            builder.Append(function.Name);
+                            builder.Append('(');
+                            if (function.ParameterList.Length > 0) {
+                                for (int i = 0; i < function.ParameterList.Length; i++) {
+                                    if (function.ParameterList[i].type is not null)
+                                        builder.Append(function.ParameterList[i].name);
+                                    else {
+                                        // callback closure
+                                        builder.Append('(');
+                                        if (function.ParameterList[i].typeCallback.Length > 1) { // last parameter is returnType
+                                            for (int j = 0; j < function.ParameterList[i].typeCallback.Length - 1; j++) { // last parameter is returnType
+                                                builder.Append(function.ParameterList[i].typeCallback[j].name);
+                                                builder.Append(',');
+                                            }
+                                            builder.Length--;
+                                        }
+                                        builder.Append(")=>__callback.invokeMethod");
+                                        if (function.ParameterList[i].typeCallbackPromise)
+                                            builder.Append("Async");
+                                        builder.Append("('");
+                                        builder.Append(function.ParameterList[i].name);
+                                        builder.Append("'");
+                                        for (int j = 0; j < function.ParameterList[i].typeCallback.Length - 1; j++) { // last parameter is returnType
+                                            builder.Append(',');
+                                            builder.Append(function.ParameterList[i].typeCallback[j].name);
+                                        }
+                                        builder.Append(')');
+                                    }
+
+                                    builder.Append(',');
+                                }
+                                builder.Length--;
+                            }
+                            builder.Append(");}");
+                        }
+                    }
+                }
+
+                callbackCurrentList = moduleList;
+            }
+
+            builder.Append("\").AsTask();\n");
+        }
+
+        builder.Append('\n');
 
         // LoadModules()
         foreach (TSModule module in moduleList) {
@@ -130,42 +230,145 @@ public static class ClassBuilder {
         builder.Append("    public Task ");
         builder.Append(config.PreloadAllModulesName);
         builder.Append("() {\n");
-        foreach (TSModule module in moduleList) {
-            builder.Append("        Get");
-            builder.Append(module.Name);
-            builder.Append("Module();\n");
-        }
-        builder.Append("\n        return Task.WhenAll([");
         if (moduleList.Length > 0) {
             foreach (TSModule module in moduleList) {
+                builder.Append("        Get");
                 builder.Append(module.Name);
-                builder.Append("Module!, ");
+                builder.Append("Module();\n");
             }
-            builder.Length -= 2;
+            builder.Append('\n');
         }
+        builder.Append("        return Task.WhenAll([");
+        if (hasCallback)
+            builder.Append("CallbackModule, ");
+        foreach (TSModule module in moduleList) {
+            builder.Append(module.Name);
+            builder.Append("Module!, ");
+        }
+        if (builder[^1] is ' ')
+            builder.Length -= 2;
         builder.Append("]);\n");
         builder.Append("    }\n\n\n");
 
-        // script invoke methods
+        // invoke methods script
         builder.Append("""
                 TResult ITSRuntime.TSInvoke<TResult>(string identifier, object?[]? args) => ((IJSInProcessRuntime)jsRuntime).Invoke<TResult>(identifier, args);
 
-                ValueTask<TValue> ITSRuntime.TSInvokeTrySync<TValue>(string identifier, object?[]? args, CancellationToken cancellationToken) {
+                ValueTask<TResult> ITSRuntime.TSInvokeTrySync<TResult>(string identifier, object?[]? args, CancellationToken cancellationToken) {
                     if (jsRuntime is IJSInProcessRuntime jsInProcessRuntime)
-                        return ValueTask.FromResult(jsInProcessRuntime.Invoke<TValue>(identifier, args));
+                        return ValueTask.FromResult(jsInProcessRuntime.Invoke<TResult>(identifier, args));
                     else
-                        return jsRuntime.InvokeAsync<TValue>(identifier, cancellationToken, args);
+                        return jsRuntime.InvokeAsync<TResult>(identifier, cancellationToken, args);
                 }
 
-                ValueTask<TValue> ITSRuntime.TSInvokeAsync<TValue>(string identifier, object?[]? args, CancellationToken cancellationToken)
-                    => jsRuntime.InvokeAsync<TValue>(identifier, cancellationToken, args);
+                ValueTask<TResult> ITSRuntime.TSInvokeAsync<TResult>(string identifier, object?[]? args, CancellationToken cancellationToken)
+                    => jsRuntime.InvokeAsync<TResult>(identifier, cancellationToken, args);
 
 
 
             """);
+        // invoke methods module
+        builder.Append("""
+                TResult ITSRuntime.TSInvoke<TResult>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args) {
+                    if (!moduleTask.IsCompletedSuccessfully)
+                        throw new JSException("JS-module is not loaded. Use and await the Preload()-method to ensure the module is loaded.");
+
+                    return ((IJSInProcessObjectReference)moduleTask.Result).Invoke<TResult>(identifier, args);
+                }
+
+                async ValueTask<TResult> ITSRuntime.TSInvokeTrySync<TResult>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args, CancellationToken cancellationToken) {
+                    IJSObjectReference module = await moduleTask;
+                    if (module is IJSInProcessObjectReference inProcessModule)
+                        return inProcessModule.Invoke<TResult>(identifier, args);
+                    else
+                        return await module.InvokeAsync<TResult>(identifier, cancellationToken, args);
+                }
+
+                async ValueTask<TResult> ITSRuntime.TSInvokeAsync<TResult>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args, CancellationToken cancellationToken) {
+                    IJSObjectReference module = await moduleTask;
+                    return await module.InvokeAsync<TResult>(identifier, cancellationToken, args);
+                }
+
+                
+
+            """);
+        // invoke methods callback-script
+        if (hasCallback)
+            builder.Append("""
+                    TResult ITSRuntime.TSInvoke<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args) where TCallback : class {
+                        if (!CallbackModule.IsCompletedSuccessfully)
+                            throw new JSException("JS-module is not loaded. Use and await the Preload()-method to ensure the module is loaded.");
+
+                        return ((IJSInProcessObjectReference)CallbackModule.Result).Invoke<TResult>(identifier, [dotNetObjectReference, .. args]);
+                    }
+
+                    async ValueTask<TResult> ITSRuntime.TSInvokeTrySync<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class {
+                        IJSObjectReference module = await CallbackModule;
+                        if (module is IJSInProcessObjectReference inProcessModule)
+                            return inProcessModule.Invoke<TResult>(identifier, [dotNetObjectReference, .. args]);
+                        else
+                            return await module.InvokeAsync<TResult>(identifier, cancellationToken, [dotNetObjectReference, .. args]);
+                    }
+
+                    async ValueTask<TResult> ITSRuntime.TSInvokeAsync<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class {
+                        IJSObjectReference module = await CallbackModule;
+                        return await module.InvokeAsync<TResult>(identifier, cancellationToken, [dotNetObjectReference, .. args]);
+                    }
+
+
+                
+                """);
+        else
+            builder.Append("""
+                    TResult ITSRuntime.TSInvoke<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args) where TCallback : class => default; // no callbacks are used
+
+                    ValueTask<TResult> ITSRuntime.TSInvokeTrySync<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class => default; // no callbacks are used
+
+                    ValueTask<TResult> ITSRuntime.TSInvokeAsync<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class => default; // no callbacks are used
+
+
+
+                """);
+        // invoke methods callback-module
+        if (hasCallback)
+            builder.Append("""
+                    TResult ITSRuntime.TSInvoke<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args) where TCallback : class {
+                        if (!moduleTask.IsCompletedSuccessfully || !CallbackModule.IsCompletedSuccessfully)
+                            throw new JSException("JS-module is not loaded. Use and await the Preload()-method to ensure the module is loaded.");
+
+                        return ((IJSInProcessObjectReference)CallbackModule.Result).Invoke<TResult>(identifier, [moduleTask.Result, dotNetObjectReference, .. args]);
+                    }
+
+                    async ValueTask<TResult> ITSRuntime.TSInvokeTrySync<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class {
+                        IJSObjectReference module = await CallbackModule;
+                        if (module is IJSInProcessObjectReference inProcessModule)
+                            return inProcessModule.Invoke<TResult>(identifier, [await moduleTask, dotNetObjectReference, .. args]);
+                        else
+                            return await module.InvokeAsync<TResult>(identifier, cancellationToken, [await moduleTask, dotNetObjectReference, .. args]);
+                    }
+
+                    async ValueTask<TResult> ITSRuntime.TSInvokeAsync<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class {
+                        IJSObjectReference module = await CallbackModule;
+                        return await module.InvokeAsync<TResult>(identifier, cancellationToken, [await moduleTask, dotNetObjectReference, .. args]);
+                    }
+
+
+
+                """);
+        else
+            builder.Append("""
+                    TResult ITSRuntime.TSInvoke<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args) where TCallback : class  => default; // no callbacks are used
+
+                    ValueTask<TResult> ITSRuntime.TSInvokeTrySync<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class  => default; // no callbacks are used
+
+                    ValueTask<TResult> ITSRuntime.TSInvokeAsync<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class => default; // no callbacks are used
+
+
+
+                """);
+        builder.Append('\n');
 
         // BuildClassJsRuntime
-        int builderLength = builder.Length;
         if (config.JSRuntimeSyncEnabled)
             builder.Append("""
                 public TResult Invoke<TResult>(string identifier, params object?[]? args)
@@ -175,23 +378,23 @@ public static class ClassBuilder {
             """);
         if (config.JSRuntimeTrySyncEnabled)
             builder.Append("""
-                public ValueTask<TValue> InvokeTrySync<TValue>(string identifier, CancellationToken cancellationToken, params object?[]? args) {
+                public ValueTask<TResult> InvokeTrySync<TResult>(string identifier, CancellationToken cancellationToken, params object?[]? args) {
                     if (jsRuntime is IJSInProcessRuntime jsInProcessRuntime)
-                        return ValueTask.FromResult(jsInProcessRuntime.Invoke<TValue>(identifier, args));
+                        return ValueTask.FromResult(jsInProcessRuntime.Invoke<TResult>(identifier, args));
                     else
-                        return jsRuntime.InvokeAsync<TValue>(identifier, cancellationToken, args);
+                        return jsRuntime.InvokeAsync<TResult>(identifier, cancellationToken, args);
                 }
 
 
             """);
         if (config.JSRuntimeAsyncEnabled)
             builder.Append("""
-                public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, params object?[]? args)
-                    => jsRuntime.InvokeAsync<TValue>(identifier, cancellationToken, args);
+                public ValueTask<TResult> InvokeAsync<TResult>(string identifier, CancellationToken cancellationToken, params object?[]? args)
+                    => jsRuntime.InvokeAsync<TResult>(identifier, cancellationToken, args);
 
 
             """);
-        if (builderLength < builder.Length)
+        if (builder[^3] is not '\n')
             builder.Append('\n');
 
         // Dispose
@@ -223,6 +426,17 @@ public static class ClassBuilder {
             builder.Append(module.Name);
             builder.Append("Module = null;");
         }
+        if (hasCallback)
+            builder.Append("""
+
+
+                        if (callbackModule?.IsCompletedSuccessfully == true)
+                            if (callbackModule.Result is IJSInProcessObjectReference inProcessModule)
+                                inProcessModule.Dispose();
+                            else
+                                _ = callbackModule.Result.DisposeAsync().Preserve();
+                        callbackModule = null;
+                """);
         builder.Append("\n    }\n\n");
 
         // DisposeAsync
@@ -262,6 +476,20 @@ public static class ClassBuilder {
             builder.Append(module.Name);
             builder.Append("Module = null;\n\n");
         }
+        if (hasCallback)
+            builder.Append("""
+                        if (callbackModule?.IsCompletedSuccessfully == true)
+                            if (callbackModule.Result is IJSInProcessObjectReference inProcessModule)
+                                inProcessModule.Dispose();
+                            else {
+                                ValueTask valueTask = callbackModule.Result.DisposeAsync();
+                                if (!valueTask.IsCompleted)
+                                    taskList.Add(valueTask.AsTask());
+                            }
+                        callbackModule = null;
+
+
+                """);
         builder.Append("""
                     if (taskList.Count == 0)
                         return ValueTask.CompletedTask;

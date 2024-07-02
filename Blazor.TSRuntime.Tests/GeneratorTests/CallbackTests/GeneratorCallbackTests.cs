@@ -1,0 +1,271 @@
+﻿using Microsoft.CodeAnalysis;
+using System.Collections.Immutable;
+
+namespace TSRuntime.Tests;
+
+public static class GeneratorCallbackTests {
+    private const string SCRIPT_PATH = $"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/site.d.ts";
+
+    [Fact]
+    public static Task Parameterless() {
+        const string jsonConfig = """{}""";
+        const string content = "export function callbackTest(someCallback: () => void): void;\n";
+
+        string[] result = jsonConfig.GenerateSourceText([(SCRIPT_PATH, content)], out _, out ImmutableArray<Diagnostic> diagnostics);
+        Assert.Empty(diagnostics);
+
+        string tsRuntime = result[0];
+        string itsRuntimeCore = result[1];
+        string itsRuntimeModule = result[2];
+        return Verify($"""
+            ---------
+            TSRuntime
+            ---------
+
+            {tsRuntime}
+
+            ----------
+            ITSRuntime
+            ----------
+
+            {itsRuntimeCore}
+
+            ------
+            Module
+            ------
+
+            {itsRuntimeModule}
+            """);
+    }
+
+    [Fact]
+    public static Task ParameterAndReturnType() {
+        const string jsonConfig = """{}""";
+        const string content = "export function callbackTest(parseString: (str: string) => number): number;\n";
+
+        string[] result = jsonConfig.GenerateSourceText([(SCRIPT_PATH, content)], out _, out ImmutableArray<Diagnostic> diagnostics);
+        Assert.Empty(diagnostics);
+
+        string tsRuntime = result[0];
+        string itsRuntimeCore = result[1];
+        string itsRuntimeModule = result[2];
+        return Verify($"""
+            ---------
+            TSRuntime
+            ---------
+
+            {tsRuntime}
+
+            ----------
+            ITSRuntime
+            ----------
+
+            {itsRuntimeCore}
+
+            ------
+            Module
+            ------
+
+            {itsRuntimeModule}
+            """);
+    }
+
+    [Fact]
+    public static Task MultipleParameter() {
+        const string jsonConfig = """{}""";
+        const string content = "export function callbackTest(a: boolean, parseString: (str: string) => number, b: number, callback2: (n: number) => string): void;\n";
+
+        string[] result = jsonConfig.GenerateSourceText([(SCRIPT_PATH, content)], out _, out ImmutableArray<Diagnostic> diagnostics);
+        Assert.Empty(diagnostics);
+
+        string tsRuntime = result[0];
+        string itsRuntimeCore = result[1];
+        string itsRuntimeModule = result[2];
+        return Verify($"""
+            ---------
+            TSRuntime
+            ---------
+
+            {tsRuntime}
+
+            ----------
+            ITSRuntime
+            ----------
+
+            {itsRuntimeCore}
+
+            ------
+            Module
+            ------
+
+            {itsRuntimeModule}
+            """);
+    }
+
+    [Fact]
+    public static Task Promise() {
+        const string jsonConfig = """{}""";
+        const string content = "export function callbackTest(someCallback: () => Promise<string>): void;\n";
+
+        string[] result = jsonConfig.GenerateSourceText([(SCRIPT_PATH, content)], out _, out ImmutableArray<Diagnostic> diagnostics);
+        Assert.Empty(diagnostics);
+
+        string tsRuntime = result[0];
+        string itsRuntimeCore = result[1];
+        string itsRuntimeModule = result[2];
+        return Verify($"""
+            ---------
+            TSRuntime
+            ---------
+
+            {tsRuntime}
+
+            ----------
+            ITSRuntime
+            ----------
+
+            {itsRuntimeCore}
+
+            ------
+            Module
+            ------
+
+            {itsRuntimeModule}
+            """);
+    }
+
+    [Fact]
+    public static Task PromiseVoid() {
+        const string jsonConfig = """{}""";
+        const string content = "export function callbackTest(someCallback: () => Promise<void>): void;\n";
+
+        string[] result = jsonConfig.GenerateSourceText([(SCRIPT_PATH, content)], out _, out ImmutableArray<Diagnostic> diagnostics);
+        Assert.Empty(diagnostics);
+
+        string tsRuntime = result[0];
+        string itsRuntimeCore = result[1];
+        string itsRuntimeModule = result[2];
+        return Verify($"""
+            ---------
+            TSRuntime
+            ---------
+
+            {tsRuntime}
+
+            ----------
+            ITSRuntime
+            ----------
+
+            {itsRuntimeCore}
+
+            ------
+            Module
+            ------
+
+            {itsRuntimeModule}
+            """);
+    }
+
+    [Fact]
+    public static Task Script() {
+        const string jsonConfig = """
+            {
+                "input path": {
+                    "include": "/",
+                    "module files": false
+                }
+            }
+            """;
+        const string content = "function callbackTest(someCallback: () => void): void;\n";
+
+        string[] result = jsonConfig.GenerateSourceText([(SCRIPT_PATH, content)], out _, out ImmutableArray<Diagnostic> diagnostics);
+        Assert.Empty(diagnostics);
+
+        string tsRuntime = result[0];
+        string itsRuntimeCore = result[1];
+        string itsRuntimeModule = result[2];
+        return Verify($"""
+            ---------
+            TSRuntime
+            ---------
+
+            {tsRuntime}
+
+            ----------
+            ITSRuntime
+            ----------
+
+            {itsRuntimeCore}
+
+            ------
+            Module
+            ------
+
+            {itsRuntimeModule}
+            """);
+    }
+
+    [Fact]
+    public static Task ReturnTypeNotSupported() {
+        const string jsonConfig = """{}""";
+        const string content = "export function callbackTest(): () => void;\n";
+
+        string[] result = jsonConfig.GenerateSourceText([(SCRIPT_PATH, content)], out _, out ImmutableArray<Diagnostic> diagnostics);
+        Assert.Empty(diagnostics);
+
+        string tsRuntime = result[0];
+        string itsRuntimeCore = result[1];
+        string itsRuntimeModule = result[2];
+        return Verify($"""
+            ---------
+            TSRuntime
+            ---------
+
+            {tsRuntime}
+
+            ----------
+            ITSRuntime
+            ----------
+
+            {itsRuntimeCore}
+
+            ------
+            Module
+            ------
+
+            {itsRuntimeModule}
+            """);
+    }
+
+    [Fact]
+    public static Task NestedNotSupported() {
+        const string jsonConfig = """{}""";
+        const string content = "export function callbackTest(someCallback: (nestedCallback: () => void) => void): void;\n";
+
+        string[] result = jsonConfig.GenerateSourceText([(SCRIPT_PATH, content)], out _, out ImmutableArray<Diagnostic> diagnostics);
+        Assert.Empty(diagnostics);
+
+        string tsRuntime = result[0];
+        string itsRuntimeCore = result[1];
+        string itsRuntimeModule = result[2];
+        return Verify($"""
+            ---------
+            TSRuntime
+            ---------
+
+            {tsRuntime}
+
+            ----------
+            ITSRuntime
+            ----------
+
+            {itsRuntimeCore}
+
+            ------
+            Module
+            ------
+
+            {itsRuntimeModule}
+            """);
+    }
+}

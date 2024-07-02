@@ -136,11 +136,23 @@ public static class DiagnosticErrors {
         isEnabledByDefault: true);
 
 
+    public static void AddConfigFunctionTransformMissingActionError(this List<Diagnostic> errorList, string jsonKey)
+        => errorList.Add(Diagnostic.Create(ConfigFunctionTransformMissingAction, null, [jsonKey]));
+
+    private static DiagnosticDescriptor ConfigFunctionTransformMissingAction { get; } = new(
+        id: "BTS012",
+        title: "config function transform missing action",
+        messageFormat: "malformed config: '{0}' should contain '#action#' when 2 or more method types are enabled, otherwise it leads to duplicate method naming",
+        category: "Blazor.TSRuntime",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+
     public static void AddInputPathNoStartingSlashError(this List<Diagnostic> errorList, string jsonKey)
         => errorList.Add(Diagnostic.Create(InputPathNoStartingSlash, null, [jsonKey]));
 
     private static DiagnosticDescriptor InputPathNoStartingSlash { get; } = new(
-        id: "BTS012",
+        id: "BTS013",
         title: "config 'input path' has no starting slash",
         messageFormat: "malformed config: '{0}' should start with '/'",
         category: "Blazor.TSRuntime",
@@ -152,7 +164,7 @@ public static class DiagnosticErrors {
         => errorList.Add(Diagnostic.Create(ModulePathNoJsExtension, null, [jsonKey]));
 
     private static DiagnosticDescriptor ModulePathNoJsExtension { get; } = new(
-        id: "BTS013",
+        id: "BTS014",
         title: "config 'module path' has no '.js' extension",
         messageFormat: "malformed config: '{0}' should end with '.js'",
         category: "Blazor.TSRuntime",
@@ -168,7 +180,7 @@ public static class DiagnosticErrors {
         => errorList.Add(Diagnostic.Create(descriptor, null, [filePath, lineNumber, position]));
 
     public static DiagnosticDescriptor FileMissingOpenBracket { get; } = new(
-        id: "BTS014",
+        id: "BTS015",
         title: "invalid file: missing '('",
         messageFormat: "invalid file: '{0}' at line {1}: missing '(' after column {2} (the token that indicates the start of function parameters)",
         category: "Blazor.TSRuntime",
@@ -176,7 +188,7 @@ public static class DiagnosticErrors {
         isEnabledByDefault: true);
 
     public static DiagnosticDescriptor FileMissingClosingGenericBracket { get; } = new(
-        id: "BTS015",
+        id: "BTS016",
         title: "invalid file: missing '('",
         messageFormat: "invalid file: '{0}' at line {1}: missing '>' after column {2} (the token that marks the end of generics)",
         category: "Blazor.TSRuntime",
@@ -184,7 +196,7 @@ public static class DiagnosticErrors {
         isEnabledByDefault: true);
 
     public static DiagnosticDescriptor FileNoParameterEnd { get; } = new(
-        id: "BTS016",
+        id: "BTS017",
         title: "invalid file: no end of parameter",
         messageFormat: "invalid file: '{0}' at line {1}: missing ')' after column {2} (the token that marks end of parameters)",
         category: "Blazor.TSRuntime",

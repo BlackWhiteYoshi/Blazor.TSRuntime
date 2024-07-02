@@ -18,38 +18,29 @@ namespace Microsoft.JSInterop;
 /// <para>An implementation for <see cref="ITSRuntime"/>.</para>
 /// <para>It manages JS-modules: It loads the modules, caches it in an array and disposing releases all modules.</para>
 /// <para>
-/// There are 2 modules available:<br />
-/// - TestModule<br />
-/// - NestedTestModule
+/// There is 1 module available: site
 /// </para>
 /// </summary>
 [System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "0.8.0")]
 public sealed class TSRuntime(IJSRuntime jsRuntime) : ITSRuntime, IDisposable, IAsyncDisposable {
     private readonly CancellationTokenSource cancellationTokenSource = new();
 
-    Task<IJSObjectReference> ITSRuntime.GetTestModuleModule() => GetTestModuleModule();
-    private Task<IJSObjectReference>? TestModuleModule;
-    private Task<IJSObjectReference> GetTestModuleModule()
-        => TestModuleModule switch {
-            Task<IJSObjectReference> { IsCompletedSuccessfully: true }
-            or Task<IJSObjectReference> { IsCompleted: false } => TestModuleModule,
-            _ => TestModuleModule = jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationTokenSource.Token, "/TestModule.js").AsTask()
-        };
+    private Task<IJSObjectReference>? callbackModule;
+    private Task<IJSObjectReference> CallbackModule => callbackModule ??= jsRuntime.InvokeAsync<IJSObjectReference>("import", "data:text/javascript,export function callbackTest(__module,__callback){return __module.callbackTest(()=>__callback.invokeMethodAsync('someCallback'));}").AsTask();
 
-    Task<IJSObjectReference> ITSRuntime.GetNestedTestModuleModule() => GetNestedTestModuleModule();
-    private Task<IJSObjectReference>? NestedTestModuleModule;
-    private Task<IJSObjectReference> GetNestedTestModuleModule()
-        => NestedTestModuleModule switch {
+    Task<IJSObjectReference> ITSRuntime.GetsiteModule() => GetsiteModule();
+    private Task<IJSObjectReference>? siteModule;
+    private Task<IJSObjectReference> GetsiteModule()
+        => siteModule switch {
             Task<IJSObjectReference> { IsCompletedSuccessfully: true }
-            or Task<IJSObjectReference> { IsCompleted: false } => NestedTestModuleModule,
-            _ => NestedTestModuleModule = jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationTokenSource.Token, "/NestedFolder/NestedTestModule.js").AsTask()
+            or Task<IJSObjectReference> { IsCompleted: false } => siteModule,
+            _ => siteModule = jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationTokenSource.Token, "/site.js").AsTask()
         };
 
     public Task PreloadAllModules() {
-        GetTestModuleModule();
-        GetNestedTestModuleModule();
+        GetsiteModule();
 
-        return Task.WhenAll([TestModuleModule!, NestedTestModuleModule!]);
+        return Task.WhenAll([CallbackModule, siteModule!]);
     }
 
 
@@ -87,18 +78,46 @@ public sealed class TSRuntime(IJSRuntime jsRuntime) : ITSRuntime, IDisposable, I
     }
 
     
-    TResult ITSRuntime.TSInvoke<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args) where TCallback : class => default; // no callbacks are used
+    TResult ITSRuntime.TSInvoke<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args) where TCallback : class {
+        if (!CallbackModule.IsCompletedSuccessfully)
+            throw new JSException("JS-module is not loaded. Use and await the Preload()-method to ensure the module is loaded.");
 
-    ValueTask<TResult> ITSRuntime.TSInvokeTrySync<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class => default; // no callbacks are used
+        return ((IJSInProcessObjectReference)CallbackModule.Result).Invoke<TResult>(identifier, [dotNetObjectReference, .. args]);
+    }
 
-    ValueTask<TResult> ITSRuntime.TSInvokeAsync<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class => default; // no callbacks are used
+    async ValueTask<TResult> ITSRuntime.TSInvokeTrySync<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class {
+        IJSObjectReference module = await CallbackModule;
+        if (module is IJSInProcessObjectReference inProcessModule)
+            return inProcessModule.Invoke<TResult>(identifier, [dotNetObjectReference, .. args]);
+        else
+            return await module.InvokeAsync<TResult>(identifier, cancellationToken, [dotNetObjectReference, .. args]);
+    }
+
+    async ValueTask<TResult> ITSRuntime.TSInvokeAsync<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class {
+        IJSObjectReference module = await CallbackModule;
+        return await module.InvokeAsync<TResult>(identifier, cancellationToken, [dotNetObjectReference, .. args]);
+    }
 
 
-    TResult ITSRuntime.TSInvoke<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args) where TCallback : class  => default; // no callbacks are used
+    TResult ITSRuntime.TSInvoke<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args) where TCallback : class {
+        if (!moduleTask.IsCompletedSuccessfully || !CallbackModule.IsCompletedSuccessfully)
+            throw new JSException("JS-module is not loaded. Use and await the Preload()-method to ensure the module is loaded.");
 
-    ValueTask<TResult> ITSRuntime.TSInvokeTrySync<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class  => default; // no callbacks are used
+        return ((IJSInProcessObjectReference)CallbackModule.Result).Invoke<TResult>(identifier, [moduleTask.Result, dotNetObjectReference, .. args]);
+    }
 
-    ValueTask<TResult> ITSRuntime.TSInvokeAsync<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class => default; // no callbacks are used
+    async ValueTask<TResult> ITSRuntime.TSInvokeTrySync<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class {
+        IJSObjectReference module = await CallbackModule;
+        if (module is IJSInProcessObjectReference inProcessModule)
+            return inProcessModule.Invoke<TResult>(identifier, [await moduleTask, dotNetObjectReference, .. args]);
+        else
+            return await module.InvokeAsync<TResult>(identifier, cancellationToken, [await moduleTask, dotNetObjectReference, .. args]);
+    }
+
+    async ValueTask<TResult> ITSRuntime.TSInvokeAsync<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class {
+        IJSObjectReference module = await CallbackModule;
+        return await module.InvokeAsync<TResult>(identifier, cancellationToken, [await moduleTask, dotNetObjectReference, .. args]);
+    }
 
 
 
@@ -112,19 +131,19 @@ public sealed class TSRuntime(IJSRuntime jsRuntime) : ITSRuntime, IDisposable, I
         cancellationTokenSource.Cancel();
         cancellationTokenSource.Dispose();
 
-        if (TestModuleModule?.IsCompletedSuccessfully == true)
-            if (TestModuleModule.Result is IJSInProcessObjectReference inProcessModule)
+        if (siteModule?.IsCompletedSuccessfully == true)
+            if (siteModule.Result is IJSInProcessObjectReference inProcessModule)
                 inProcessModule.Dispose();
             else
-                _ = TestModuleModule.Result.DisposeAsync().Preserve();
-        TestModuleModule = null;
+                _ = siteModule.Result.DisposeAsync().Preserve();
+        siteModule = null;
 
-        if (NestedTestModuleModule?.IsCompletedSuccessfully == true)
-            if (NestedTestModuleModule.Result is IJSInProcessObjectReference inProcessModule)
+        if (callbackModule?.IsCompletedSuccessfully == true)
+            if (callbackModule.Result is IJSInProcessObjectReference inProcessModule)
                 inProcessModule.Dispose();
             else
-                _ = NestedTestModuleModule.Result.DisposeAsync().Preserve();
-        NestedTestModuleModule = null;
+                _ = callbackModule.Result.DisposeAsync().Preserve();
+        callbackModule = null;
     }
 
     /// <summary>
@@ -139,27 +158,27 @@ public sealed class TSRuntime(IJSRuntime jsRuntime) : ITSRuntime, IDisposable, I
         cancellationTokenSource.Cancel();
         cancellationTokenSource.Dispose();
 
-        List<Task> taskList = new(2);
+        List<Task> taskList = new(1);
 
-        if (TestModuleModule?.IsCompletedSuccessfully == true)
-            if (TestModuleModule.Result is IJSInProcessObjectReference inProcessModule)
+        if (siteModule?.IsCompletedSuccessfully == true)
+            if (siteModule.Result is IJSInProcessObjectReference inProcessModule)
                 inProcessModule.Dispose();
             else {
-                ValueTask valueTask = TestModuleModule.Result.DisposeAsync();
+                ValueTask valueTask = siteModule.Result.DisposeAsync();
                 if (!valueTask.IsCompleted)
                     taskList.Add(valueTask.AsTask());
             }
-        TestModuleModule = null;
+        siteModule = null;
 
-        if (NestedTestModuleModule?.IsCompletedSuccessfully == true)
-            if (NestedTestModuleModule.Result is IJSInProcessObjectReference inProcessModule)
+        if (callbackModule?.IsCompletedSuccessfully == true)
+            if (callbackModule.Result is IJSInProcessObjectReference inProcessModule)
                 inProcessModule.Dispose();
             else {
-                ValueTask valueTask = NestedTestModuleModule.Result.DisposeAsync();
+                ValueTask valueTask = callbackModule.Result.DisposeAsync();
                 if (!valueTask.IsCompleted)
                     taskList.Add(valueTask.AsTask());
             }
-        NestedTestModuleModule = null;
+        callbackModule = null;
 
         if (taskList.Count == 0)
             return ValueTask.CompletedTask;
@@ -358,91 +377,29 @@ using System.Numerics;
 namespace Microsoft.JSInterop;
 
 public partial interface ITSRuntime {
-    protected Task<IJSObjectReference> GetTestModuleModule();
+    protected Task<IJSObjectReference> GetsiteModule();
 
     /// <summary>
-    /// <para>Loads 'TestModule' (/TestModule.js) as javascript-module.</para>
+    /// <para>Loads 'site' (/site.js) as javascript-module.</para>
     /// <para>If already loading, it does not trigger a second loading and if already loaded, it returns a completed task.</para>
     /// </summary>
     /// <returns>A Task that will complete when the module import have completed.</returns>
-    public Task PreloadTestModule() => GetTestModuleModule();
+    public Task PreloadSite() => GetsiteModule();
 
 
-    /// <summary>
-    /// <para>Invokes in module 'TestModule' the JS-function 'Test' synchronously when supported, otherwise asynchronously.</para>
-    /// </summary>
-    /// <typeparam name="TNumber"></typeparam>
-    /// <param name="a"></param>
-    /// <param name="b"></param>
-    /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
-    /// <returns>Result of the JS-function.</returns>
-    public async ValueTask<TNumber> TestModule_Test_invoketrysync<TNumber>(TNumber a, string b, CancellationToken cancellationToken = default) where TNumber : INumber<TNumber> {
-        return await TSInvokeTrySync<TNumber>(GetTestModuleModule(), "Test", [a, b], cancellationToken);
+    [method: DynamicDependency(nameof(_someCallback))]
+    private sealed class CallbackTestCallback {
+        public Func<ValueTask> _someCallback;
+        [JSInvokable] public ValueTask someCallback() => _someCallback();
     }
-}
-
-
--------------
-Nested Module
--------------
-
-// <auto-generated/>
-#pragma warning disable
-#nullable enable annotations
-
-
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-using System.Numerics;
-
-namespace Microsoft.JSInterop;
-
-public partial interface ITSRuntime {
-    protected Task<IJSObjectReference> GetNestedTestModuleModule();
-
     /// <summary>
-    /// <para>Loads 'NestedTestModule' (/NestedFolder/NestedTestModule.js) as javascript-module.</para>
-    /// <para>If already loading, it does not trigger a second loading and if already loaded, it returns a completed task.</para>
+    /// <para>Invokes in module 'site' the JS-function 'callbackTest' synchronously when supported, otherwise asynchronously.</para>
     /// </summary>
-    /// <returns>A Task that will complete when the module import have completed.</returns>
-    public Task PreloadNestedTestModule() => GetNestedTestModuleModule();
-
-
-    /// <summary>
-    /// <para>Invokes in module 'NestedTestModule' the JS-function 'NestedTest' asynchronously.</para>
-    /// </summary>
+    /// <param name="someCallback"></param>
     /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
     /// <returns>A Task that will complete when the JS-Function have completed.</returns>
-    public async ValueTask NestedTestModule_NestedTest_invokeasync(CancellationToken cancellationToken = default) {
-        await TSInvokeAsync<Infrastructure.IJSVoidResult>(GetNestedTestModuleModule(), "NestedTest", [], cancellationToken);
-    }
-}
-
-
-----------------
-ServiceExtension
-----------------
-
-// <auto-generated/>
-#pragma warning disable
-#nullable enable annotations
-
-
-using Microsoft.Extensions.DependencyInjection;
-
-namespace Microsoft.JSInterop;
-
-[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "0.8.0")]
-public static class TSRuntimeServiceExtension {
-    /// <summary>
-    /// Registers a scoped ITSRuntime with a TSRuntime as implementation and if available, registers the module interfaces with the same TSRuntime-object.
-    /// </summary>
-    /// <param name="services"></param>
-    /// <returns></returns>
-    public static IServiceCollection AddTSRuntime(this IServiceCollection services) {
-        services.AddScoped<ITSRuntime, TSRuntime>();
-
-        return services;
+    public async ValueTask CallbackTest(Func<ValueTask>? someCallback, CancellationToken cancellationToken = default) {
+        using DotNetObjectReference<CallbackTestCallback> __callback = DotNetObjectReference.Create(new CallbackTestCallback() { _someCallback = someCallback });
+        await TSInvokeTrySync<Infrastructure.IJSVoidResult, CallbackTestCallback>(GetsiteModule(), "callbackTest", __callback, [], cancellationToken);
     }
 }

@@ -534,6 +534,16 @@ public sealed class Config : IEquatable<Config> {
                         break;
                     }
                 }
+                // 'function transform should contain "#action#"'-check
+                int methodEnabledCount = 0;
+                if (InvokeFunctionSyncEnabled)
+                    methodEnabledCount++;
+                if (InvokeFunctionTrySyncEnabled)
+                    methodEnabledCount++;
+                if (InvokeFunctionAsyncEnabled)
+                    methodEnabledCount++;
+                if (methodEnabledCount >= 2 && !InvokeFunctionNamePattern.NamePattern.Contains("#action#"))
+                    ErrorList.AddConfigFunctionTransformMissingActionError("[invoke function].[name pattern].[pattern]");
 
                 switch (jsonObject["promise"]) {
                     case JsonObject promiseJsonObject: {
@@ -1081,6 +1091,9 @@ public sealed class Config : IEquatable<Config> {
         if (ServiceExtension != other.ServiceExtension)
             return false;
 
+        if (!ErrorList.SequenceEqual(other.ErrorList))
+            return false;
+
         return true;
     }
 
@@ -1115,6 +1128,8 @@ public sealed class Config : IEquatable<Config> {
         hashCode = Combine(hashCode, JSRuntimeAsyncEnabled.GetHashCode());
 
         hashCode = Combine(hashCode, ServiceExtension.GetHashCode());
+
+        hashCode = CombineList(hashCode, ErrorList);
 
         return hashCode;
 

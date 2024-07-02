@@ -27,9 +27,7 @@ public partial interface ITSRuntime {
     /// </summary>
     /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
     /// <returns>A Task that will complete when the JS-Function have completed.</returns>
-    public Task Test(CancellationToken cancellationToken = default)
-        => TSInvokeTrySync<Infrastructure.IJSVoidResult>(GetmoduleModule(), "test", [], cancellationToken) switch {
-            ValueTask<Infrastructure.IJSVoidResult> { IsCompleted: true } => Task.CompletedTask,
-            ValueTask<Infrastructure.IJSVoidResult> task => task.AsTask()
-        };
+    public async ValueTask Test(CancellationToken cancellationToken = default) {
+        await TSInvokeTrySync<Infrastructure.IJSVoidResult>(GetmoduleModule(), "test", [], cancellationToken);
+    }
 }

@@ -24,11 +24,9 @@ public static class InterfaceCoreBuilder {
 
         Config config = configOrError.config!;
 
-        string privateOrProtected;
         string partialOrEmpty;
         string interfaceSummary;
         if (!config.ModuleGrouping) {
-            privateOrProtected = "private";
             partialOrEmpty = "partial ";
             interfaceSummary = """
                 /// <summary>
@@ -38,7 +36,6 @@ public static class InterfaceCoreBuilder {
                 """;
         }
         else {
-            privateOrProtected = "protected";
             partialOrEmpty = string.Empty;
             interfaceSummary = """
                 /// <summary>
@@ -90,22 +87,22 @@ public static class InterfaceCoreBuilder {
                 /// <summary>
                 /// This method performs synchronous, if the underlying implementation supports synchrounous interoperability.
                 /// </summary>
-                /// <typeparam name="TValue">The JSON-serializable return type.</typeparam>
+                /// <typeparam name="TResult">The JSON-serializable return type.</typeparam>
                 /// <param name="identifier">An identifier for the function to invoke. For example, the value <c>"someScope.someFunction"</c> will invoke the function <c>window.someScope.someFunction</c>.</param>
                 /// <param name="args">JSON-serializable arguments.</param>
-                /// <returns>An instance of <typeparamref name="TValue"/> obtained by JSON-deserializing the return value.</returns>
-                public ValueTask<TValue> InvokeTrySync<TValue>(string identifier, params object?[]? args)
-                    => InvokeTrySync<TValue>(identifier, default, args);
+                /// <returns>An instance of <typeparamref name="TResult"/> obtained by JSON-deserializing the return value.</returns>
+                public ValueTask<TResult> InvokeTrySync<TResult>(string identifier, params object?[]? args)
+                    => InvokeTrySync<TResult>(identifier, default, args);
         
                 /// <summary>
                 /// This method performs synchronous, if the underlying implementation supports synchrounous interoperability.
                 /// </summary>
-                /// <typeparam name="TValue">The JSON-serializable return type.</typeparam>
+                /// <typeparam name="TResult">The JSON-serializable return type.</typeparam>
                 /// <param name="identifier">An identifier for the function to invoke. For example, the value <c>"someScope.someFunction"</c> will invoke the function <c>window.someScope.someFunction</c>.</param>
                 /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
                 /// <param name="args">JSON-serializable arguments.</param>
-                /// <returns>An instance of <typeparamref name="TValue"/> obtained by JSON-deserializing the return value.</returns>
-                public ValueTask<TValue> InvokeTrySync<TValue>(string identifier, CancellationToken cancellationToken, params object?[]? args);
+                /// <returns>An instance of <typeparamref name="TResult"/> obtained by JSON-deserializing the return value.</returns>
+                public ValueTask<TResult> InvokeTrySync<TResult>(string identifier, CancellationToken cancellationToken, params object?[]? args);
             """;
 
         const string JSRUNTIME_ASYNC = """
@@ -113,7 +110,7 @@ public static class InterfaceCoreBuilder {
                 /// Invokes the specified JavaScript function asynchronously.
                 /// <para>
                 /// <see cref="JSRuntime"/> will apply timeouts to this operation based on the value configured in <see cref="JSRuntime.DefaultAsyncTimeout"/>. To dispatch a call with a different timeout, or no timeout,
-                /// consider using <see cref="InvokeVoidAsync{TValue}(string, CancellationToken, object[])" />.
+                /// consider using <see cref="InvokeVoidAsync{TResult}(string, CancellationToken, object[])" />.
                 /// </para>
                 /// </summary>
                 /// <param name="identifier">An identifier for the function to invoke. For example, the value <c>"someScope.someFunction"</c> will invoke the function <c>window.someScope.someFunction</c>.</param>
@@ -139,28 +136,28 @@ public static class InterfaceCoreBuilder {
                 /// Invokes the specified JavaScript function asynchronously.
                 /// <para>
                 /// <see cref="JSRuntime"/> will apply timeouts to this operation based on the value configured in <see cref="JSRuntime.DefaultAsyncTimeout"/>. To dispatch a call with a different timeout, or no timeout,
-                /// consider using <see cref="InvokeAsync{TValue}(string, CancellationToken, object[])" />.
+                /// consider using <see cref="InvokeAsync{TResult}(string, CancellationToken, object[])" />.
                 /// </para>
                 /// </summary>
-                /// <typeparam name="TValue">The JSON-serializable return type.</typeparam>
+                /// <typeparam name="TResult">The JSON-serializable return type.</typeparam>
                 /// <param name="identifier">An identifier for the function to invoke. For example, the value <c>"someScope.someFunction"</c> will invoke the function <c>window.someScope.someFunction</c>.</param>
                 /// <param name="args">JSON-serializable arguments.</param>
-                /// <returns>An instance of <typeparamref name="TValue"/> obtained by JSON-deserializing the return value.</returns>
-                public ValueTask<TValue> InvokeAsync<TValue>(string identifier, params object?[]? args)
-                    => InvokeAsync<TValue>(identifier, default, args);
+                /// <returns>An instance of <typeparamref name="TResult"/> obtained by JSON-deserializing the return value.</returns>
+                public ValueTask<TResult> InvokeAsync<TResult>(string identifier, params object?[]? args)
+                    => InvokeAsync<TResult>(identifier, default, args);
         
                 /// <summary>
                 /// Invokes the specified JavaScript function asynchronously.
                 /// </summary>
-                /// <typeparam name="TValue">The JSON-serializable return type.</typeparam>
+                /// <typeparam name="TResult">The JSON-serializable return type.</typeparam>
                 /// <param name="identifier">An identifier for the function to invoke. For example, the value <c>"someScope.someFunction"</c> will invoke the function <c>window.someScope.someFunction</c>.</param>
                 /// <param name="cancellationToken">
                 /// A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts
                 /// (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.
                 /// </param>
                 /// <param name="args">JSON-serializable arguments.</param>
-                /// <returns>An instance of <typeparamref name="TValue"/> obtained by JSON-deserializing the return value.</returns>
-                public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, params object?[]? args);
+                /// <returns>An instance of <typeparamref name="TResult"/> obtained by JSON-deserializing the return value.</returns>
+                public ValueTask<TResult> InvokeAsync<TResult>(string identifier, CancellationToken cancellationToken, params object?[]? args);
             """;
 
         string jsRuntimeMethods = (config.JSRuntimeSyncEnabled, config.JSRuntimeTrySyncEnabled, config.JSRuntimeAsyncEnabled) switch {
@@ -173,6 +170,152 @@ public static class InterfaceCoreBuilder {
             (false, false, true) => $"\n\n{JSRUNTIME_ASYNC}\n",
             (false, false, false) => ""
         };
+
+        const string TS_INVOKE_SCRIPT = """
+                /// <summary>
+                /// <para>Invokes the specified JavaScript function synchronously.</para>
+                /// <para>If module is not loaded or synchronous is not supported, it fails with an exception.</para>
+                /// </summary>
+                /// <typeparam name="TResult"></typeparam>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <returns></returns>
+                protected TResult TSInvoke<TResult>(string identifier, object?[]? args);
+
+                /// <summary>
+                /// Invokes the specified JavaScript function synchronously when supported, otherwise asynchronously.
+                /// </summary>
+                /// <typeparam name="TResult"></typeparam>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
+                /// <returns></returns>
+                protected ValueTask<TResult> TSInvokeTrySync<TResult>(string identifier, object?[]? args, CancellationToken cancellationToken);
+
+                /// <summary>
+                /// Invokes the specified JavaScript function asynchronously.
+                /// </summary>
+                /// <typeparam name="TResult"></typeparam>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
+                /// <returns></returns>
+                protected ValueTask<TResult> TSInvokeAsync<TResult>(string identifier, object?[]? args, CancellationToken cancellationToken);
+            """;
+
+        const string TS_INVOKE_MODULE = """
+                /// <summary>
+                /// <para>Invokes the specified JavaScript function in the specified module synchronously.</para>
+                /// <para>If module is not loaded or synchronous is not supported, it fails with an exception.</para>
+                /// </summary>
+                /// <typeparam name="TResult"></typeparam>
+                /// <param name="moduleTask">The loading task of a module</param>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <returns></returns>
+                protected TResult TSInvoke<TResult>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args);
+
+                /// <summary>
+                /// Invokes the specified JavaScript function in the specified module synchronously when supported, otherwise asynchronously.
+                /// </summary>
+                /// <typeparam name="TResult"></typeparam>
+                /// <param name="moduleTask">The loading task of a module</param>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
+                /// <returns></returns>
+                protected ValueTask<TResult> TSInvokeTrySync<TResult>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args, CancellationToken cancellationToken);
+
+                /// <summary>
+                /// Invokes the specified JavaScript function in the specified module asynchronously.
+                /// </summary>
+                /// <typeparam name="TResult"></typeparam>
+                /// <param name="moduleTask">The loading task of a module</param>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
+                /// <returns></returns>
+                protected ValueTask<TResult> TSInvokeAsync<TResult>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args, CancellationToken cancellationToken);
+            """;
+
+        const string TS_INVOKE_SCRIPT_CALLBACK = """
+                /// <summary>
+                /// <para>Invokes the specified JavaScript function synchronously.</para>
+                /// <para>If module is not loaded or synchronous is not supported, it fails with an exception.</para>
+                /// </summary>
+                /// <typeparam name="TResult"></typeparam>
+                /// <typeparam name="TCallback"></typeparam>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="dotNetObjectReference">reference to a csharp object with callback functions</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <returns></returns>
+                protected TResult TSInvoke<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args) where TCallback : class;
+
+                /// <summary>
+                /// Invokes the specified JavaScript function synchronously when supported, otherwise asynchronously.
+                /// </summary>
+                /// <typeparam name="TResult"></typeparam>
+                /// <typeparam name="TCallback"></typeparam>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="dotNetObjectReference">reference to a csharp object with callback functions</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
+                /// <returns></returns>
+                protected ValueTask<TResult> TSInvokeTrySync<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class;
+
+                /// <summary>
+                /// Invokes the specified JavaScript function asynchronously.
+                /// </summary>
+                /// <typeparam name="TResult"></typeparam>
+                /// <typeparam name="TCallback"></typeparam>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="dotNetObjectReference">reference to a csharp object with callback functions</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
+                /// <returns></returns>
+                protected ValueTask<TResult> TSInvokeAsync<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class;
+            """;
+
+        const string TS_INVOKE_MODULE_CALLBACK = """
+                /// <summary>
+                /// <para>Invokes the specified JavaScript function in the specified module synchronously.</para>
+                /// <para>If module is not loaded or synchronous is not supported, it fails with an exception.</para>
+                /// </summary>
+                /// <typeparam name="TResult"></typeparam>
+                /// <typeparam name="TCallback"></typeparam>
+                /// <param name="moduleTask">The loading task of a module</param>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="dotNetObjectReference">reference to a csharp object with callback functions</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <returns></returns>
+                protected TResult TSInvoke<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args) where TCallback : class;
+
+                /// <summary>
+                /// Invokes the specified JavaScript function in the specified module synchronously when supported, otherwise asynchronously.
+                /// </summary>
+                /// <typeparam name="TResult"></typeparam>
+                /// <typeparam name="TCallback"></typeparam>
+                /// <param name="moduleTask">The loading task of a module</param>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="dotNetObjectReference">reference to a csharp object with callback functions</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
+                /// <returns></returns>
+                protected ValueTask<TResult> TSInvokeTrySync<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class;
+
+                /// <summary>
+                /// Invokes the specified JavaScript function in the specified module asynchronously.
+                /// </summary>
+                /// <typeparam name="TResult"></typeparam>
+                /// <typeparam name="TCallback"></typeparam>
+                /// <param name="moduleTask">The loading task of a module</param>
+                /// <param name="identifier">name of the javascript function</param>
+                /// <param name="dotNetObjectReference">reference to a csharp object with callback functions</param>
+                /// <param name="args">parameter passing to the JS-function</param>
+                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
+                /// <returns></returns>
+                protected ValueTask<TResult> TSInvokeAsync<TResult, TCallback>(Task<IJSObjectReference> moduleTask, string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class;
+            """;
 
 
         string source = $$"""
@@ -195,83 +338,19 @@ public static class InterfaceCoreBuilder {
                 /// </summary>
                 /// <returns>A Task that will complete when all module loading Tasks have completed.</returns>
                 public Task {{config.PreloadAllModulesName}}();
-                {{jsRuntimeMethods}}
+            {{jsRuntimeMethods}}
 
-                /// <summary>
-                /// <para>Invokes the specified JavaScript function synchronously.</para>
-                /// </summary>
-                /// <typeparam name="TResult"></typeparam>
-                /// <param name="identifier">name of the javascript function</param>
-                /// <param name="args">parameter passing to the JS-function</param>
-                /// <returns></returns>
-                protected TResult TSInvoke<TResult>(string identifier, object?[]? args);
 
-                /// <summary>
-                /// Invokes the specified JavaScript function synchronously when supported, otherwise asynchronously.
-                /// </summary>
-                /// <typeparam name="TValue"></typeparam>
-                /// <param name="identifier">name of the javascript function</param>
-                /// <param name="args">parameter passing to the JS-function</param>
-                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
-                /// <returns></returns>
-                protected ValueTask<TValue> TSInvokeTrySync<TValue>(string identifier, object?[]? args, CancellationToken cancellationToken);
+            {{TS_INVOKE_SCRIPT}}
 
-                /// <summary>
-                /// Invokes the specified JavaScript function asynchronously.
-                /// </summary>
-                /// <typeparam name="TValue"></typeparam>
-                /// <param name="identifier">name of the javascript function</param>
-                /// <param name="args">parameter passing to the JS-function</param>
-                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
-                /// <returns></returns>
-                protected ValueTask<TValue> TSInvokeAsync<TValue>(string identifier, object?[]? args, CancellationToken cancellationToken);
 
-                /// <summary>
-                /// <para>Invokes the specified JavaScript function in the specified module synchronously.</para>
-                /// <para>If module is not loaded, it returns without any invoking. If synchronous is not supported, it fails with an exception.</para>
-                /// </summary>
-                /// <typeparam name="TResult"></typeparam>
-                /// <param name="moduleTask">The loading task of a module</param>
-                /// <param name="identifier">name of the javascript function</param>
-                /// <param name="args">parameter passing to the JS-function</param>
-                /// <returns></returns>
-                {{privateOrProtected}} TResult TSInvoke<TResult>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args) {
-                    if (!moduleTask.IsCompletedSuccessfully)
-                        throw new JSException("JS-module is not loaded. Use and await the Preload-method to ensure the module is loaded.");
+            {{TS_INVOKE_MODULE}}
 
-                    return ((IJSInProcessObjectReference)moduleTask.Result).Invoke<TResult>(identifier, args);
-                }
 
-                /// <summary>
-                /// Invokes the specified JavaScript function in the specified module synchronously when supported, otherwise asynchronously.
-                /// </summary>
-                /// <typeparam name="TValue"></typeparam>
-                /// <param name="moduleTask">The loading task of a module</param>
-                /// <param name="identifier">name of the javascript function</param>
-                /// <param name="args">parameter passing to the JS-function</param>
-                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
-                /// <returns></returns>
-                {{privateOrProtected}} async ValueTask<TValue> TSInvokeTrySync<TValue>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args, CancellationToken cancellationToken) {
-                    IJSObjectReference module = await moduleTask;
-                    if (module is IJSInProcessObjectReference inProcessModule)
-                        return inProcessModule.Invoke<TValue>(identifier, args);
-                    else
-                        return await module.InvokeAsync<TValue>(identifier, cancellationToken, args);
-                }
+            {{TS_INVOKE_SCRIPT_CALLBACK}}
 
-                /// <summary>
-                /// Invokes the specified JavaScript function in the specified module asynchronously.
-                /// </summary>
-                /// <typeparam name="TValue"></typeparam>
-                /// <param name="moduleTask">The loading task of a module</param>
-                /// <param name="identifier">name of the javascript function</param>
-                /// <param name="args">parameter passing to the JS-function</param>
-                /// <param name="cancellationToken">A cancellation token to signal the cancellation of the operation. Specifying this parameter will override any default cancellations such as due to timeouts (<see cref="JSRuntime.DefaultAsyncTimeout"/>) from being applied.</param>
-                /// <returns></returns>
-                {{privateOrProtected}} async ValueTask<TValue> TSInvokeAsync<TValue>(Task<IJSObjectReference> moduleTask, string identifier, object?[]? args, CancellationToken cancellationToken) {
-                    IJSObjectReference module = await moduleTask;
-                    return await module.InvokeAsync<TValue>(identifier, cancellationToken, args);
-                }
+
+            {{TS_INVOKE_MODULE_CALLBACK}}
             }
 
             """;

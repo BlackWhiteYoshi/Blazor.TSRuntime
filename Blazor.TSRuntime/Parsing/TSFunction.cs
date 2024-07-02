@@ -49,6 +49,11 @@ public sealed class TSFunction : IEquatable<TSFunction> {
 
 
     /// <summary>
+    /// Flag is set if at least one parameter is a callback.
+    /// </summary>
+    public bool HasCallback { get; private set; } = false;
+
+    /// <summary>
     /// When not null, this instance could not be instantiated correctly.
     /// </summary>
     public (DiagnosticDescriptor? descriptor, int position) Error { get; private set; }
@@ -118,6 +123,12 @@ public sealed class TSFunction : IEquatable<TSFunction> {
         }
 
 
+        if (line is ['a', 's', 'y', 'n', 'c', ' ', ..]) {
+            line = line[6..];
+            position += 6; // skip "async "
+            TrimWhiteSpace(ref line, ref position);
+        }
+        
         if (line is not ['f', 'u', 'n', 'c', 't', 'i', 'o', 'n', ' ', ..])
             return null;
 
@@ -249,6 +260,10 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                                 bracketCount--;
                                 break;
                             case ',' or '=':
+                                if (line[i..] is ['=', '>', ..]) {
+                                    i++;
+                                    break;
+                                }
                                 if (bracketCount <= 0) {
                                     parameterTypeEnd = i;
                                     goto parameter_type_end_found;
@@ -262,6 +277,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                     parameter_type_end_found:
 
                     tsParameter.ParseType(line[..parameterTypeEnd].TrimEnd());
+                    result.HasCallback |= tsParameter.typeCallback.Length > 0;
 
                     token = line[parameterTypeEnd];
                     line = line[(parameterTypeEnd + 1)..]; // skip [',', ')']
@@ -345,6 +361,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
             }
 
             result._returnType.ParseType(line);
+            result.HasCallback |= result._returnType.typeCallback.Length > 0;
         }
 
 
@@ -423,22 +440,34 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                             line = line[7..].TrimStart(); // skip "@param "
 
                             ReadOnlySpan<char> typeSpan = FindTypeSpan(ref line);
-                            for (int i = 0; i < ParameterList.Length; i++)
+                            bool isOptional = false;
+                            if (line is ['[', ..]) {
+                                isOptional = true;
+                                line = line[1..]; // skip "["
+                            }
+                            for (int i = 0; i < ParameterList.Length; i++) {
                                 if (line.StartsWith(ParameterList[i].name.AsSpan())) {
                                     CSsummary = ref ParameterList[i].summary;
                                     unkownTag = false;
-                                    if (typeSpan.Length > 0)
+                                    ParameterList[i].typeNullable = false;
+                                    ParameterList[i].optional = isOptional;
+                                    if (typeSpan.Length > 0) {
                                         ParameterList[i].ParseType(typeSpan);
+                                        HasCallback |= ParameterList[i].typeCallback.Length > 0;
+                                    }
 
-                                    if (line.Length == ParameterList[i].name.Length)
-                                        line = [];
-                                    else if (char.IsWhiteSpace(line[ParameterList[i].name.Length])) {
-                                        line = line[(ParameterList[i].name.Length + 1)..]; // skip "[name] "
-                                        if (line.Length >= 2 && line[..2] is ['-', ' ', ..])
-                                            line = line[2..]; // skip "- "
+                                    line = line[ParameterList[i].name.Length..]; // skip "{name}"
+                                    if (line is [']', ..])
+                                        line = line[1..]; // skip "]"
+                                    if (line.Length > 0 && char.IsWhiteSpace(line[0])) {
+                                        if (line is [_, '-', ' ', ..])
+                                            line = line[3..]; // skip " - "
+                                        else
+                                            line = line[1..]; // skip " "
                                     }
                                     goto double_break;
                                 }
+                            }
 
                             unkownTag = true;
                             int paramterEnd = line.IndexOf(' ');
@@ -470,10 +499,12 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                                 if (typeSpan is ['P', 'r', 'o', 'm', 'i', 's', 'e', '<', ..]) {
                                     ReturnPromise = true;
                                     _returnType.ParseType(typeSpan[8..^1].Trim()); // cut "Promise<..>"
+                                    HasCallback |= _returnType.typeCallback.Length > 0;
                                 }
                                 else {
                                     ReturnPromise = false;
                                     _returnType.ParseType(typeSpan);
+                                    HasCallback |= _returnType.typeCallback.Length > 0;
                                 }
                             break;
                         }

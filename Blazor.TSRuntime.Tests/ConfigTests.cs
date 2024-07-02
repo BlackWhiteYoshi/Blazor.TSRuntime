@@ -712,6 +712,14 @@ public static class ConfigTests {
         Assert.Equal(expected, result);
     }
 
+    [Fact]
+    public static void FunctionNamePattern_MissingActionWarning() {
+        const string JSON = """{ "invoke function": { "sync enabled": true, "trysync enabled": true, "async enabled": true } } """;
+        Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
+        Assert.Single(config.ErrorList);
+        Assert.Equal("malformed config: '[invoke function].[name pattern].[pattern]' should contain '#action#' when 2 or more method types are enabled, otherwise it leads to duplicate method naming", config.ErrorList[0].GetMessage());
+    }
+
 
     [Theory]
     [InlineData("Preload#module#", $"Preload{MODULE}", 0)]
