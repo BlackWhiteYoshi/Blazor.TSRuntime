@@ -186,7 +186,7 @@ public static class ParserTests {
         Assert.Equal(name, function.Name);
         Assert.Equal(generics.Length, function.Generics.Length);
         for (int i = 0; i < function.Generics.Length; i++)
-            Assert.Equal(generics[i], function.Generics[i]);
+            Assert.Equal(generics[i], function.Generics[i].type);
     }
 
 
@@ -267,6 +267,28 @@ public static class ParserTests {
         Assert.Equal(summary, function.Summary);
         Assert.Equal(parameter, function.ParameterList[0].summary);
         Assert.Equal(returns, function.ReturnType.summary);
+    }
+
+    [Theory]
+    [InlineData("/**@typeparam missing type example*/\n", "", false, "", "")]
+    [InlineData("/**summaryExample\n * @typeparam missing type example*/\n", "summaryExample", false, "", "")]
+    [InlineData("/**summaryExample\n * @typeparam {a}*/\n", "summaryExample", true, "a", "")]
+    [InlineData("/**summaryExample\n * @typeparam {T}*/\n", "summaryExample", true, "T", "")]
+    [InlineData("/**summaryExample\n * @typeparam {A} upper letter A*/\n", "summaryExample", true, "A", "upper letter A")]
+    public static void ParsingSummaryWithTypeParamTag(string input, string summary, bool success, string typeParameter, string typeParameterDescription) {
+        const string FUNCTION_DECLARATION = "export function test<T>(): void;";
+        TSFunction function = TSFunction.ParseFunction(FUNCTION_DECLARATION)!;
+        function.ParseSummary($"{input}{FUNCTION_DECLARATION}", input.Length);
+
+        Assert.Equal(summary, function.Summary);
+
+        if (success) {
+            Assert.Equal(2, function.Generics.Length);
+            Assert.Equal(typeParameter, function.Generics[1].type);
+            Assert.Equal(typeParameterDescription, function.Generics[1].description);
+        }
+        else
+            Assert.Single(function.Generics);
     }
 
     [Theory]

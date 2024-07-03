@@ -392,7 +392,7 @@ Only callbacks as parameters without nesting are supported.
   - module grouping is now supported
   - small breaking change: A namespace that contains IServiceCollection is required when serviceExtension is enabled and namespace *Microsoft.Extensions.DependencyInjection* was added to the defaults
 - 0.5
-  - generics in type map is now supported
+  - generics in type map are now supported
 - 0.6
   - \*\*\* huge Refactoring, many breaking changes \*\*\*
   - renamed the project, repository and NuGet package to "Blazor.TSRuntime" (before it was "TSRuntime")
@@ -413,6 +413,8 @@ Only callbacks as parameters without nesting are supported.
   - JS-files with JSDocs type annotations are now supported
   - TS-files are now supported
 - 0.8
-  - support for scripts (non-module-files: js-files that are included via &lt;script&gt; tag)
-- 0.9
-  - support for callbacks: Mapping parameters of a function type to the corresponding C# delegate (*Action<>*/*Func<>*)
+  - scripts are supported (non-module-files: js-files that are included via &lt;script&gt; tag)
+<br></br>
+- 1.0
+  - callbacks are supported: Mapping parameters of a function type to the corresponding C# delegate (*Action<>*/*Func<>*)
+  - JSDoc "@typeparam" tag is now supported

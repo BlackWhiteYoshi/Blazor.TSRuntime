@@ -16,7 +16,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
     /// <summary>
     /// List of the generic parameters of this js function
     /// </summary>
-    public string[] Generics { get; private set; } = [];
+    public (string type, string description)[] Generics { get; private set; } = [];
 
     /// <summary>
     /// List of the parameters of this js-function.
@@ -155,7 +155,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
             line = line[(openBracket + 1)..].TrimStart();
             int openBracketPosition = position + openBracket;
             position += openBracket + 1;
-            List<string> generics = [];
+            List<(string type, string description)> generics = [];
 
             bool ignore = false;
             int bracketCount = 0;
@@ -163,14 +163,14 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                 switch (line[i]) {
                     case ' ':
                         if (!ignore) {
-                            generics.Add(line[..i].ToString());
+                            generics.Add((line[..i].ToString(), string.Empty));
                             ignore = true; // skip "extends ..."
                         }
                         break;
                     case ',':
                         if (bracketCount == 0) {
                             if (!ignore)
-                                generics.Add(line[..i].ToString());
+                                generics.Add((line[..i].ToString(), string.Empty));
                             line = line[(i + 1)..]; // skip ','
                             position = i + 1;
                             TrimWhiteSpace(ref line, ref position);
@@ -188,7 +188,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                         }
 
                         if (!ignore)
-                            generics.Add(line[..i].ToString());
+                            generics.Add((line[..i].ToString(), string.Empty));
                         line = line[(i + 1)..]; // skip '>'
                         position = i + 1;
                         TrimWhiteSpace(ref line, ref position);
@@ -436,6 +436,20 @@ public sealed class TSFunction : IEquatable<TSFunction> {
 
                     line = line[tagIndex..];
                     switch (line) {
+                        case ['@', 't', 'y', 'p', 'e', 'p', 'a', 'r', 'a', 'm', ' ', ..]: {
+                            line = line[11..].TrimStart(); // skip "@typeparam "
+
+                            ReadOnlySpan<char> typeSpan = FindTypeSpan(ref line);
+                            
+                            if (typeSpan.Length > 0) {
+                                Generics = [.. Generics, (typeSpan.ToString(), string.Empty)];
+                                CSsummary = ref Generics[^1].description;
+                                unkownTag = false;
+                            }
+                            else
+                                unkownTag = true;
+                            break;
+                        }
                         case ['@', 'p', 'a', 'r', 'a', 'm', ' ', ..]: {
                             line = line[7..].TrimStart(); // skip "@param "
 
@@ -556,6 +570,8 @@ public sealed class TSFunction : IEquatable<TSFunction> {
 
 
 
+        // returns the contnet of '{...}' (without '{' and '}') and moves linestart behind typespan
+        // if no '{...}' found (no starting or ending bracket), empty span is returned
         static ReadOnlySpan<char> FindTypeSpan(ref ReadOnlySpan<char> line) {
             if (line is not ['{', ..])
                 return [];
@@ -639,7 +655,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
     public override int GetHashCode() {
         int hash = Name.GetHashCode();
 
-        foreach (string generic in Generics)
+        foreach ((string, string) generic in Generics)
             hash = Combine(hash, generic.GetHashCode());
 
         foreach (TSParameter tsParameter in ParameterList)

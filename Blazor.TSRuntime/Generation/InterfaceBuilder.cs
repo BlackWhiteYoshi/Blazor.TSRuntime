@@ -474,10 +474,12 @@ public static class InterfaceBuilder {
                     builder.Append(genericType.Name);
                     builder.Append("\"></typeparam>\n");
                 }
-                foreach (string genericType in function.Generics) {
+                foreach ((string type, string description) in function.Generics) {
                     builder.Append("    /// <typeparam name=\"");
-                    builder.Append(genericType);
-                    builder.Append("\"></typeparam>\n");
+                    builder.Append(type);
+                    builder.Append("\">");
+                    builder.Append(description);
+                    builder.Append("</typeparam>\n");
                 }
                 // <param>
                 for (int i = 0; i <= lastIndex; i++) {
@@ -530,7 +532,7 @@ public static class InterfaceBuilder {
                         builder.Append(genericParameterList[i].Name);
                         builder.Append(", ");
                     }
-                    foreach (string genericType in function.Generics) {
+                    foreach ((string genericType, _) in function.Generics) {
                         builder.Append(genericType);
                         builder.Append(", ");
                     }
