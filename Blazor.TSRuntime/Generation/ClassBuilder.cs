@@ -27,12 +27,11 @@ public static class ClassBuilder {
         ImmutableArray<TSModule> moduleList = parameters.tuple.moduleList;
         Config config = parameters.tuple.configOrError.config!;
 
-
         foreach (Diagnostic error in config.ErrorList)
             context.ReportDiagnostic(error);
 
-
         StringBuilder builder = stringBuilderPool.Get();
+
 
         // usings, namespace, summary
         builder.Append("""
@@ -59,23 +58,21 @@ public static class ClassBuilder {
                 builder.Append("There are no modules available.");
                 break;
             case 1:
-                builder.Append("There is 1 module available: ");
-                builder.Append(moduleList[0].Name);
+                builder.AppendInterpolation($"There is 1 module available: {moduleList[0].Name}");
                 break;
             default:
-                builder.Append("There are ");
-                builder.Append(moduleList.Length);
-                builder.Append(" modules available:");
-                foreach (TSModule module in moduleList) {
-                    builder.Append("<br />\n/// - ");
-                    builder.Append(module.Name);
-                }
+                builder.AppendInterpolation($"There are {moduleList.Length} modules available:");
+                foreach (TSModule module in moduleList)
+                    builder.AppendInterpolation($"<br />\n/// - {module.Name}");
                 break;
         }
-        builder.Append('\n');
-        builder.Append("/// </para>\n");
-        builder.Append("/// </summary>\n");
-        builder.Append($"[System.CodeDom.Compiler.GeneratedCodeAttribute(\"{AssemblyInfo.NAME}\", \"{AssemblyInfo.VERSION}\")]\n");
+        builder.Append($"""
+
+            /// </para>
+            /// </summary>
+            [System.CodeDom.Compiler.GeneratedCodeAttribute("{AssemblyInfo.NAME}", "{AssemblyInfo.VERSION}")]
+
+            """);
 
         // head
         builder.Append("public sealed class TSRuntime(IJSRuntime jsRuntime) : ");
@@ -84,8 +81,7 @@ public static class ClassBuilder {
         else {
             foreach (TSModule module in moduleList) {
                 config.ModuleGroupingNamePattern.AppendNaming(builder, module.Name);
-                builder.Append(',');
-                builder.Append(' ');
+                builder.Append(", ");
             }
         }
         builder.Append("IDisposable, IAsyncDisposable {\n");
@@ -119,65 +115,67 @@ public static class ClassBuilder {
         if (hasCallback) {
             builder.Append('\n');
             builder.Append("    private Task<IJSObjectReference>? callbackModule;\n");
-            builder.Append("    private Task<IJSObjectReference> CallbackModule => callbackModule ??= jsRuntime.InvokeAsync<IJSObjectReference>(\"import\", \"data:text/javascript,");
 
+            builder.Append("    private Task<IJSObjectReference> CallbackModule => callbackModule ??= jsRuntime.InvokeAsync<IJSObjectReference>(\"import\", \"data:text/javascript,");
             for (int loopIndex = firstCallback.loopIndex; loopIndex < 2; loopIndex++) { // iterating over 2 lists: scriptList and moduleList
                 for (int fileIndex = firstCallback.fileIndex; fileIndex < callbackCurrentList.Count; fileIndex++) {
                     TSFile file = callbackCurrentList[fileIndex];
                     for (int functionIndex = 0; functionIndex < file.FunctionList.Count; functionIndex++) {
                         TSFunction function = file.FunctionList[functionIndex];
                         if (function.HasCallback) {
-                            builder.Append("export function ");
-                            builder.Append(function.Name);
+                            builder.AppendInterpolation($"export function {function.Name}(");
+
                             // parameters
-                            builder.Append("(");
-                            if (loopIndex is 1) // loopIndex == 1 corresponds to callbackCurrentList == moduleList;
+                            if (loopIndex == 1) // loopIndex == 1 corresponds to callbackCurrentList == moduleList;
                                 builder.Append("__module,");
                             builder.Append("__callback");
-                            for (int i = 0; i < function.ParameterList.Length; i++) {
-                                if (function.ParameterList[i].type is not null) {
-                                    builder.Append(',');
-                                    builder.Append(function.ParameterList[i].name);
-                                }
-                            }
+                            for (int i = 0; i < function.ParameterList.Length; i++)
+                                if (function.ParameterList[i].type is not null)
+                                    builder.AppendInterpolation($",{function.ParameterList[i].name}");
+
                             builder.Append("){return ");
+
                             if (loopIndex == 1) // loopIndex == 1 corresponds to callbackCurrentList == moduleList;
                                 builder.Append("__module.");
                             else
                                 builder.Append("window.");
-                            builder.Append(function.Name);
-                            builder.Append('(');
+                            builder.AppendInterpolation($"{function.Name}(");
+
                             if (function.ParameterList.Length > 0) {
                                 for (int i = 0; i < function.ParameterList.Length; i++) {
                                     if (function.ParameterList[i].type is not null)
                                         builder.Append(function.ParameterList[i].name);
                                     else {
                                         // callback closure
+                                        
                                         builder.Append('(');
+
+                                        // parameters
                                         if (function.ParameterList[i].typeCallback.Length > 1) { // last parameter is returnType
-                                            for (int j = 0; j < function.ParameterList[i].typeCallback.Length - 1; j++) { // last parameter is returnType
-                                                builder.Append(function.ParameterList[i].typeCallback[j].name);
-                                                builder.Append(',');
-                                            }
-                                            builder.Length--;
+                                            for (int j = 0; j < function.ParameterList[i].typeCallback.Length - 1; j++) // last parameter is returnType
+                                                builder.AppendInterpolation($"{function.ParameterList[i].typeCallback[j].name},");
+                                            builder.Length--; // remove ','
                                         }
+                                        
+                                        // c# method call
                                         builder.Append(")=>__callback.invokeMethod");
                                         if (function.ParameterList[i].typeCallbackPromise)
                                             builder.Append("Async");
-                                        builder.Append("('");
-                                        builder.Append(function.ParameterList[i].name);
-                                        builder.Append("'");
-                                        for (int j = 0; j < function.ParameterList[i].typeCallback.Length - 1; j++) { // last parameter is returnType
-                                            builder.Append(',');
-                                            builder.Append(function.ParameterList[i].typeCallback[j].name);
-                                        }
+
+                                        // arguments
+                                        builder.AppendInterpolation($"('{function.ParameterList[i].name}'");
+                                        for (int j = 0; j < function.ParameterList[i].typeCallback.Length - 1; j++) // last parameter is returnType
+                                            builder.AppendInterpolation($",{function.ParameterList[i].typeCallback[j].name}");
+
                                         builder.Append(')');
                                     }
 
                                     builder.Append(',');
                                 }
-                                builder.Length--;
+
+                                builder.Length--; // remove ','
                             }
+
                             builder.Append(");}");
                         }
                     }
@@ -198,57 +196,41 @@ public static class ClassBuilder {
                 builder.Append("ITSRuntime");
             else
                 config.ModuleGroupingNamePattern.AppendNaming(builder, module.Name);
-            builder.Append(".Get");
-            builder.Append(module.Name);
-            builder.Append("Module() => Get");
-            builder.Append(module.Name);
-            builder.Append("Module();\n");
+            builder.AppendInterpolation($$"""
+                .Get{{module.Name}}Module() => Get{{module.Name}}Module();
+                    private Task<IJSObjectReference>? {{module.Name}}Module;
+                    private Task<IJSObjectReference> Get{{module.Name}}Module()
+                        => {{module.Name}}Module switch {
+                            Task<IJSObjectReference> { IsCompletedSuccessfully: true }
+                            or Task<IJSObjectReference> { IsCompleted: false } => {{module.Name}}Module,
+                            _ => {{module.Name}}Module = jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationTokenSource.Token, "{{module.URLPath}}").AsTask()
+                        };
 
-            builder.Append("    private Task<IJSObjectReference>? ");
-            builder.Append(module.Name);
-            builder.Append("Module;\n");
 
-            builder.Append("    private Task<IJSObjectReference> Get");
-            builder.Append(module.Name);
-            builder.Append("Module()\n");
-            builder.Append("        => ");
-            builder.Append(module.Name);
-            builder.Append("Module switch {\n");
-            builder.Append("            Task<IJSObjectReference> { IsCompletedSuccessfully: true }\n");
-            builder.Append("            or Task<IJSObjectReference> { IsCompleted: false } => ");
-            builder.Append(module.Name);
-            builder.Append("Module,\n");
-            builder.Append("            _ => ");
-            builder.Append(module.Name);
-            builder.Append("Module = jsRuntime.InvokeAsync<IJSObjectReference>(\"import\", cancellationTokenSource.Token, \"");
-            builder.Append(module.URLPath);
-            builder.Append("\").AsTask()\n");
-            builder.Append("        };\n\n");
+                """);
         }
 
         // PreloadAllModules()
-        builder.Append("    public Task ");
-        builder.Append(config.PreloadAllModulesName);
-        builder.Append("() {\n");
-        if (moduleList.Length > 0) {
-            foreach (TSModule module in moduleList) {
-                builder.Append("        Get");
-                builder.Append(module.Name);
-                builder.Append("Module();\n");
+        {
+            builder.AppendInterpolation($"    public Task {config.PreloadAllModulesName}() {{\n");
+
+            if (moduleList.Length > 0) {
+                foreach (TSModule module in moduleList)
+                    builder.AppendInterpolation($"        Get{module.Name}Module();\n");
+                builder.Append('\n');
             }
-            builder.Append('\n');
+
+            builder.Append("        return Task.WhenAll([");
+            if (hasCallback)
+                builder.Append("CallbackModule, ");
+            foreach (TSModule module in moduleList)
+                builder.AppendInterpolation($"{module.Name}Module!, ");
+            if (builder[^1] is ' ') // if hasCallback or moduleList.Length > 0
+                builder.Length -= 2; // remove ", "
+            builder.Append("]);\n");
+
+            builder.Append("    }\n\n\n");
         }
-        builder.Append("        return Task.WhenAll([");
-        if (hasCallback)
-            builder.Append("CallbackModule, ");
-        foreach (TSModule module in moduleList) {
-            builder.Append(module.Name);
-            builder.Append("Module!, ");
-        }
-        if (builder[^1] is ' ')
-            builder.Length -= 2;
-        builder.Append("]);\n");
-        builder.Append("    }\n\n\n");
 
         // invoke methods script
         builder.Append("""
@@ -409,23 +391,17 @@ public static class ClassBuilder {
                     cancellationTokenSource.Cancel();
                     cancellationTokenSource.Dispose();
             """);
-        foreach (TSModule module in moduleList) {
-            builder.Append("\n\n");
-            builder.Append("        if (");
-            builder.Append(module.Name);
-            builder.Append("Module?.IsCompletedSuccessfully == true)\n");
-            builder.Append("            if (");
-            builder.Append(module.Name);
-            builder.Append("Module.Result is IJSInProcessObjectReference inProcessModule)\n");
-            builder.Append("                inProcessModule.Dispose();\n");
-            builder.Append("            else\n");
-            builder.Append("                _ = ");
-            builder.Append(module.Name);
-            builder.Append("Module.Result.DisposeAsync().Preserve();\n");
-            builder.Append("        ");
-            builder.Append(module.Name);
-            builder.Append("Module = null;");
-        }
+        foreach (TSModule module in moduleList)
+            builder.AppendInterpolation($$"""
+
+
+                        if ({{module.Name}}Module?.IsCompletedSuccessfully == true)
+                            if ({{module.Name}}Module.Result is IJSInProcessObjectReference inProcessModule)
+                                inProcessModule.Dispose();
+                            else
+                                _ = {{module.Name}}Module.Result.DisposeAsync().Preserve();
+                        {{module.Name}}Module = null;
+                """);
         if (hasCallback)
             builder.Append("""
 
@@ -440,7 +416,7 @@ public static class ClassBuilder {
         builder.Append("\n    }\n\n");
 
         // DisposeAsync
-        builder.Append("""
+        builder.AppendInterpolation($$"""
                 /// <summary>
                 /// <para>Releases each module synchronously if possible, otherwise asynchronously and returns a task that completes, when all module disposing tasks complete.</para>
                 /// <para>The asynchronous disposing tasks are happening in parallel.</para>
@@ -453,29 +429,24 @@ public static class ClassBuilder {
                     cancellationTokenSource.Cancel();
                     cancellationTokenSource.Dispose();
 
-                    List<Task> taskList = new(
+                    List<Task> taskList = new({{moduleList.Length}});
+
+
             """);
-        builder.Append(moduleList.Length);
-        builder.Append(");\n\n");
-        foreach (TSModule module in moduleList) {
-            builder.Append("        if (");
-            builder.Append(module.Name);
-            builder.Append("Module?.IsCompletedSuccessfully == true)\n");
-            builder.Append("            if (");
-            builder.Append(module.Name);
-            builder.Append("Module.Result is IJSInProcessObjectReference inProcessModule)\n");
-            builder.Append("                inProcessModule.Dispose();\n");
-            builder.Append("            else {\n");
-            builder.Append("                ValueTask valueTask = ");
-            builder.Append(module.Name);
-            builder.Append("Module.Result.DisposeAsync();\n");
-            builder.Append("                if (!valueTask.IsCompleted)\n");
-            builder.Append("                    taskList.Add(valueTask.AsTask());\n");
-            builder.Append("            }\n");
-            builder.Append("        ");
-            builder.Append(module.Name);
-            builder.Append("Module = null;\n\n");
-        }
+        foreach (TSModule module in moduleList)
+            builder.AppendInterpolation($$"""
+                        if ({{module.Name}}Module?.IsCompletedSuccessfully == true)
+                            if ({{module.Name}}Module.Result is IJSInProcessObjectReference inProcessModule)
+                                inProcessModule.Dispose();
+                            else {
+                                ValueTask valueTask = {{module.Name}}Module.Result.DisposeAsync();
+                                if (!valueTask.IsCompleted)
+                                    taskList.Add(valueTask.AsTask());
+                            }
+                        {{module.Name}}Module = null;
+
+
+                """);
         if (hasCallback)
             builder.Append("""
                         if (callbackModule?.IsCompletedSuccessfully == true)
@@ -499,6 +470,7 @@ public static class ClassBuilder {
             }
 
             """);
+
 
         string source = builder.ToString();
         context.AddSource("TSRuntime.g.cs", source);
