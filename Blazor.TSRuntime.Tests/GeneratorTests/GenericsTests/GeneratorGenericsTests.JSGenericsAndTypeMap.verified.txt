@@ -74,7 +74,7 @@ public sealed class TSRuntime(IJSRuntime jsRuntime) : ITSRuntime, IDisposable, I
         return await module.InvokeAsync<TResult>(identifier, cancellationToken, args);
     }
 
-    
+
     TResult ITSRuntime.TSInvoke<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args) where TCallback : class => default; // no callbacks are used
 
     ValueTask<TResult> ITSRuntime.TSInvokeTrySync<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args, CancellationToken cancellationToken) where TCallback : class => default; // no callbacks are used

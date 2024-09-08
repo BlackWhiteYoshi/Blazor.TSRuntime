@@ -1,7 +1,6 @@
 ﻿namespace TSRuntime.Configs;
 
-public readonly struct MappedType(string type, GenericType[] genericTypes) : IEquatable<MappedType>
-{
+public readonly struct MappedType(string type, GenericType[] genericTypes) : IEquatable<MappedType> {
     public readonly string Type { get; init; } = type;
     public readonly GenericType[] GenericTypes { get; init; } = genericTypes;
 

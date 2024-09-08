@@ -77,7 +77,7 @@ public sealed class TSRuntime(IJSRuntime jsRuntime) : ITSRuntime, IDisposable, I
         return await module.InvokeAsync<TResult>(identifier, cancellationToken, args);
     }
 
-    
+
     TResult ITSRuntime.TSInvoke<TResult, TCallback>(string identifier, DotNetObjectReference<TCallback> dotNetObjectReference, object?[]? args) where TCallback : class {
         if (!CallbackModule.IsCompletedSuccessfully)
             throw new JSException("JS-module is not loaded. Use and await the Preload()-method to ensure the module is loaded.");

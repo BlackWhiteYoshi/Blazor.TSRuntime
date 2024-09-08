@@ -57,7 +57,7 @@ public readonly struct FunctionNamePattern : IEquatable<FunctionNamePattern> {
         while (str.Length > 0) {
             // first '#'
             int index = str.IndexOf('#');
-            
+
             // has no '#'
             if (index == -1) {
                 if (str.Length > 0)

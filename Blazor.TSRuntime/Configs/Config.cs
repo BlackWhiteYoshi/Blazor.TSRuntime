@@ -26,7 +26,7 @@ public sealed class Config : IEquatable<Config> {
     /// List of generated using statements at the top of ITSRuntime.
     /// </summary>
     public string[] UsingStatements { get; init; } = UsingStatementsDefault;
-    private static string[] UsingStatementsDefault => [ "Microsoft.AspNetCore.Components", "System.Numerics" ];
+    private static string[] UsingStatementsDefault => ["Microsoft.AspNetCore.Components", "System.Numerics"];
 
 
     #region invoke function
@@ -36,13 +36,13 @@ public sealed class Config : IEquatable<Config> {
     /// </summary>
     public bool InvokeFunctionSyncEnabled { get; init; } = INVOKE_FUNCTION_SYNC_ENABLED;
     private const bool INVOKE_FUNCTION_SYNC_ENABLED = false;
-    
+
     /// <summary>
     /// Toggles whether try-sync invoke methods should be generated for modules.
     /// </summary>
     public bool InvokeFunctionTrySyncEnabled { get; init; } = INVOKE_FUNCTION_TRYSYNC_ENABLED;
     private const bool INVOKE_FUNCTION_TRYSYNC_ENABLED = true;
-    
+
     /// <summary>
     /// Toggles whether async invoke methods should be generated for modules.
     /// </summary>
@@ -64,13 +64,13 @@ public sealed class Config : IEquatable<Config> {
     /// </summary>
     public string InvokeFunctionActionNameSync { get; init; } = INVOKE_FUNCTION_ACTION_NAME_SYNC;
     private const string INVOKE_FUNCTION_ACTION_NAME_SYNC = "Invoke";
-    
+
     /// <summary>
     /// Naming of the #action# variable for the invoke module functions name pattern when the action is try synchronous.
     /// </summary>
     public string InvokeFunctionActionNameTrySync { get; init; } = INVOKE_FUNCTION_ACTION_NAME_TRYSYNC;
     private const string INVOKE_FUNCTION_ACTION_NAME_TRYSYNC = "InvokeTrySync";
-    
+
     /// <summary>
     /// Naming of the #action# variable for the invoke module functions name pattern when the action is asynchronous.
     /// </summary>
@@ -85,7 +85,7 @@ public sealed class Config : IEquatable<Config> {
     /// </summary>
     public bool PromiseOnlyAsync { get; init; } = PROMISE_ONLY_ASYNC;
     private const bool PROMISE_ONLY_ASYNC = true;
-    
+
     /// <summary>
     /// <para>Whenever a module function returns a promise, the string "Async" is appended.</para>
     /// <para>If your pattern ends already with "Async", for example with the #action# variable, this will result in a double: "AsyncAsync"</para>
@@ -152,13 +152,13 @@ public sealed class Config : IEquatable<Config> {
     /// </summary>
     public bool JSRuntimeSyncEnabled { get; init; } = JSRUNTIME_SYNC_ENABLED;
     private const bool JSRUNTIME_SYNC_ENABLED = false;
-    
+
     /// <summary>
     /// Toggles whether generic JSRuntime try-sync invoke method should be generated.
     /// </summary>
     public bool JSRuntimeTrySyncEnabled { get; init; } = JSRUNTIME_TRYSYNC_ENABLED;
     private const bool JSRUNTIME_TRYSYNC_ENABLED = false;
-    
+
     /// <summary>
     /// Toggles whether generic JSRuntime async invoke method should be generated.
     /// </summary>
@@ -751,7 +751,7 @@ public sealed class Config : IEquatable<Config> {
                 InvokeFunctionActionNameSync = INVOKE_FUNCTION_ACTION_NAME_SYNC;
                 InvokeFunctionActionNameTrySync = INVOKE_FUNCTION_ACTION_NAME_TRYSYNC;
                 InvokeFunctionActionNameAsync = INVOKE_FUNCTION_ACTION_NAME_ASYNC;
-                
+
                 PromiseOnlyAsync = PROMISE_ONLY_ASYNC;
                 PromiseAppendAsync = PROMISE_APPEND_ASYNC;
 
@@ -859,7 +859,7 @@ public sealed class Config : IEquatable<Config> {
 
         ServiceExtension = root.ParseValue("service extension", ErrorList, "[service extension]", SERVICE_EXTENSION);
     }
-    
+
     /// <summary>
     /// Converts this instance as a json-file.
     /// </summary>
@@ -884,7 +884,7 @@ public sealed class Config : IEquatable<Config> {
                         """
                 };
                 builder.Append($$"""
-                    
+
                         {
                           "include": "{{include}}",
                           "excludes": {{excludesJson}},
@@ -907,7 +907,7 @@ public sealed class Config : IEquatable<Config> {
             0 => string.Empty,
             1 => $""" "{UsingStatements[0]}" """,
             _ => $"""
-                    
+
                         "{string.Join("\",\n    \"", UsingStatements)}"
                       
                     """
@@ -1116,7 +1116,7 @@ public sealed class Config : IEquatable<Config> {
         hashCode = Combine(hashCode, PromiseAppendAsync.GetHashCode());
 
         hashCode = CombineList(hashCode, TypeMap);
-        
+
         hashCode = Combine(hashCode, PreloadNamePattern.GetHashCode());
         hashCode = Combine(hashCode, PreloadAllModulesName.GetHashCode());
 

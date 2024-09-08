@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using TSRuntime.Parsing;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TSRuntime.Tests;
 
@@ -119,7 +118,7 @@ public static class ParserTests {
         Assert.False(parameter.typeCallbackPromise);
 
         Assert.Equal(2, parameter.typeCallback.Length);
-        
+
         {
             TSParameter nestedParameter = parameter.typeCallback[0];
             Assert.Null(nestedParameter.type);
@@ -208,7 +207,7 @@ public static class ParserTests {
         for (int i = 0; i < paramterNames.Length; i++)
             Assert.Equal(paramterNames[i], function.ParameterList[i].name);
     }
-    
+
 
     [Theory]
     [InlineData("\n\n", "")]

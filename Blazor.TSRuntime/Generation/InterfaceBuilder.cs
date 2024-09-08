@@ -1,6 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.ObjectPool;
-using System.Reflection;
 using System.Text;
 using TSRuntime.Configs;
 using TSRuntime.Parsing;
@@ -265,7 +264,7 @@ public static class InterfaceBuilder {
                                 builder.AppendInterpolation($" where {genericType.Name} : {genericType.Constraint}");
 
                         builder.Append(" {\n");
-                        
+
 
                         // callbacks
                         for (int k = 0; k < function.ParameterList.Length; k++)
@@ -275,20 +274,20 @@ public static class InterfaceBuilder {
                                 {
                                     if (function.ParameterList[k].typeCallback[^1].type is "void" && !function.ParameterList[k].typeCallbackPromise) {
                                         builder.Append("Action");
-                                        
+
                                         if (callbackTypeList.Length > 1) {
                                             builder.Append('<');
 
                                             builder.Append(callbackTypeList[0].Type);
                                             for (int l = 1; l < callbackTypeList.Length - 1; l++) // last parameter is returnType
                                                 builder.AppendInterpolation($", {callbackTypeList[l].Type}");
-                                            
+
                                             builder.Append('>');
                                         }
                                     }
                                     else {
                                         builder.Append("Func<");
-                                        
+
                                         for (int l = 0; l < callbackTypeList.Length - 1; l++)
                                             builder.AppendInterpolation($"{callbackTypeList[l].Type}, ");
 
@@ -313,9 +312,9 @@ public static class InterfaceBuilder {
                                     else
                                         if (function.ParameterList[k].typeCallback[^1].type is "void")
                                             builder.Append("ValueTask");
-                                        else    
+                                        else
                                             builder.AppendInterpolation($"ValueTask<{callbackTypeList[^1].Type}>");
-                                    
+
                                     // parameter
                                     builder.AppendInterpolation($" {function.ParameterList[k].name}(");
                                     for (int l = 0; l < callbackTypeList.Length - 1; l++) // last parameter is returnType
@@ -414,7 +413,7 @@ public static class InterfaceBuilder {
 
                     if (function.Summary != string.Empty)
                         builder.AppendInterpolation($"    /// <para>{function.Summary}</para>\n");
-                    
+
                     if (isModule) {
                         builder.AppendInterpolation($"    /// <para>Invokes in module '{scriptName}' the JS-function '{function.Name}' {summaryAction}</para>\n");
                         if (isSync)
@@ -422,7 +421,7 @@ public static class InterfaceBuilder {
                     }
                     else
                         builder.AppendInterpolation($"    /// <para>Invokes in script '{scriptName}' the JS-function '{function.Name}' {summaryAction}</para>\n");
-                    
+
                     builder.Append("    /// </summary>\n");
                 }
                 // <remarks>
@@ -549,7 +548,7 @@ public static class InterfaceBuilder {
                         builder.Append(genericCallbackList[0].name);
                         for (int i = 1; i < genericCallbackList.Count; i++)
                             builder.AppendInterpolation($", {genericCallbackList[i].name}");
-                        
+
                         builder.Append('>');
                     }
 
@@ -563,7 +562,7 @@ public static class InterfaceBuilder {
                         builder.Append(genericCallbackList[0].name);
                         for (int i = 1; i < genericCallbackList.Count; i++)
                             builder.AppendInterpolation($", {genericCallbackList[i].name}");
-                        
+
                         builder.Append('>');
                     }
 
@@ -595,7 +594,7 @@ public static class InterfaceBuilder {
                         builder.Append("Infrastructure.IJSVoidResult");
                     else
                         builder.AppendInterpolation($"{returnType}{returnModifiers}");
-                
+
                     if (function.HasCallback) {
                         builder.Append(", ");
 
@@ -607,7 +606,7 @@ public static class InterfaceBuilder {
                             builder.Append(genericCallbackList[0].name);
                             for (int i = 1; i < genericCallbackList.Count; i++)
                                 builder.AppendInterpolation($", {genericCallbackList[i].name}");
-                            
+
                             builder.Append('>');
                         }
                     }
@@ -619,12 +618,12 @@ public static class InterfaceBuilder {
                 {
                     if (isModule)
                         builder.AppendInterpolation($"Get{scriptName}Module(), ");
-                    
+
                     builder.AppendInterpolation($"\"{function.Name}\", ");
-                    
+
                     if (function.HasCallback)
                         builder.Append("__callback, ");
-                    
+
                     builder.Append('[');
                     {
                         for (int i = 0; i <= lastIndex; i++)

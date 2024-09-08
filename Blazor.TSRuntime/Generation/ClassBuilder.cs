@@ -44,7 +44,7 @@ public static class ClassBuilder {
             using System.Collections.Generic;
             using System.Threading;
             using System.Threading.Tasks;
-            
+
             namespace Microsoft.JSInterop;
 
             /// <summary>
@@ -147,7 +147,7 @@ public static class ClassBuilder {
                                         builder.Append(function.ParameterList[i].name);
                                     else {
                                         // callback closure
-                                        
+
                                         builder.Append('(');
 
                                         // parameters
@@ -156,7 +156,7 @@ public static class ClassBuilder {
                                                 builder.AppendInterpolation($"{function.ParameterList[i].typeCallback[j].name},");
                                             builder.Length--; // remove ','
                                         }
-                                        
+
                                         // c# method call
                                         builder.Append(")=>__callback.invokeMethod");
                                         if (function.ParameterList[i].typeCallbackPromise)
@@ -271,7 +271,7 @@ public static class ClassBuilder {
                     return await module.InvokeAsync<TResult>(identifier, cancellationToken, args);
                 }
 
-                
+
 
             """);
         // invoke methods callback-script
@@ -298,7 +298,7 @@ public static class ClassBuilder {
                     }
 
 
-                
+
                 """);
         else
             builder.Append("""

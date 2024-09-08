@@ -20,7 +20,7 @@ public static class GenerateSourceTextExtension {
     /// <returns></returns>
     public static string[] GenerateSourceText(this string config, (string path, string content)[] input, out Compilation outputCompilation, out ImmutableArray<Diagnostic> diagnostics)
         => config.GenerateSourceResult(input, out outputCompilation, out diagnostics).Select((GeneratedSourceResult result) => result.SourceText.ToString()).ToArray();
-    
+
 
     /// <summary>
     /// <para>Takes additional files as input and outputs the generated source code based on the given input.</para>

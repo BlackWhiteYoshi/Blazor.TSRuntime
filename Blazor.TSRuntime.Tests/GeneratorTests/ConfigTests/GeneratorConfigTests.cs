@@ -1028,7 +1028,7 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    
+
     [Fact]
     public static Task ModuleGrouping() {
         const string jsonConfig = """{ "module grouping": { "enabled": true } }""";

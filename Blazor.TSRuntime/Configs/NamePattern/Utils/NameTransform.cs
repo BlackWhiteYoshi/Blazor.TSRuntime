@@ -3,8 +3,7 @@
 /// <summary>
 /// Transforms a placeholder in the name pattern.
 /// </summary>
-public enum NameTransform
-{
+public enum NameTransform {
     /// <summary>
     /// No Transform.
     /// </summary>

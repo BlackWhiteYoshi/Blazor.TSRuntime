@@ -53,7 +53,7 @@ public static class InterfaceCoreBuilder {
                 /// <param name="args">JSON-serializable arguments.</param>
                 public void InvokeVoid(string identifier, params object?[]? args)
                     => Invoke<Infrastructure.IJSVoidResult>(identifier, args);
-        
+
                 /// <summary>
                 /// Invokes the specified JavaScript function synchronously.
                 /// </summary>
@@ -73,7 +73,7 @@ public static class InterfaceCoreBuilder {
                 /// <returns></returns>
                 public async ValueTask InvokeVoidTrySync(string identifier, params object?[]? args)
                     => await InvokeTrySync<Infrastructure.IJSVoidResult>(identifier, default, args);
-        
+
                 /// <summary>
                 /// This method performs synchronous, if the underlying implementation supports synchrounous interoperability.
                 /// </summary>
@@ -83,7 +83,7 @@ public static class InterfaceCoreBuilder {
                 /// <returns></returns>
                 public async ValueTask InvokeVoidTrySync(string identifier, CancellationToken cancellationToken, params object?[]? args)
                     => await InvokeTrySync<Infrastructure.IJSVoidResult>(identifier, cancellationToken, args);
-        
+
                 /// <summary>
                 /// This method performs synchronous, if the underlying implementation supports synchrounous interoperability.
                 /// </summary>
@@ -93,7 +93,7 @@ public static class InterfaceCoreBuilder {
                 /// <returns>An instance of <typeparamref name="TResult"/> obtained by JSON-deserializing the return value.</returns>
                 public ValueTask<TResult> InvokeTrySync<TResult>(string identifier, params object?[]? args)
                     => InvokeTrySync<TResult>(identifier, default, args);
-        
+
                 /// <summary>
                 /// This method performs synchronous, if the underlying implementation supports synchrounous interoperability.
                 /// </summary>
@@ -118,7 +118,7 @@ public static class InterfaceCoreBuilder {
                 /// <returns></returns>
                 public async ValueTask InvokeVoidAsync(string identifier, params object?[]? args)
                     => await InvokeAsync<Infrastructure.IJSVoidResult>(identifier, default, args);
-        
+
                 /// <summary>
                 /// Invokes the specified JavaScript function asynchronously.
                 /// </summary>
@@ -131,7 +131,7 @@ public static class InterfaceCoreBuilder {
                 /// <returns></returns>
                 public async ValueTask InvokeVoidAsync(string identifier, CancellationToken cancellationToken, params object?[]? args)
                     => await InvokeAsync<Infrastructure.IJSVoidResult>(identifier, cancellationToken, args);
-        
+
                 /// <summary>
                 /// Invokes the specified JavaScript function asynchronously.
                 /// <para>
@@ -145,7 +145,7 @@ public static class InterfaceCoreBuilder {
                 /// <returns>An instance of <typeparamref name="TResult"/> obtained by JSON-deserializing the return value.</returns>
                 public ValueTask<TResult> InvokeAsync<TResult>(string identifier, params object?[]? args)
                     => InvokeAsync<TResult>(identifier, default, args);
-        
+
                 /// <summary>
                 /// Invokes the specified JavaScript function asynchronously.
                 /// </summary>
@@ -326,7 +326,7 @@ public static class InterfaceCoreBuilder {
 
             using System.Threading;
             using System.Threading.Tasks;
-            
+
             namespace Microsoft.JSInterop;
 
             {{interfaceSummary}}

@@ -1,7 +1,6 @@
 ﻿namespace TSRuntime.Configs;
 
-public readonly struct InputPath(string include, string[] excludes) : IEquatable<InputPath>
-{
+public readonly struct InputPath(string include, string[] excludes) : IEquatable<InputPath> {
     /// <summary>
     /// <para>Path to a folder. Every .d.ts-file in that folder will be included.</para>
     /// <para>It can also be a path to a file. If this is a file-path, <see cref="ModulePath"/> must also be set.</para>
@@ -52,8 +51,7 @@ public readonly struct InputPath(string include, string[] excludes) : IEquatable
     }
 
 
-    public void Deconstruct(out string include, out string[] excludes, out bool moduleFiles, out string? modulePath)
-    {
+    public void Deconstruct(out string include, out string[] excludes, out bool moduleFiles, out string? modulePath) {
         include = Include;
         excludes = Excludes;
         moduleFiles = ModuleFiles;

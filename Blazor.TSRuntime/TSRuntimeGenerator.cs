@@ -39,7 +39,7 @@ public sealed class TSRuntimeGenerator : IIncrementalGenerator {
                 _ => ((Config?)null, file.error)
             });
 
-        
+
         IncrementalValuesProvider<(TSFile? file, string content, Config? config)> fileList = context.AdditionalTextsProvider
             .Combine(configProvider)
             .Select<(AdditionalText, ConfigOrError), (TSFile?, string, Config?)>(((AdditionalText textFile, ConfigOrError configOrError) parameters, CancellationToken cancellationToken) => {

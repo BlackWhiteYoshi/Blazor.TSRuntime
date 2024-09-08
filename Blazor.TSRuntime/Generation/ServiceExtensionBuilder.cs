@@ -37,7 +37,7 @@ public static class ServiceExtensionBuilder {
 
 
             using Microsoft.Extensions.DependencyInjection;
-            
+
             namespace Microsoft.JSInterop;
 
             [System.CodeDom.Compiler.GeneratedCodeAttribute("{{AssemblyInfo.NAME}}", "{{AssemblyInfo.VERSION}}")]
@@ -67,7 +67,7 @@ public static class ServiceExtensionBuilder {
                     return services;
                 }
             }
-            
+
             """);
 
 

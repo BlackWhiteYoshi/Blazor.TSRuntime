@@ -8,7 +8,7 @@ using TSRuntime.Configs.NamePattern;
 namespace TSRuntime.Tests;
 
 public static class ConfigTests {
-    
+
     [Fact]
     public static void Config_FieldsHaveDefaultValues() {
         Config config = new();
@@ -75,13 +75,13 @@ public static class ConfigTests {
         int propertyCount = typeof(Config).GetProperties().Length - 1; // subtract ErrorList
 
         Assert.Equal(propertyCount, numberOfLeafNodes);
-        
+
 
         static int NumberOfLeafNodes(JsonNode node) {
             if (node is not JsonObject jsonObject)
                 return 1;
 
-            int numberOfLeafNodes = 0;            
+            int numberOfLeafNodes = 0;
             foreach (KeyValuePair<string, JsonNode?> child in jsonObject) {
                 numberOfLeafNodes += NumberOfLeafNodes(child.Value!);
             }

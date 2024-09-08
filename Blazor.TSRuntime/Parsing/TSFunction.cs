@@ -95,7 +95,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
 
         return functionList;
     }
-    
+
     /// <summary>
     /// Creates a TSFunction if the given line represents a exported js-function. 
     /// </summary>
@@ -128,7 +128,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
             position += 6; // skip "async "
             TrimWhiteSpace(ref line, ref position);
         }
-        
+
         if (line is not ['f', 'u', 'n', 'c', 't', 'i', 'o', 'n', ' ', ..])
             return null;
 
@@ -239,7 +239,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                 line = line[(tokenIndex + 1)..]; // skip [',', ')', ':']
                 position += tokenIndex + 1;
                 TrimWhiteSpace(ref line, ref position);
-                
+
                 // parse type
                 if (token is ':') {
                     int parameterTypeEnd;
@@ -353,7 +353,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
             }
             else {
                 result.ReturnPromise = false;
-                
+
                 int headEnd = line.IndexOfAny(['{', ';']);
                 if (headEnd == -1)
                     headEnd = line.Length;
@@ -383,7 +383,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
     public void ParseSummary(string fileContent, int position) {
         if (position < 6) // at least "/***/\n"
             return;
-        
+
         // find "*/" in the line above
         for (position -= 2; !(fileContent[position - 1] is '*' && fileContent[position] is '/'); position--)
             if (fileContent[position] is '\n' || position < 1)
@@ -440,7 +440,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
                             line = line[11..].TrimStart(); // skip "@typeparam "
 
                             ReadOnlySpan<char> typeSpan = FindTypeSpan(ref line);
-                            
+
                             if (typeSpan.Length > 0) {
                                 Generics = [.. Generics, (typeSpan.ToString(), string.Empty)];
                                 CSsummary = ref Generics[^1].description;
@@ -600,7 +600,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
             line = [];
             return [];
         }
-        
+
         // removes all leading and trainling "<br/>" and then calls ToString
         static string ToSummary(StringBuilder builder) {
             while (builder.Length >= 5 && builder[^5] == '<' && builder[^4] == 'b' && builder[^3] == 'r' && builder[^2] == '/' && builder[^1] == '>')

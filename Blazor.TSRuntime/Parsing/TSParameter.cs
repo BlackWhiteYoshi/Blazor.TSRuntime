@@ -205,7 +205,7 @@ public record struct TSParameter() : IEquatable<TSParameter> {
                     return;
                 }
             }
-        
+
             if (subStr is ['A', 'r', 'r', 'a', 'y', '<', .., '>']) {
                 array = true;
                 arrayNullable = typeNullable;
@@ -217,7 +217,7 @@ public record struct TSParameter() : IEquatable<TSParameter> {
                 type = subStr.ToString();
                 return;
             }
-        
+
             type = subStr.ToString();
 
 
