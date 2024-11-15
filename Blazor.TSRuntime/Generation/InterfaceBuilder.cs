@@ -52,15 +52,15 @@ public static class InterfaceBuilder {
     /// <param name="builder"></param>
     /// <param name="config"></param>
     private struct BuildInterfaceFileCore(StringBuilder builder, Config config) {
-        private string scriptName;
-        private bool isModule;
-        private TSFunction function;
+        private string scriptName = default!;
+        private bool isModule = default;
+        private TSFunction function = default!;
         private readonly List<(MappedType parameter, MappedType[]? callback)> mappedParameterList = [];
-        private MappedType mappedReturnType;
+        private MappedType mappedReturnType = default;
         private readonly List<GenericType> genericParameterList = [];
         private readonly List<GenericType> genericCallbackList = [];
-        private string returnType;
-        private string returnModifiers;
+        private string returnType = default!;
+        private string returnModifiers = default!;
 
 
         /// <summary>
