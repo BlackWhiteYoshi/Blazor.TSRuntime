@@ -5,5 +5,5 @@
 /// </summary>
 public static class AssemblyInfo {
     public const string NAME = "Blazor.TSRuntime";
-    public const string VERSION = "1.0.0";
+    public const string VERSION = "1.0.1";
 }
