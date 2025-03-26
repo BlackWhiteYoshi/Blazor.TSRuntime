@@ -81,7 +81,7 @@ and an &lt;AdditionalFiles&gt; to make all .js-files available to the source-gen
 <ItemGroup>
   <PackageReference Include="Blazor.TSRuntime" Version="{latest version}" PrivateAssets="all" />
   <AdditionalFiles Include="tsruntime.json" />
-  <AdditionalFiles Include="**\*.js" />
+  <AdditionalFiles Include="**/*.js" Exclude="bin/**;obj/**;Properties/**" />
 </ItemGroup>
 ```
 

@@ -3,23 +3,23 @@ using System.Collections.Immutable;
 
 namespace TSRuntime.Tests;
 
-public static class GeneratorConfigTests {
+public sealed class GeneratorConfigTests {
     private static readonly (string path, string content) testModule = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/TestModule.d.ts", "export function Test(a: number, b: string): number;\n");
     private static readonly (string path, string content) nestedTestModule = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/NestedFolder/NestedTestModule.d.ts", "export declare function NestedTest(): Promise<void>;\n");
 
 
-    [Fact]
-    public static Task DefaultConfig() {
+    [Test]
+    public async ValueTask DefaultConfig() {
         const string jsonConfig = """{}""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -52,8 +52,8 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task EverythingTurnedOff() {
+    [Test]
+    public async ValueTask EverythingTurnedOff() {
         const string jsonConfig = """
             {
                 "using statements": [],
@@ -83,14 +83,14 @@ public static class GeneratorConfigTests {
             }
             """;
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
-        Assert.Equal(4, result.Length);
-        return Verify($"""
+        await Assert.That(result.Length).IsEqualTo(4);
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -118,18 +118,18 @@ public static class GeneratorConfigTests {
     }
 
 
-    [Fact]
-    public static Task WebRootPath() {
+    [Test]
+    public async ValueTask WebRootPath() {
         const string jsonConfig = """{ "webroot path": ".." }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -164,18 +164,18 @@ public static class GeneratorConfigTests {
 
     // InputPath is in InputPathTest.cs
 
-    [Fact]
-    public static Task UsingStatements() {
+    [Test]
+    public async ValueTask UsingStatements() {
         const string jsonConfig = """{ "using statements": ["UsingStatement.1", "UsingStatement.2", "UsingStatement.3"] }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -209,18 +209,18 @@ public static class GeneratorConfigTests {
     }
 
 
-    [Fact]
-    public static Task InvokeFunctionSyncEnabled() {
+    [Test]
+    public async ValueTask InvokeFunctionSyncEnabled() {
         const string jsonConfig = """{ "invoke function": { "sync enabled": true, "trysync enabled": false } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -253,18 +253,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task InvokeFunctionTrySyncEnabled() {
+    [Test]
+    public async ValueTask InvokeFunctionTrySyncEnabled() {
         const string jsonConfig = """{ "invoke function": { "trysync enabled": true } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -297,18 +297,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task InvokeFunctionAsyncEnabled() {
+    [Test]
+    public async ValueTask InvokeFunctionAsyncEnabled() {
         const string jsonConfig = """{ "invoke function": { "trysync enabled": false, "async enabled": true } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -342,18 +342,18 @@ public static class GeneratorConfigTests {
     }
 
 
-    [Fact]
-    public static Task InvokeFunctionNamePattern() {
+    [Test]
+    public async ValueTask InvokeFunctionNamePattern() {
         const string jsonConfig = """{ "invoke function": { "name pattern": { "pattern": "#module#_#function#_#action#" } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -386,18 +386,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task InvokeFunctionModuleTransform() {
+    [Test]
+    public async ValueTask InvokeFunctionModuleTransform() {
         const string jsonConfig = """{ "invoke function": { "name pattern": { "pattern": "#module#_#function#_#action#", "module transform": "lower case" } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -430,18 +430,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task InvokeFunctionFunctionTransform() {
+    [Test]
+    public async ValueTask InvokeFunctionFunctionTransform() {
         const string jsonConfig = """{ "invoke function": { "name pattern": { "pattern": "#module#_#function#_#action#", "function transform": "lower case" } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -474,18 +474,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task InvokeFunctionActionTransform() {
+    [Test]
+    public async ValueTask InvokeFunctionActionTransform() {
         const string jsonConfig = """{ "invoke function": { "name pattern": { "pattern": "#module#_#function#_#action#", "action transform": "lower case" } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -518,18 +518,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task InvokeFunctionActionNameSync() {
+    [Test]
+    public async ValueTask InvokeFunctionActionNameSync() {
         const string jsonConfig = """{ "invoke function": { "sync enabled": true, "name pattern": { "pattern": "#module#_#function#_#action#", "action name": { "sync": "TTT" } } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -562,18 +562,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task InvokeFunctionActionNameTrySync() {
+    [Test]
+    public async ValueTask InvokeFunctionActionNameTrySync() {
         const string jsonConfig = """{ "invoke function": { "name pattern": { "pattern": "#module#_#function#_#action#", "action name": { "trysync": "TTT" } } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -606,18 +606,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task InvokeFunctionActionNameAsync() {
+    [Test]
+    public async ValueTask InvokeFunctionActionNameAsync() {
         const string jsonConfig = """{ "invoke function": { "name pattern": { "pattern": "#module#_#function#_#action#", "action name": { "async": "TTT" } } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -651,8 +651,8 @@ public static class GeneratorConfigTests {
     }
 
 
-    [Fact]
-    public static Task PromiseOnlyAsync() {
+    [Test]
+    public async ValueTask PromiseOnlyAsync() {
         const string jsonConfig = """
             {
                 "invoke function": {
@@ -669,14 +669,14 @@ public static class GeneratorConfigTests {
             }
             """;
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -709,18 +709,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task PromiseAppendAsync() {
+    [Test]
+    public async ValueTask PromiseAppendAsync() {
         const string jsonConfig = """{ "invoke function": { "promise": { "append async": true } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -758,14 +758,14 @@ public static class GeneratorConfigTests {
 
     private const string MODULE_PATH = $"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/module.d.ts";
 
-    [Fact]
-    public static Task TypeMap_MapsIdentity() {
+    [Test]
+    public async ValueTask TypeMap_MapsIdentity() {
         const string jsonConfig = """{ "invoke function": { "type map": { } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string itsRuntimeModule = result[2];
-        return Verify($"""
+        await Verify($"""
             ------
             Module
             ------
@@ -775,15 +775,15 @@ public static class GeneratorConfigTests {
     }
 
 
-    [Fact]
-    public static Task TypeMap_MapsNullable() {
+    [Test]
+    public async ValueTask TypeMap_MapsNullable() {
         const string jsonConfig = """{}""";
         (string path, string content) module = (MODULE_PATH, "export function TT(a: number | null, b: string | null): number | null;\n");
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string itsRuntimeModule = result[2];
-        return Verify($"""
+        await Verify($"""
             ------
             Module
             ------
@@ -792,15 +792,15 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task TypeMap_MapsArray() {
+    [Test]
+    public async ValueTask TypeMap_MapsArray() {
         const string jsonConfig = """{}""";
         (string path, string content) module = (MODULE_PATH, "export function TT(a: number[], b: string[]): number[];\n");
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string itsRuntimeModule = result[2];
-        return Verify($"""
+        await Verify($"""
             ------
             Module
             ------
@@ -809,15 +809,15 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task TypeMap_MapsNullableArray() {
+    [Test]
+    public async ValueTask TypeMap_MapsNullableArray() {
         const string jsonConfig = """{}""";
         (string path, string content) module = (MODULE_PATH, "export function TT(a: number[] | null, b: string[] | null): number[] | null;\n");
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string itsRuntimeModule = result[2];
-        return Verify($"""
+        await Verify($"""
             ------
             Module
             ------
@@ -826,15 +826,15 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task TypeMap_MapsNullableArrayWithNullableItems() {
+    [Test]
+    public async ValueTask TypeMap_MapsNullableArrayWithNullableItems() {
         const string jsonConfig = """{}""";
         (string path, string content) module = (MODULE_PATH, "export function TT(a: (number | null)[] | null, b: (string | null)[] | null): (number | null)[] | null;\n");
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string itsRuntimeModule = result[2];
-        return Verify($"""
+        await Verify($"""
             ------
             Module
             ------
@@ -844,14 +844,14 @@ public static class GeneratorConfigTests {
     }
 
 
-    [Fact]
-    public static Task TypeMap_MapsGeneric() {
+    [Test]
+    public async ValueTask TypeMap_MapsGeneric() {
         const string jsonConfig = """{ "invoke function": { "type map": { "number": { "type": "TN", "generic types": "TN" } } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string itsRuntimeModule = result[2];
-        return Verify($"""
+        await Verify($"""
             ------
             Module
             ------
@@ -860,14 +860,14 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task TypeMap_MapsMultipleGenerics() {
+    [Test]
+    public async ValueTask TypeMap_MapsMultipleGenerics() {
         const string jsonConfig = """{ "invoke function": { "type map": { "number": { "type": "Dictionary<K, V>", "generic types": ["K", "V"] } } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string itsRuntimeModule = result[2];
-        return Verify($"""
+        await Verify($"""
             ------
             Module
             ------
@@ -876,15 +876,15 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task TypeMap_MapsGenericExceptOptionalIsNotIncluded() {
+    [Test]
+    public async ValueTask TypeMap_MapsGenericExceptOptionalIsNotIncluded() {
         const string jsonConfig = """{}""";
         (string path, string content) module = (MODULE_PATH, "export function Test(a: string | undefined, b: number | undefined): void;\n");
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string itsRuntimeModule = result[2];
-        return Verify($"""
+        await Verify($"""
             ------
             Module
             ------
@@ -896,18 +896,18 @@ public static class GeneratorConfigTests {
     #endregion
 
 
-    [Fact]
-    public static Task PreloadNamePattern() {
+    [Test]
+    public async ValueTask PreloadNamePattern() {
         const string jsonConfig = """{ "preload function": { "name pattern": { "pattern": "TTT_#module#" } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -940,18 +940,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task PreloadModuleTransform() {
+    [Test]
+    public async ValueTask PreloadModuleTransform() {
         const string jsonConfig = """{ "preload function": { "name pattern": { "module transform": "lower case" } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -984,18 +984,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task PreloadAllModulesName() {
+    [Test]
+    public async ValueTask PreloadAllModulesName() {
         const string jsonConfig = """{ "preload function": { "all modules name": "TTT" } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -1029,18 +1029,18 @@ public static class GeneratorConfigTests {
     }
 
 
-    [Fact]
-    public static Task ModuleGrouping() {
+    [Test]
+    public async ValueTask ModuleGrouping() {
         const string jsonConfig = """{ "module grouping": { "enabled": true } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -1073,18 +1073,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task ModuleGroupingNamePattern() {
+    [Test]
+    public async ValueTask ModuleGroupingNamePattern() {
         const string jsonConfig = """{ "module grouping": { "enabled": true, "interface name pattern": { "pattern": "TTT_#module#" } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -1117,18 +1117,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task ModuleGroupingModuleTransform() {
+    [Test]
+    public async ValueTask ModuleGroupingModuleTransform() {
         const string jsonConfig = """{ "module grouping": { "enabled": true, "interface name pattern": { "module transform": "lower case" } } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -1162,18 +1162,18 @@ public static class GeneratorConfigTests {
     }
 
 
-    [Fact]
-    public static Task JSRuntimeSyncEnabled() {
+    [Test]
+    public async ValueTask JSRuntimeSyncEnabled() {
         const string jsonConfig = """{ "js runtime": { "sync enabled": true } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -1206,18 +1206,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task JSRuntimeTrySyncEnabled() {
+    [Test]
+    public async ValueTask JSRuntimeTrySyncEnabled() {
         const string jsonConfig = """{ "js runtime": { "trysync enabled": true } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -1250,18 +1250,18 @@ public static class GeneratorConfigTests {
             """);
     }
 
-    [Fact]
-    public static Task JSRuntimeAsyncEnabled() {
+    [Test]
+    public async ValueTask JSRuntimeAsyncEnabled() {
         const string jsonConfig = """{ "js runtime": { "async enabled": true } }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -1295,18 +1295,18 @@ public static class GeneratorConfigTests {
     }
 
 
-    [Fact]
-    public static Task ServiceExtension() {
+    [Test]
+    public async ValueTask ServiceExtension() {
         const string jsonConfig = """{ "service extension": true }""";
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
         string itsRuntimeNestedModule = result[3];
         string serviceExtension = result[4];
-        return Verify($"""
+        await Verify($"""
             ---------
             TSRuntime
             ---------

@@ -3,11 +3,11 @@ using System.Collections.Immutable;
 
 namespace TSRuntime.Tests;
 
-public static class ScriptTests {
+public sealed class ScriptTests {
     private const string SCRIPT_PATH = $"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/site.ts";
 
-    [Fact]
-    public static Task ParameterlessFunction() {
+    [Test]
+    public async ValueTask ParameterlessFunction() {
         const string jsonConfig = """
             {
                 "input path": {
@@ -29,14 +29,14 @@ public static class ScriptTests {
             """;
         const string scriptFunction = "function Test() {}\n";
         string[] result = jsonConfig.GenerateSourceText([(SCRIPT_PATH, scriptFunction)], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string itsRuntimeScript = result[2];
-        return Verify(itsRuntimeScript);
+        await Verify(itsRuntimeScript);
     }
 
-    [Fact]
-    public static Task ParameterAndReturnTypeFunction() {
+    [Test]
+    public async ValueTask ParameterAndReturnTypeFunction() {
         const string jsonConfig = """
             {
                 "input path": {
@@ -58,14 +58,14 @@ public static class ScriptTests {
             """;
         const string scriptFunction = "function Test(str: string, a: boolean): number {}\n";
         string[] result = jsonConfig.GenerateSourceText([(SCRIPT_PATH, scriptFunction)], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string itsRuntimeScript = result[2];
-        return Verify(itsRuntimeScript);
+        await Verify(itsRuntimeScript);
     }
 
-    [Fact]
-    public static Task PromiseFunction() {
+    [Test]
+    public async ValueTask PromiseFunction() {
         const string jsonConfig = """
             {
                 "input path": {
@@ -87,14 +87,14 @@ public static class ScriptTests {
             """;
         const string scriptFunction = "function Test(): Promise<void> {}\n";
         string[] result = jsonConfig.GenerateSourceText([(SCRIPT_PATH, scriptFunction)], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string itsRuntimeScript = result[2];
-        return Verify(itsRuntimeScript);
+        await Verify(itsRuntimeScript);
     }
 
-    [Fact]
-    public static Task PromiseReturnFunction() {
+    [Test]
+    public async ValueTask PromiseReturnFunction() {
         const string jsonConfig = """
             {
                 "input path": {
@@ -116,9 +116,9 @@ public static class ScriptTests {
             """;
         const string scriptFunction = "function Test(): Promise<number> {}\n";
         string[] result = jsonConfig.GenerateSourceText([(SCRIPT_PATH, scriptFunction)], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string itsRuntimeScript = result[2];
-        return Verify(itsRuntimeScript);
+        await Verify(itsRuntimeScript);
     }
 }

@@ -7,10 +7,9 @@ using TSRuntime.Configs.NamePattern;
 
 namespace TSRuntime.Tests;
 
-public static class ConfigTests {
-
-    [Fact]
-    public static void Config_FieldsHaveDefaultValues() {
+public sealed class ConfigTests {
+    [Test]
+    public async ValueTask Config_FieldsHaveDefaultValues() {
         Config config = new();
 
         foreach (PropertyInfo property in typeof(Config).GetProperties()) {
@@ -18,14 +17,14 @@ public static class ConfigTests {
                 continue;
 
             object? value = property.GetValue(config);
-            Assert.NotNull(value);
+            await Assert.That(value).IsNotNull();
             if (value is IEnumerable<object?> enumerable)
-                Assert.NotEmpty(enumerable);
+                await Assert.That(enumerable).IsNotEmpty();
         }
     }
 
-    [Fact]
-    public static void Config_EmptyJsonHaveDefaultValues() {
+    [Test]
+    public async ValueTask Config_EmptyJsonHaveDefaultValues() {
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, "{}");
 
         foreach (PropertyInfo property in typeof(Config).GetProperties()) {
@@ -33,14 +32,14 @@ public static class ConfigTests {
                 continue;
 
             object? value = property.GetValue(config);
-            Assert.NotNull(value);
+            await Assert.That(value).IsNotNull();
             if (value is IEnumerable<object?> enumerable)
-                Assert.NotEmpty(enumerable);
+                await Assert.That(enumerable).IsNotEmpty();
         }
     }
 
-    [Fact]
-    public static void Config_ToJsonSavesAllProperties() {
+    [Test]
+    public async ValueTask Config_ToJsonSavesAllProperties() {
         string configAsJson = new Config().ToJson();
         JsonNode root = JsonNode.Parse(configAsJson)!;
         JsonObject jsonObject = root.AsObject();
@@ -74,7 +73,7 @@ public static class ConfigTests {
 
         int propertyCount = typeof(Config).GetProperties().Length - 1; // subtract ErrorList
 
-        Assert.Equal(propertyCount, numberOfLeafNodes);
+        await Assert.That(numberOfLeafNodes).IsEqualTo(propertyCount);
 
 
         static int NumberOfLeafNodes(JsonNode node) {
@@ -92,8 +91,8 @@ public static class ConfigTests {
 
     #region InputPath
 
-    [Fact]
-    public static void Config_FromJson_InputPath_Empty() {
+    [Test]
+    public async ValueTask Config_FromJson_InputPath_Empty() {
         const string JSON = """
             {
                 "input path": ""
@@ -101,17 +100,17 @@ public static class ConfigTests {
             """;
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
 
-        Assert.Single(config.InputPath);
+        await Assert.That(config.InputPath).HasSingleItem();
         InputPath inputPath = config.InputPath[0];
 
-        Assert.Equal("", inputPath.Include);
-        Assert.Empty(inputPath.Excludes);
-        Assert.True(inputPath.ModuleFiles);
-        Assert.Null(inputPath.ModulePath);
+        await Assert.That(inputPath.Include).IsEqualTo("");
+        await Assert.That(inputPath.Excludes).IsEmpty();
+        await Assert.That(inputPath.ModuleFiles).IsTrue();
+        await Assert.That(inputPath.ModulePath).IsNull();
     }
 
-    [Fact]
-    public static void Config_FromJson_InputPath_IncludeShorthand() {
+    [Test]
+    public async ValueTask Config_FromJson_InputPath_IncludeShorthand() {
         const string JSON = """
             {
                 "input path": "\\test"
@@ -119,17 +118,17 @@ public static class ConfigTests {
             """;
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
 
-        Assert.Single(config.InputPath);
+        await Assert.That(config.InputPath).HasSingleItem();
         InputPath inputPath = config.InputPath[0];
 
-        Assert.Equal("/test", inputPath.Include);
-        Assert.Empty(inputPath.Excludes);
-        Assert.True(inputPath.ModuleFiles);
-        Assert.Null(inputPath.ModulePath);
+        await Assert.That(inputPath.Include).IsEqualTo("/test");
+        await Assert.That(inputPath.Excludes).IsEmpty();
+        await Assert.That(inputPath.ModuleFiles).IsTrue();
+        await Assert.That(inputPath.ModulePath).IsNull();
     }
 
-    [Fact]
-    public static void Config_FromJson_InputPath_IncludeSingle() {
+    [Test]
+    public async ValueTask Config_FromJson_InputPath_IncludeSingle() {
         const string JSON = """
             {
                 "input path": {
@@ -139,17 +138,17 @@ public static class ConfigTests {
             """;
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
 
-        Assert.Single(config.InputPath);
+        await Assert.That(config.InputPath).HasSingleItem();
         InputPath inputPath = config.InputPath[0];
 
-        Assert.Equal("/test", inputPath.Include);
-        Assert.Empty(inputPath.Excludes);
-        Assert.True(inputPath.ModuleFiles);
-        Assert.Null(inputPath.ModulePath);
+        await Assert.That(inputPath.Include).IsEqualTo("/test");
+        await Assert.That(inputPath.Excludes).IsEmpty();
+        await Assert.That(inputPath.ModuleFiles).IsTrue();
+        await Assert.That(inputPath.ModulePath).IsNull();
     }
 
-    [Fact]
-    public static void Config_FromJson_InputPath_IncludeArray() {
+    [Test]
+    public async ValueTask Config_FromJson_InputPath_IncludeArray() {
         const string JSON = """
             {
                 "input path": [
@@ -161,17 +160,17 @@ public static class ConfigTests {
             """;
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
 
-        Assert.Single(config.InputPath);
+        await Assert.That(config.InputPath).HasSingleItem();
         InputPath inputPath = config.InputPath[0];
 
-        Assert.Equal("/test", inputPath.Include);
-        Assert.Empty(inputPath.Excludes);
-        Assert.True(inputPath.ModuleFiles);
-        Assert.Null(inputPath.ModulePath);
+        await Assert.That(inputPath.Include).IsEqualTo("/test");
+        await Assert.That(inputPath.Excludes).IsEmpty();
+        await Assert.That(inputPath.ModuleFiles).IsTrue();
+        await Assert.That(inputPath.ModulePath).IsNull();
     }
 
-    [Fact]
-    public static void Config_FromJson_InputPath_ExcludesSingle() {
+    [Test]
+    public async ValueTask Config_FromJson_InputPath_ExcludesSingle() {
         const string JSON = """
             {
                 "input path": [
@@ -184,17 +183,17 @@ public static class ConfigTests {
             """;
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
 
-        Assert.Single(config.InputPath);
+        await Assert.That(config.InputPath).HasSingleItem();
         InputPath inputPath = config.InputPath[0];
 
-        Assert.Equal("/test", inputPath.Include);
-        Assert.Equal("as/df", inputPath.Excludes[0]);
-        Assert.True(inputPath.ModuleFiles);
-        Assert.Null(inputPath.ModulePath);
+        await Assert.That(inputPath.Include).IsEqualTo("/test");
+        await Assert.That(inputPath.Excludes[0]).IsEqualTo("as/df");
+        await Assert.That(inputPath.ModuleFiles).IsTrue();
+        await Assert.That(inputPath.ModulePath).IsNull();
     }
 
-    [Fact]
-    public static void Config_FromJson_InputPath_ExcludesMultiple() {
+    [Test]
+    public async ValueTask Config_FromJson_InputPath_ExcludesMultiple() {
         const string JSON = """
             {
                 "input path": [
@@ -207,17 +206,17 @@ public static class ConfigTests {
             """;
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
 
-        Assert.Single(config.InputPath);
+        await Assert.That(config.InputPath).HasSingleItem();
         InputPath inputPath = config.InputPath[0];
 
-        Assert.Equal("/test", inputPath.Include);
-        Assert.True(inputPath.Excludes.SequenceEqual(["as/df", "ghjk"]));
-        Assert.True(inputPath.ModuleFiles);
-        Assert.Null(inputPath.ModulePath);
+        await Assert.That(inputPath.Include).IsEqualTo("/test");
+        await Assert.That(inputPath.Excludes.SequenceEqual(["as/df", "ghjk"])).IsTrue();
+        await Assert.That(inputPath.ModuleFiles).IsTrue();
+        await Assert.That(inputPath.ModulePath).IsNull();
     }
 
-    [Fact]
-    public static void Config_FromJson_InputPath_ModuleFiles() {
+    [Test]
+    public async ValueTask Config_FromJson_InputPath_ModuleFiles() {
         const string JSON = """
             {
                 "input path": [
@@ -230,17 +229,17 @@ public static class ConfigTests {
             """;
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
 
-        Assert.Single(config.InputPath);
+        await Assert.That(config.InputPath).HasSingleItem();
         InputPath inputPath = config.InputPath[0];
 
-        Assert.Equal("/test", inputPath.Include);
-        Assert.Empty(inputPath.Excludes);
-        Assert.False(inputPath.ModuleFiles);
-        Assert.Null(inputPath.ModulePath);
+        await Assert.That(inputPath.Include).IsEqualTo("/test");
+        await Assert.That(inputPath.Excludes).IsEmpty();
+        await Assert.That(inputPath.ModuleFiles).IsFalse();
+        await Assert.That(inputPath.ModulePath).IsNull();
     }
 
-    [Fact]
-    public static void Config_FromJson_InputPath_ModulePath() {
+    [Test]
+    public async ValueTask Config_FromJson_InputPath_ModulePath() {
         const string JSON = """
             {
                 "input path": [
@@ -253,17 +252,17 @@ public static class ConfigTests {
             """;
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
 
-        Assert.Single(config.InputPath);
+        await Assert.That(config.InputPath).HasSingleItem();
         InputPath inputPath = config.InputPath[0];
 
-        Assert.Equal("/test", inputPath.Include);
-        Assert.Empty(inputPath.Excludes);
-        Assert.True(inputPath.ModuleFiles);
-        Assert.Equal("yx/cv", inputPath.ModulePath);
+        await Assert.That(inputPath.Include).IsEqualTo("/test");
+        await Assert.That(inputPath.Excludes).IsEmpty();
+        await Assert.That(inputPath.ModuleFiles).IsTrue();
+        await Assert.That(inputPath.ModulePath).IsEqualTo("yx/cv");
     }
 
-    [Fact]
-    public static void Config_FromJson_InputPath_ExcludeAndModuleFileAndModulePath() {
+    [Test]
+    public async ValueTask Config_FromJson_InputPath_ExcludeAndModuleFileAndModulePath() {
         const string JSON = """
             {
                 "input path": [
@@ -278,17 +277,17 @@ public static class ConfigTests {
             """;
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
 
-        Assert.Single(config.InputPath);
+        await Assert.That(config.InputPath).HasSingleItem();
         InputPath inputPath = config.InputPath[0];
 
-        Assert.Equal("/test", inputPath.Include);
-        Assert.Equal("as/df", inputPath.Excludes[0]);
-        Assert.False(inputPath.ModuleFiles);
-        Assert.Equal("yx/cv", inputPath.ModulePath);
+        await Assert.That(inputPath.Include).IsEqualTo("/test");
+        await Assert.That(inputPath.Excludes[0]).IsEqualTo("as/df");
+        await Assert.That(inputPath.ModuleFiles).IsFalse();
+        await Assert.That(inputPath.ModulePath).IsEqualTo("yx/cv");
     }
 
-    [Fact]
-    public static void Config_FromJson_InputPath_Multiple() {
+    [Test]
+    public async ValueTask Config_FromJson_InputPath_Multiple() {
         const string JSON = """
             {
                 "input path": [
@@ -307,27 +306,27 @@ public static class ConfigTests {
             """;
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
 
-        Assert.Equal(2, config.InputPath.Length);
+        await Assert.That(config.InputPath.Length).IsEqualTo(2);
         {
             InputPath inputPath = config.InputPath[0];
-            Assert.Equal("/test", inputPath.Include);
-            Assert.Equal("as/df", inputPath.Excludes[0]);
-            Assert.True(inputPath.ModuleFiles);
-            Assert.Equal("yx/cv", inputPath.ModulePath);
+            await Assert.That(inputPath.Include).IsEqualTo("/test");
+            await Assert.That(inputPath.Excludes[0]).IsEqualTo("as/df");
+            await Assert.That(inputPath.ModuleFiles).IsTrue();
+            await Assert.That(inputPath.ModulePath).IsEqualTo("yx/cv");
         }
         {
             InputPath inputPath = config.InputPath[1];
-            Assert.Equal("q", inputPath.Include);
-            Assert.True(inputPath.Excludes.SequenceEqual(["w", "ww"]));
-            Assert.False(inputPath.ModuleFiles);
-            Assert.Null(inputPath.ModulePath);
+            await Assert.That(inputPath.Include).IsEqualTo("q");
+            await Assert.That(inputPath.Excludes.SequenceEqual(["w", "ww"])).IsTrue();
+            await Assert.That(inputPath.ModuleFiles).IsFalse();
+            await Assert.That(inputPath.ModulePath).IsNull();
         }
     }
 
     #endregion
 
-    [Theory]
-    [InlineData("", (string[])[], true, null, """
+    [Test]
+    [Arguments("", (string[])[], true, null, """
         [
             {
               "include": "",
@@ -336,7 +335,7 @@ public static class ConfigTests {
             }
           ]
         """)]
-    [InlineData("", (string[])[], false, "", """
+    [Arguments("", (string[])[], false, "", """
         [
             {
               "include": "",
@@ -346,7 +345,7 @@ public static class ConfigTests {
             }
           ]
         """)]
-    [InlineData("qwer", (string[])["asdf"], true, "yxcv", """
+    [Arguments("qwer", (string[])["asdf"], true, "yxcv", """
         [
             {
               "include": "qwer",
@@ -356,7 +355,7 @@ public static class ConfigTests {
             }
           ]
         """)]
-    [InlineData("qwer", (string[])["asdf", "ghjk"], false, "yxcv", """
+    [Arguments("qwer", (string[])["asdf", "ghjk"], false, "yxcv", """
         [
             {
               "include": "qwer",
@@ -369,17 +368,17 @@ public static class ConfigTests {
             }
           ]
         """)]
-    public static void Config_ToJson_InputPathWorks(string include, string[] excludes, bool moduleFiles, string? fileModulePath, string expected) {
+    public async ValueTask Config_ToJson_InputPathWorks(string include, string[] excludes, bool moduleFiles, string? fileModulePath, string expected) {
         Config config = new() {
             InputPath = [new InputPath(include, excludes, moduleFiles, fileModulePath)]
         };
         string json = config.ToJson();
 
-        Assert.Contains($""" "input path": {expected},""", json);
+        await Assert.That(json).Contains($""" "input path": {expected},""");
     }
 
-    [Fact]
-    public static void Config_ToJson_MultipleInputPath() {
+    [Test]
+    public async ValueTask Config_ToJson_MultipleInputPath() {
         Config config = new() {
             InputPath = [
                 new InputPath("qwer") { Excludes = ["asdf"], ModulePath = "yxcv" },
@@ -407,27 +406,27 @@ public static class ConfigTests {
                 }
               ],
             """;
-        Assert.Contains(expected, json);
+        await Assert.That(json).Contains(expected);
     }
 
-    [Fact]
-    public static void Config_ToJson_EmptyInputPath() {
+    [Test]
+    public async ValueTask Config_ToJson_EmptyInputPath() {
         Config config = new() {
             InputPath = []
         };
         string json = config.ToJson();
 
-        Assert.Contains($""" "input path": [],""", json);
+        await Assert.That(json).Contains($""" "input path": [],""");
     }
 
 
-    [Theory]
-    [InlineData(""" "" """, (string[])[""])]
-    [InlineData(""" "Something" """, (string[])["Something"])]
-    [InlineData(""" [] """, (string[])[])]
-    [InlineData(""" ["Something"] """, (string[])["Something"])]
-    [InlineData(""" ["Something", "More"] """, (string[])["Something", "More"])]
-    public static void Config_FromJson_UsingStatementsWork(string usingStatementsValue, string[] expected) {
+    [Test]
+    [Arguments(""" "" """, (string[])[""])]
+    [Arguments(""" "Something" """, (string[])["Something"])]
+    [Arguments(""" [] """, (string[])[])]
+    [Arguments(""" ["Something"] """, (string[])["Something"])]
+    [Arguments(""" ["Something", "More"] """, (string[])["Something", "More"])]
+    public async ValueTask Config_FromJson_UsingStatementsWork(string usingStatementsValue, string[] expected) {
         string json = $$"""
             {
                 "using statements": {{usingStatementsValue}}
@@ -436,39 +435,39 @@ public static class ConfigTests {
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, json);
 
         for (int i = 0; i < config.UsingStatements.Length; i++)
-            Assert.Equal(expected[i], config.UsingStatements[i]);
+            await Assert.That(config.UsingStatements[i]).IsEqualTo(expected[i]);
     }
 
-    [Theory]
-    [InlineData((string[])[], """[]""")]
-    [InlineData((string[])["Microsoft.AspNetCore.Components"], """[ "Microsoft.AspNetCore.Components" ]""")]
-    [InlineData((string[])["qwer", "asdf", "yxcv"], """
+    [Test]
+    [Arguments((string[])[], """[]""")]
+    [Arguments((string[])["Microsoft.AspNetCore.Components"], """[ "Microsoft.AspNetCore.Components" ]""")]
+    [Arguments((string[])["qwer", "asdf", "yxcv"], """
                                                         [
                                                             "qwer",
                                                             "asdf",
                                                             "yxcv"
                                                           ]
                                                         """)]
-    public static void Config_ToJson_UsingStatementsWorks(string[] usingStatements, string expected) {
+    public async ValueTask Config_ToJson_UsingStatementsWorks(string[] usingStatements, string expected) {
         Config config = new() {
             UsingStatements = usingStatements
         };
         string json = config.ToJson();
 
-        Assert.Contains($""" "using statements": {expected},""", json);
+        await Assert.That(json).Contains($""" "using statements": {expected},""");
     }
 
 
-    [Theory]
-    [InlineData(""" "test": "Test" """, "test", "Test", (string?[])[])]
-    [InlineData(""" "test": { "type": "Test" } """, "test", "Test", (string?[])[])]
-    [InlineData(""" "test": { "type": "Test", "generic types": [] } """, "test", "Test", (string?[])[])]
-    [InlineData(""" "test": { "type": "Test", "generic types": "TTest" } """, "test", "Test", (string?[])["TTest", null])]
-    [InlineData(""" "test": { "type": "Test", "generic types": { "name": "TTest" } } """, "test", "Test", (string?[])["TTest", null])]
-    [InlineData(""" "test": { "type": "Test", "generic types": { "name": "TTest", "constraint": "ITest" } } """, "test", "Test", (string?[])["TTest", "ITest"])]
-    [InlineData(""" "test": { "type": "Test", "generic types": [ { "name": "TTest", "constraint": "ITest" } ] } """, "test", "Test", (string?[])["TTest", "ITest"])]
-    [InlineData(""" "test": { "type": "Test", "generic types": [ { "name": "TTest1", "constraint": "ITest1" }, { "name": "TTest2", "constraint": "ITest2" } ] } """, "test", "Test", (string?[])["TTest1", "ITest1", "TTest2", "ITest2"])]
-    public static void Config_FromJson_TypeMapWorks(string typeMapItemJson, string expectedKey, string expectedType, string?[] expectedGenericTypes) {
+    [Test]
+    [Arguments(""" "test": "Test" """, "test", "Test", (string?[])[])]
+    [Arguments(""" "test": { "type": "Test" } """, "test", "Test", (string?[])[])]
+    [Arguments(""" "test": { "type": "Test", "generic types": [] } """, "test", "Test", (string?[])[])]
+    [Arguments(""" "test": { "type": "Test", "generic types": "TTest" } """, "test", "Test", (string?[])["TTest", null])]
+    [Arguments(""" "test": { "type": "Test", "generic types": { "name": "TTest" } } """, "test", "Test", (string?[])["TTest", null])]
+    [Arguments(""" "test": { "type": "Test", "generic types": { "name": "TTest", "constraint": "ITest" } } """, "test", "Test", (string?[])["TTest", "ITest"])]
+    [Arguments(""" "test": { "type": "Test", "generic types": [ { "name": "TTest", "constraint": "ITest" } ] } """, "test", "Test", (string?[])["TTest", "ITest"])]
+    [Arguments(""" "test": { "type": "Test", "generic types": [ { "name": "TTest1", "constraint": "ITest1" }, { "name": "TTest2", "constraint": "ITest2" } ] } """, "test", "Test", (string?[])["TTest1", "ITest1", "TTest2", "ITest2"])]
+    public async ValueTask Config_FromJson_TypeMapWorks(string typeMapItemJson, string expectedKey, string expectedType, string?[] expectedGenericTypes) {
         // expected = [genericType1, constraint1, genericType2, constraint2, ...]
 
         string json = $$"""
@@ -480,29 +479,29 @@ public static class ConfigTests {
             """;
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, json);
 
-        Assert.Equal(expectedKey, config.TypeMap.Keys.First());
-        Assert.Equal(expectedType, config.TypeMap[expectedKey].Type);
+        await Assert.That(config.TypeMap.Keys.First()).IsEqualTo(expectedKey);
+        await Assert.That(config.TypeMap[expectedKey].Type).IsEqualTo(expectedType);
         for (int i = 0; i < config.TypeMap[expectedKey].GenericTypes.Length; i++) {
-            Assert.Equal(expectedGenericTypes[2 * i], config.TypeMap[expectedKey].GenericTypes[i].Name);
-            Assert.Equal(expectedGenericTypes[2 * i + 1], config.TypeMap[expectedKey].GenericTypes[i].Constraint);
+            await Assert.That(config.TypeMap[expectedKey].GenericTypes[i].Name).IsEqualTo(expectedGenericTypes[2 * i]);
+            await Assert.That(config.TypeMap[expectedKey].GenericTypes[i].Constraint).IsEqualTo(expectedGenericTypes[2 * i + 1]);
         }
     }
 
-    [Theory]
-    [InlineData((string?[])[], """{ }""")]
-    [InlineData((string?[])["key", "value"], """
+    [Test]
+    [Arguments((string?[])[], """{ }""")]
+    [Arguments((string?[])["key", "value"], """
                                                 {
                                                       "key": "value"
                                                     }
                                                 """)]
-    [InlineData((string?[])["a", "b", "c", "d", "e", "f"], """
+    [Arguments((string?[])["a", "b", "c", "d", "e", "f"], """
                                                             {
                                                                   "a": "b",
                                                                   "c": "d",
                                                                   "e": "f"
                                                                 }
                                                             """)]
-    public static void Config_ToJson_TypeMapSimpleMappingWorks(string[] types, string expected) {
+    public async ValueTask Config_ToJson_TypeMapSimpleMappingWorks(string[] types, string expected) {
         // types = [key1, value1, key2, value2, ...]
 
         Dictionary<string, MappedType> map = new(types.Length / 2);
@@ -514,11 +513,11 @@ public static class ConfigTests {
         };
         string json = config.ToJson();
 
-        Assert.Contains($""" "type map": {expected}""", json);
+        await Assert.That(json).Contains($""" "type map": {expected}""");
     }
 
-    [Theory]
-    [InlineData("test", "Test", (string?[])["TTest", null], """
+    [Test]
+    [Arguments("test", "Test", (string?[])["TTest", null], """
                                                                       "test": {
                                                                         "type": "Test",
                                                                         "generic types": [
@@ -529,7 +528,7 @@ public static class ConfigTests {
                                                                         ]
                                                                       }
                                                                 """)]
-    [InlineData("test", "Test", (string?[])["TTest", "ITest"], """
+    [Arguments("test", "Test", (string?[])["TTest", "ITest"], """
                                                                       "test": {
                                                                         "type": "Test",
                                                                         "generic types": [
@@ -540,7 +539,7 @@ public static class ConfigTests {
                                                                         ]
                                                                       }
                                                                 """)]
-    [InlineData("test", "Test", (string?[])["TTest1", "ITest1", "TTest2", "ITest2"], """
+    [Arguments("test", "Test", (string?[])["TTest1", "ITest1", "TTest2", "ITest2"], """
                                                                                               "test": {
                                                                                                 "type": "Test",
                                                                                                 "generic types": [
@@ -555,7 +554,7 @@ public static class ConfigTests {
                                                                                                 ]
                                                                                               }
                                                                                         """)]
-    public static void Config_ToJson_TypeMapComplexMappingWorks(string key, string type, string?[] genericTypes, string expected) {
+    public async ValueTask Config_ToJson_TypeMapComplexMappingWorks(string key, string type, string?[] genericTypes, string expected) {
         // genericTypes = [genericType1, constraint1, genericType2, constraint2, ...]
 
         GenericType[] generics = new GenericType[genericTypes.Length / 2];
@@ -571,20 +570,20 @@ public static class ConfigTests {
         };
         string json = config.ToJson();
 
-        Assert.Contains($$"""
+        await Assert.That(json).Contains($$"""
             "type map": {
             {{expected}}
                 }
-            """, json);
+            """);
     }
 
 
-    [Theory]
-    [InlineData("""true""", true, "I#module#Module", NameTransform.FirstUpperCase)]
-    [InlineData("""false""", false, "I#module#Module", NameTransform.FirstUpperCase)]
-    [InlineData("""{ "enabled": true }""", true, "I#module#Module", NameTransform.FirstUpperCase)]
-    [InlineData("""{ "enabled": true, "interface name pattern": { "pattern": "test", "module transform": "none" } }""", true, "test", NameTransform.None)]
-    public static void Config_FromJson_ModuleGroupingWorks(string moduleGroupingJson, bool expectedModuleGrouping, string expectedNamePattern, NameTransform expectedModuleTransform) {
+    [Test]
+    [Arguments("""true""", true, "I#module#Module", NameTransform.FirstUpperCase)]
+    [Arguments("""false""", false, "I#module#Module", NameTransform.FirstUpperCase)]
+    [Arguments("""{ "enabled": true }""", true, "I#module#Module", NameTransform.FirstUpperCase)]
+    [Arguments("""{ "enabled": true, "interface name pattern": { "pattern": "test", "module transform": "none" } }""", true, "test", NameTransform.None)]
+    public async ValueTask Config_FromJson_ModuleGroupingWorks(string moduleGroupingJson, bool expectedModuleGrouping, string expectedNamePattern, NameTransform expectedModuleTransform) {
         string json = $$"""
             {
               "module grouping": {{moduleGroupingJson}}
@@ -592,13 +591,13 @@ public static class ConfigTests {
             """;
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, json);
 
-        Assert.Equal(expectedModuleGrouping, config.ModuleGrouping);
-        Assert.Equal(expectedNamePattern, config.ModuleGroupingNamePattern.NamePattern);
-        Assert.Equal(expectedModuleTransform, config.ModuleGroupingNamePattern.ModuleTransform);
+        await Assert.That(config.ModuleGrouping).IsEqualTo(expectedModuleGrouping);
+        await Assert.That(config.ModuleGroupingNamePattern.NamePattern).IsEqualTo(expectedNamePattern);
+        await Assert.That(config.ModuleGroupingNamePattern.ModuleTransform).IsEqualTo(expectedModuleTransform);
     }
 
-    [Theory]
-    [InlineData(true, "", NameTransform.None, """
+    [Test]
+    [Arguments(true, "", NameTransform.None, """
                                                     {
                                                         "enabled": true,
                                                         "interface name pattern": {
@@ -607,7 +606,7 @@ public static class ConfigTests {
                                                         }
                                                       }
                                                     """)]
-    [InlineData(false, "", NameTransform.None, """
+    [Arguments(false, "", NameTransform.None, """
                                                     {
                                                         "enabled": false,
                                                         "interface name pattern": {
@@ -616,7 +615,7 @@ public static class ConfigTests {
                                                         }
                                                       }
                                                     """)]
-    [InlineData(false, "test", NameTransform.FirstUpperCase, """
+    [Arguments(false, "test", NameTransform.FirstUpperCase, """
                                                     {
                                                         "enabled": false,
                                                         "interface name pattern": {
@@ -625,21 +624,21 @@ public static class ConfigTests {
                                                         }
                                                       }
                                                     """)]
-    public static void Config_ToJson_ModuleGroupingWorks(bool enabled, string interfaceNamePattern, NameTransform moduleTransform, string expected) {
+    public async ValueTask Config_ToJson_ModuleGroupingWorks(bool enabled, string interfaceNamePattern, NameTransform moduleTransform, string expected) {
         Config config = new() {
             ModuleGrouping = enabled,
             ModuleGroupingNamePattern = new ModuleNamePattern(interfaceNamePattern, moduleTransform, null!)
         };
         string json = config.ToJson();
 
-        Assert.Contains($""" "module grouping": {expected}""", json);
+        await Assert.That(json).Contains($""" "module grouping": {expected}""");
     }
 
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public static void Config_FromJson_ServiceExtensionWorks(bool expected) {
+    [Test]
+    [Arguments(true)]
+    [Arguments(false)]
+    public async ValueTask Config_FromJson_ServiceExtensionWorks(bool expected) {
         string json = $$"""
             {
               "service extension": {{(expected ? "true" : "false")}}
@@ -647,18 +646,18 @@ public static class ConfigTests {
             """;
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, json);
 
-        Assert.Equal(expected, config.ServiceExtension);
+        await Assert.That(config.ServiceExtension).IsEqualTo(expected);
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public static void Config_ToJson_ServiceExtensionWorks(bool expected) {
+    [Test]
+    [Arguments(true)]
+    [Arguments(false)]
+    public async ValueTask Config_ToJson_ServiceExtensionWorks(bool expected) {
         Config config = new() {
             ServiceExtension = expected
         };
         string json = config.ToJson();
-        Assert.Contains($""" "service extension": {(expected ? "true" : "false")}""", json);
+        await Assert.That(json).Contains($""" "service extension": {(expected ? "true" : "false")}""");
     }
 
 
@@ -669,21 +668,21 @@ public static class ConfigTests {
     private const string ACTION = "Action";
 
 
-    [Theory]
-    [InlineData("#function#_#module#_#action#", $"{FUNCTION}_{MODULE}_{ACTION}", 0)]
-    [InlineData("#function##module##action#", $"{FUNCTION}{MODULE}{ACTION}", 0)]
-    [InlineData("test#function##module##action#", $"test{FUNCTION}{MODULE}{ACTION}", 0)]
-    [InlineData("test2", $"test2", 0)]
-    [InlineData("#action#", $"{ACTION}", 0)]
-    [InlineData("", "", 0)]
-    [InlineData("#wrong#", "", 1)]
-    [InlineData("test#", "test", 1)]
-    [InlineData("#test", "", 1)]
-    [InlineData("##", "", 1)]
-    [InlineData("#modole#", "", 1)]
-    [InlineData("test#fonction#", "test", 1)]
-    [InlineData("###", "", 2)]
-    public static void FunctionNamePattern_ParsingWorks(string naming, string expected, int errorCount) {
+    [Test]
+    [Arguments("#function#_#module#_#action#", $"{FUNCTION}_{MODULE}_{ACTION}", 0)]
+    [Arguments("#function##module##action#", $"{FUNCTION}{MODULE}{ACTION}", 0)]
+    [Arguments("test#function##module##action#", $"test{FUNCTION}{MODULE}{ACTION}", 0)]
+    [Arguments("test2", $"test2", 0)]
+    [Arguments("#action#", $"{ACTION}", 0)]
+    [Arguments("", "", 0)]
+    [Arguments("#wrong#", "", 1)]
+    [Arguments("test#", "test", 1)]
+    [Arguments("#test", "", 1)]
+    [Arguments("##", "", 1)]
+    [Arguments("#modole#", "", 1)]
+    [Arguments("test#fonction#", "test", 1)]
+    [Arguments("###", "", 2)]
+    public async ValueTask FunctionNamePattern_ParsingWorks(string naming, string expected, int errorCount) {
         List<Diagnostic> errorList = [];
         FunctionNamePattern functionNaming = new(naming, NameTransform.None, NameTransform.None, NameTransform.None, errorList);
 
@@ -691,52 +690,52 @@ public static class ConfigTests {
         functionNaming.AppendNaming(builder, MODULE, FUNCTION, ACTION);
         string result = builder.ToString();
 
-        Assert.Equal(expected, result);
-        Assert.Equal(errorCount, errorList.Count);
+        await Assert.That(result).IsEqualTo(expected);
+        await Assert.That(errorList.Count).IsEqualTo(errorCount);
     }
 
-    [Theory]
-    [InlineData(NameTransform.None, NameTransform.None, NameTransform.None, "#module##function##action#", $"{MODULE}{FUNCTION}{ACTION}")]
-    [InlineData(NameTransform.None, NameTransform.UpperCase, NameTransform.None, "#function#", "FUNCTION")]
-    [InlineData(NameTransform.LowerCase, NameTransform.None, NameTransform.None, "#module#", "module")]
-    [InlineData(NameTransform.None, NameTransform.FirstUpperCase, NameTransform.None, "#function#", "Function")]
-    [InlineData(NameTransform.FirstLowerCase, NameTransform.None, NameTransform.None, "#module#", "module")]
-    [InlineData(NameTransform.None, NameTransform.None, NameTransform.FirstLowerCase, "#action#", "action")]
-    public static void FunctionNamePattern_TransformWorks(NameTransform module, NameTransform function, NameTransform action, string naming, string expected) {
+    [Test]
+    [Arguments(NameTransform.None, NameTransform.None, NameTransform.None, "#module##function##action#", $"{MODULE}{FUNCTION}{ACTION}")]
+    [Arguments(NameTransform.None, NameTransform.UpperCase, NameTransform.None, "#function#", "FUNCTION")]
+    [Arguments(NameTransform.LowerCase, NameTransform.None, NameTransform.None, "#module#", "module")]
+    [Arguments(NameTransform.None, NameTransform.FirstUpperCase, NameTransform.None, "#function#", "Function")]
+    [Arguments(NameTransform.FirstLowerCase, NameTransform.None, NameTransform.None, "#module#", "module")]
+    [Arguments(NameTransform.None, NameTransform.None, NameTransform.FirstLowerCase, "#action#", "action")]
+    public async ValueTask FunctionNamePattern_TransformWorks(NameTransform module, NameTransform function, NameTransform action, string naming, string expected) {
         FunctionNamePattern functionNaming = new(naming, module, function, action, null!);
 
         StringBuilder builder = new();
         functionNaming.AppendNaming(builder, MODULE, FUNCTION, ACTION);
         string result = builder.ToString();
 
-        Assert.Equal(expected, result);
+        await Assert.That(result).IsEqualTo(expected);
     }
 
-    [Fact]
-    public static void FunctionNamePattern_MissingActionWarning() {
+    [Test]
+    public async ValueTask FunctionNamePattern_MissingActionWarning() {
         const string JSON = """{ "invoke function": { "sync enabled": true, "trysync enabled": true, "async enabled": true } } """;
         Config config = new(GenerateSourceTextExtension.CONFIG_FOLDER_PATH, JSON);
-        Assert.Single(config.ErrorList);
-        Assert.Equal("malformed config: '[invoke function].[name pattern].[pattern]' should contain '#action#' when 2 or more method types are enabled, otherwise it leads to duplicate method naming", config.ErrorList[0].GetMessage());
+        await Assert.That(config.ErrorList).HasSingleItem();
+        await Assert.That(config.ErrorList[0].GetMessage()).IsEqualTo("malformed config: '[invoke function].[name pattern].[pattern]' should contain '#action#' when 2 or more method types are enabled, otherwise it leads to duplicate method naming");
     }
 
 
-    [Theory]
-    [InlineData("Preload#module#", $"Preload{MODULE}", 0)]
-    [InlineData("#module#", $"{MODULE}", 0)]
-    [InlineData("#module##module##module#", $"{MODULE}{MODULE}{MODULE}", 0)]
-    [InlineData("test2", $"test2", 0)]
-    [InlineData("", "", 0)]
-    [InlineData("#wrong#", "", 1)]
-    [InlineData("#function#", "", 1)]
-    [InlineData("#action#", "", 1)]
-    [InlineData("test#", "test", 1)]
-    [InlineData("#test", "", 1)]
-    [InlineData("##", "", 1)]
-    [InlineData("#modole#", "", 1)]
-    [InlineData("test#function#", "test", 1)]
-    [InlineData("###", "", 2)]
-    public static void PreloadNamePattern_ParsingWorks(string naming, string expected, int errorCount) {
+    [Test]
+    [Arguments("Preload#module#", $"Preload{MODULE}", 0)]
+    [Arguments("#module#", $"{MODULE}", 0)]
+    [Arguments("#module##module##module#", $"{MODULE}{MODULE}{MODULE}", 0)]
+    [Arguments("test2", $"test2", 0)]
+    [Arguments("", "", 0)]
+    [Arguments("#wrong#", "", 1)]
+    [Arguments("#function#", "", 1)]
+    [Arguments("#action#", "", 1)]
+    [Arguments("test#", "test", 1)]
+    [Arguments("#test", "", 1)]
+    [Arguments("##", "", 1)]
+    [Arguments("#modole#", "", 1)]
+    [Arguments("test#function#", "test", 1)]
+    [Arguments("###", "", 2)]
+    public async ValueTask PreloadNamePattern_ParsingWorks(string naming, string expected, int errorCount) {
         List<Diagnostic> errorList = [];
         ModuleNamePattern preLoadNaming = new(naming, NameTransform.None, errorList);
 
@@ -744,23 +743,23 @@ public static class ConfigTests {
         preLoadNaming.AppendNaming(builder, MODULE);
         string result = builder.ToString();
 
-        Assert.Equal(expected, result);
-        Assert.Equal(errorCount, errorList.Count);
+        await Assert.That(result).IsEqualTo(expected);
+        await Assert.That(errorList.Count).IsEqualTo(errorCount);
     }
 
-    [Theory]
-    [InlineData(NameTransform.None, "#module##module##module#", $"{MODULE}{MODULE}{MODULE}")]
-    [InlineData(NameTransform.UpperCase, "#module#", "MODULE")]
-    [InlineData(NameTransform.LowerCase, "#module#", "module")]
-    [InlineData(NameTransform.FirstLowerCase, "#module#", "module")]
-    public static void PreloadNamePattern_TransformWorks(NameTransform module, string naming, string expected) {
+    [Test]
+    [Arguments(NameTransform.None, "#module##module##module#", $"{MODULE}{MODULE}{MODULE}")]
+    [Arguments(NameTransform.UpperCase, "#module#", "MODULE")]
+    [Arguments(NameTransform.LowerCase, "#module#", "module")]
+    [Arguments(NameTransform.FirstLowerCase, "#module#", "module")]
+    public async ValueTask PreloadNamePattern_TransformWorks(NameTransform module, string naming, string expected) {
         ModuleNamePattern preLoadNaming = new(naming, module, null!);
 
         StringBuilder builder = new();
         preLoadNaming.AppendNaming(builder, MODULE);
         string result = builder.ToString();
 
-        Assert.Equal(expected, result);
+        await Assert.That(result).IsEqualTo(expected);
     }
 
     #endregion

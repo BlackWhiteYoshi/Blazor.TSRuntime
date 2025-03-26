@@ -3,9 +3,9 @@ using System.Collections.Immutable;
 
 namespace TSRuntime.Tests;
 
-public static class GeneratorSummaryTests {
-    [Fact]
-    public static Task SummaryOnly() {
+public sealed class GeneratorSummaryTests {
+    [Test]
+    public async ValueTask SummaryOnly() {
         const string jsonConfig = """{}""";
         const string moduleContent = """
             /**
@@ -17,15 +17,15 @@ public static class GeneratorSummaryTests {
 
         (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/module.d.ts", moduleContent);
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
-        Assert.Equal(4, result.Length);
+        await Assert.That(result.Length).IsEqualTo(4);
         string itsRuntimeModule = result[2];
-        return Verify(itsRuntimeModule);
+        await Verify(itsRuntimeModule);
     }
 
-    [Fact]
-    public static Task RemarksOnly() {
+    [Test]
+    public async ValueTask RemarksOnly() {
         const string jsonConfig = """{}""";
         const string moduleContent = """
             /**
@@ -37,15 +37,15 @@ public static class GeneratorSummaryTests {
 
         (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/module.d.ts", moduleContent);
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
-        Assert.Equal(4, result.Length);
+        await Assert.That(result.Length).IsEqualTo(4);
         string itsRuntimeModule = result[2];
-        return Verify(itsRuntimeModule);
+        await Verify(itsRuntimeModule);
     }
 
-    [Fact]
-    public static Task ParamOnly() {
+    [Test]
+    public async ValueTask ParamOnly() {
         const string jsonConfig = """{}""";
         const string moduleContent = """
             /**
@@ -57,15 +57,15 @@ public static class GeneratorSummaryTests {
 
         (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/module.d.ts", moduleContent);
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
-        Assert.Equal(4, result.Length);
+        await Assert.That(result.Length).IsEqualTo(4);
         string itsRuntimeModule = result[2];
-        return Verify(itsRuntimeModule);
+        await Verify(itsRuntimeModule);
     }
 
-    [Fact]
-    public static Task ParamOnly_JSDoc() {
+    [Test]
+    public async ValueTask ParamOnly_JSDoc() {
         const string jsonConfig = """{}""";
         const string moduleContent = """
             /**
@@ -77,15 +77,15 @@ public static class GeneratorSummaryTests {
 
         (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/module.js", moduleContent);
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
-        Assert.Equal(4, result.Length);
+        await Assert.That(result.Length).IsEqualTo(4);
         string itsRuntimeModule = result[2];
-        return Verify(itsRuntimeModule);
+        await Verify(itsRuntimeModule);
     }
 
-    [Fact]
-    public static Task ReturnsOnly() {
+    [Test]
+    public async ValueTask ReturnsOnly() {
         const string jsonConfig = """{}""";
         const string moduleContent = """
             /**
@@ -97,15 +97,15 @@ public static class GeneratorSummaryTests {
 
         (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/module.d.ts", moduleContent);
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
-        Assert.Equal(4, result.Length);
+        await Assert.That(result.Length).IsEqualTo(4);
         string itsRuntimeModule = result[2];
-        return Verify(itsRuntimeModule);
+        await Verify(itsRuntimeModule);
     }
 
-    [Fact]
-    public static Task ReturnsOnly_JSDoc() {
+    [Test]
+    public async ValueTask ReturnsOnly_JSDoc() {
         const string jsonConfig = """{}""";
         const string moduleContent = """
             /**
@@ -117,16 +117,16 @@ public static class GeneratorSummaryTests {
 
         (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/module.js", moduleContent);
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
-        Assert.Equal(4, result.Length);
+        await Assert.That(result.Length).IsEqualTo(4);
         string itsRuntimeModule = result[2];
-        return Verify(itsRuntimeModule);
+        await Verify(itsRuntimeModule);
     }
 
 
-    [Fact]
-    public static Task SummaryAndRemarksAndParamAndReturns() {
+    [Test]
+    public async ValueTask SummaryAndRemarksAndParamAndReturns() {
         const string jsonConfig = """{}""";
         const string moduleContent = """
             /**
@@ -144,15 +144,15 @@ public static class GeneratorSummaryTests {
 
         (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/module.d.ts", moduleContent);
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
-        Assert.Equal(4, result.Length);
+        await Assert.That(result.Length).IsEqualTo(4);
         string itsRuntimeModule = result[2];
-        return Verify(itsRuntimeModule);
+        await Verify(itsRuntimeModule);
     }
 
-    [Fact]
-    public static Task SummaryAndRemarksAndParamAndReturns_JSDocs() {
+    [Test]
+    public async ValueTask SummaryAndRemarksAndParamAndReturns_JSDocs() {
         const string jsonConfig = """{}""";
         const string moduleContent = """
             /**
@@ -170,10 +170,10 @@ public static class GeneratorSummaryTests {
 
         (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/module.js", moduleContent);
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
-        Assert.Equal(4, result.Length);
+        await Assert.That(result.Length).IsEqualTo(4);
         string itsRuntimeModule = result[2];
-        return Verify(itsRuntimeModule);
+        await Verify(itsRuntimeModule);
     }
 }

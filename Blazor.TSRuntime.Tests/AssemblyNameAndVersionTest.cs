@@ -2,10 +2,10 @@
 
 namespace TSRuntime.Tests;
 
-public static class AssemblyNameAndVersionTest {
-    [Fact]
-    public static void AssemblyNameAndVersionMatch() {
-        Assert.Equal(AssemblyInfo.NAME, typeof(TSRuntimeGenerator).Assembly.GetName().Name);
-        Assert.Equal(AssemblyInfo.VERSION, typeof(TSRuntimeGenerator).Assembly.GetName().Version!.ToString()[..^2]);
+public sealed class AssemblyNameAndVersionTest {
+    [Test]
+    public async ValueTask AssemblyNameAndVersionMatch() {
+        await Assert.That(typeof(TSRuntimeGenerator).Assembly.GetName().Name).IsEqualTo(AssemblyInfo.NAME);
+        await Assert.That(typeof(TSRuntimeGenerator).Assembly.GetName().Version!.ToString(3)).IsEqualTo(AssemblyInfo.VERSION);
     }
 }

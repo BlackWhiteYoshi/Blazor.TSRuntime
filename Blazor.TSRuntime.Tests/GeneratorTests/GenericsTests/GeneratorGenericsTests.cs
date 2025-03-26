@@ -3,19 +3,19 @@ using System.Collections.Immutable;
 
 namespace TSRuntime.Tests;
 
-public static class GeneratorGenericsTests {
-    [Fact]
-    public static Task JSGenerics() {
+public sealed class GeneratorGenericsTests {
+    [Test]
+    public async ValueTask JSGenerics() {
         const string jsonConfig = """{}""";
         (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/GenericModule.d.ts", "export function generic<A, B, C>(): A;\n");
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
-        Assert.Equal(4, result.Length);
-        return Verify($"""
+        await Assert.That(result.Length).IsEqualTo(4);
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -36,18 +36,18 @@ public static class GeneratorGenericsTests {
             """);
     }
 
-    [Fact]
-    public static Task JSGenericsConstraint() {
+    [Test]
+    public async ValueTask JSGenericsConstraint() {
         const string jsonConfig = """{}""";
         (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/GenericModule.d.ts", "export function genericKeyofConstraint<Type, Key extends keyof Type>(): void;\n");
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
-        Assert.Equal(4, result.Length);
-        return Verify($"""
+        await Assert.That(result.Length).IsEqualTo(4);
+        await Verify($"""
             ---------
             TSRuntime
             ---------
@@ -68,18 +68,18 @@ public static class GeneratorGenericsTests {
             """);
     }
 
-    [Fact]
-    public static Task JSGenericsAndTypeMap() {
+    [Test]
+    public async ValueTask JSGenericsAndTypeMap() {
         const string jsonConfig = """{}""";
         (string path, string content) module = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/GenericModule.d.ts", "export function genericKeyofConstraint<Type, Key extends keyof Type>(): number;\n");
         string[] result = jsonConfig.GenerateSourceText([module], out _, out ImmutableArray<Diagnostic> diagnostics);
-        Assert.Empty(diagnostics);
+        await Assert.That(diagnostics).IsEmpty();
 
         string tsRuntime = result[0];
         string itsRuntimeCore = result[1];
         string itsRuntimeModule = result[2];
-        Assert.Equal(4, result.Length);
-        return Verify($"""
+        await Assert.That(result.Length).IsEqualTo(4);
+        await Verify($"""
             ---------
             TSRuntime
             ---------

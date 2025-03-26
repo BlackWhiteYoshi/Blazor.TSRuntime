@@ -19,7 +19,7 @@ public static class GenerateSourceTextExtension {
     /// <param name="diagnostics"></param>
     /// <returns></returns>
     public static string[] GenerateSourceText(this string config, (string path, string content)[] input, out Compilation outputCompilation, out ImmutableArray<Diagnostic> diagnostics)
-        => config.GenerateSourceResult(input, out outputCompilation, out diagnostics).Select((GeneratedSourceResult result) => result.SourceText.ToString()).ToArray();
+        => [.. config.GenerateSourceResult(input, out outputCompilation, out diagnostics).Select((GeneratedSourceResult result) => result.SourceText.ToString())];
 
 
     /// <summary>

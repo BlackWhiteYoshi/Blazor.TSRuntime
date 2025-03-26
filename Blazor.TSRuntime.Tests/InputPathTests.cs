@@ -4,13 +4,13 @@ using TSRuntime.Configs;
 
 namespace TSRuntime.Tests;
 
-public static class InputPathTests {
+public sealed class InputPathTests {
     private static readonly (string path, string content) testModule = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/TestModule.d.ts", "export declare function Test(a: number, b: string): number;\n");
     private static readonly (string path, string content) nestedTestModule = ($"{GenerateSourceTextExtension.CONFIG_FOLDER_PATH}/NestedFolder/NestedTestModule.d.ts", "export declare function NestedTest(): void;\n");
 
 
-    [Fact]
-    public static void ParsesEvery_d_ts_File_WhenInputPathEmpty() {
+    [Test]
+    public async ValueTask ParsesEvery_d_ts_File_WhenInputPathEmpty() {
         const string jsonConfig = """
             {
                 "input path": "",
@@ -20,11 +20,11 @@ public static class InputPathTests {
         ImmutableArray<GeneratedSourceResult> result = jsonConfig.GenerateSourceResult([testModule, nestedTestModule], out _, out _);
         IEnumerable<string> hintNames = result.Select((GeneratedSourceResult source) => source.HintName);
 
-        Assert.Equal(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs", "ITSRuntime_TestModule.g.cs", "ITSRuntime_NestedTestModule.g.cs"], hintNames);
+        await Assert.That(hintNames).IsEquivalentTo(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs", "ITSRuntime_TestModule.g.cs", "ITSRuntime_NestedTestModule.g.cs"]);
     }
 
-    [Fact]
-    public static void ParsesEvery_d_ts_File_WhenInputPathSlash() {
+    [Test]
+    public async ValueTask ParsesEvery_d_ts_File_WhenInputPathSlash() {
         const string jsonConfig = """
             {
                 "input path": "/",
@@ -34,11 +34,11 @@ public static class InputPathTests {
         ImmutableArray<GeneratedSourceResult> result = jsonConfig.GenerateSourceResult([testModule, nestedTestModule], out _, out _);
         IEnumerable<string> hintNames = result.Select((GeneratedSourceResult source) => source.HintName);
 
-        Assert.Equal(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs", "ITSRuntime_TestModule.g.cs", "ITSRuntime_NestedTestModule.g.cs"], hintNames);
+        await Assert.That(hintNames).IsEquivalentTo(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs", "ITSRuntime_TestModule.g.cs", "ITSRuntime_NestedTestModule.g.cs"]);
     }
 
-    [Fact]
-    public static void FilterExcludesFolder() {
+    [Test]
+    public async ValueTask FilterExcludesFolder() {
         const string jsonConfig = """
             {
                 "input path": {
@@ -51,11 +51,11 @@ public static class InputPathTests {
         ImmutableArray<GeneratedSourceResult> result = jsonConfig.GenerateSourceResult([testModule, nestedTestModule], out _, out _);
         IEnumerable<string> hintNames = result.Select((GeneratedSourceResult source) => source.HintName);
 
-        Assert.Equal(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs"], hintNames);
+        await Assert.That(hintNames).IsEquivalentTo(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs"]);
     }
 
-    [Fact]
-    public static void FilterExcludesFile() {
+    [Test]
+    public async ValueTask FilterExcludesFile() {
         const string jsonConfig = """
             {
                 "input path": {
@@ -68,11 +68,11 @@ public static class InputPathTests {
         ImmutableArray<GeneratedSourceResult> result = jsonConfig.GenerateSourceResult([testModule, nestedTestModule], out _, out _);
         IEnumerable<string> hintNames = result.Select((GeneratedSourceResult source) => source.HintName);
 
-        Assert.Equal(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs", "ITSRuntime_NestedTestModule.g.cs"], hintNames);
+        await Assert.That(hintNames).IsEquivalentTo(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs", "ITSRuntime_NestedTestModule.g.cs"]);
     }
 
-    [Fact]
-    public static void FilterExcludesFileAndFolder() {
+    [Test]
+    public async ValueTask FilterExcludesFileAndFolder() {
         const string jsonConfig = """
             {
                 "input path": {
@@ -85,11 +85,11 @@ public static class InputPathTests {
         ImmutableArray<GeneratedSourceResult> result = jsonConfig.GenerateSourceResult([testModule, nestedTestModule], out _, out _);
         IEnumerable<string> hintNames = result.Select((GeneratedSourceResult source) => source.HintName);
 
-        Assert.Equal(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs"], hintNames);
+        await Assert.That(hintNames).IsEquivalentTo(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs"]);
     }
 
-    [Fact]
-    public static void MultipleIncludes() {
+    [Test]
+    public async ValueTask MultipleIncludes() {
         const string jsonConfig = """
             {
                 "input path": ["/TestModule.d.ts", "/NestedFolder/NestedTestModule.d.ts"],
@@ -99,11 +99,11 @@ public static class InputPathTests {
         ImmutableArray<GeneratedSourceResult> result = jsonConfig.GenerateSourceResult([testModule, nestedTestModule], out _, out _);
         IEnumerable<string> hintNames = result.Select((GeneratedSourceResult source) => source.HintName);
 
-        Assert.Equal(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs", "ITSRuntime_TestModule.g.cs", "ITSRuntime_NestedTestModule.g.cs"], hintNames);
+        await Assert.That(hintNames).IsEquivalentTo(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs", "ITSRuntime_TestModule.g.cs", "ITSRuntime_NestedTestModule.g.cs"]);
     }
 
-    [Fact]
-    public static void ExcludeFolderDoesNotExcludeFile() {
+    [Test]
+    public async ValueTask ExcludeFolderDoesNotExcludeFile() {
         const string jsonConfig = """
             {
                 "input path": {
@@ -116,11 +116,11 @@ public static class InputPathTests {
         ImmutableArray<GeneratedSourceResult> result = jsonConfig.GenerateSourceResult([testModule, nestedTestModule], out _, out _);
         IEnumerable<string> hintNames = result.Select((GeneratedSourceResult source) => source.HintName);
 
-        Assert.Equal(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs", "ITSRuntime_TestModule.g.cs"], hintNames);
+        await Assert.That(hintNames).IsEquivalentTo(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs", "ITSRuntime_TestModule.g.cs"]);
     }
 
-    [Fact]
-    public static void ExcludesAreScopedToSingle() {
+    [Test]
+    public async ValueTask ExcludesAreScopedToSingle() {
         const string jsonConfig = """
             {
                 "input path": [{
@@ -134,11 +134,11 @@ public static class InputPathTests {
         ImmutableArray<GeneratedSourceResult> result = jsonConfig.GenerateSourceResult([testModule, nestedTestModule], out _, out _);
         IEnumerable<string> hintNames = result.Select((GeneratedSourceResult source) => source.HintName);
 
-        Assert.Equal(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs", "ITSRuntime_TestModule.g.cs", "ITSRuntime_NestedTestModule.g.cs"], hintNames);
+        await Assert.That(hintNames).IsEquivalentTo(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs", "ITSRuntime_TestModule.g.cs", "ITSRuntime_NestedTestModule.g.cs"]);
     }
 
-    [Fact]
-    public static void WrongFilePathIsIgnored() {
+    [Test]
+    public async ValueTask WrongFilePathIsIgnored() {
         const string jsonConfig = """
             {
                 "input path": "/TModule.d.ts",
@@ -148,11 +148,11 @@ public static class InputPathTests {
         ImmutableArray<GeneratedSourceResult> result = jsonConfig.GenerateSourceResult([testModule, nestedTestModule], out _, out _);
         IEnumerable<string> hintNames = result.Select((GeneratedSourceResult source) => source.HintName);
 
-        Assert.Equal(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs"], hintNames);
+        await Assert.That(hintNames).IsEquivalentTo(["TSRuntime.g.cs", "ITSRuntime_Core.g.cs"]);
     }
 
-    [Fact]
-    public static void ModulePath() {
+    [Test]
+    public async ValueTask ModulePath() {
         const string jsonConfig = """
             {
                 "input path":  {
@@ -165,11 +165,11 @@ public static class InputPathTests {
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out _);
         string tsRuntime = result[0];
 
-        Assert.Contains("""_ => siteModule = jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationTokenSource.Token, "/site.js").AsTask()""", tsRuntime);
+        await Assert.That(tsRuntime).Contains("""_ => siteModule = jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationTokenSource.Token, "/site.js").AsTask()""");
     }
 
-    [Fact]
-    public static void ModulePathEmpty() {
+    [Test]
+    public async ValueTask ModulePathEmpty() {
         const string jsonConfig = """
             {
                 "input path":  {
@@ -182,11 +182,11 @@ public static class InputPathTests {
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out _);
         string tsRuntime = result[0];
 
-        Assert.Contains("""_ => Module = jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationTokenSource.Token, "/").AsTask()""", tsRuntime);
+        await Assert.That(tsRuntime).Contains("""_ => Module = jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationTokenSource.Token, "/").AsTask()""");
     }
 
-    [Fact]
-    public static void ModulePathOnlySlash() {
+    [Test]
+    public async ValueTask ModulePathOnlySlash() {
         const string jsonConfig = """
             {
                 "input path":  {
@@ -199,11 +199,11 @@ public static class InputPathTests {
         string[] result = jsonConfig.GenerateSourceText([testModule, nestedTestModule], out _, out _);
         string tsRuntime = result[0];
 
-        Assert.Contains("""_ => Module = jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationTokenSource.Token, "/").AsTask()""", tsRuntime);
+        await Assert.That(tsRuntime).Contains("""_ => Module = jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationTokenSource.Token, "/").AsTask()""");
     }
 
-    [Fact]
-    public static void IncludeFolderWithModulePath_HasConflictingHintNames() {
+    [Test]
+    public async ValueTask IncludeFolderWithModulePath_HasConflictingHintNames() {
         const string jsonConfig = """
             {
                 "input path":  {
@@ -215,6 +215,6 @@ public static class InputPathTests {
             """;
         _ = jsonConfig.GenerateSourceResult([testModule, nestedTestModule], out _, out ImmutableArray<Diagnostic> diagnostics);
 
-        Assert.Single(diagnostics);
+        await Assert.That(diagnostics).HasSingleItem();
     }
 }

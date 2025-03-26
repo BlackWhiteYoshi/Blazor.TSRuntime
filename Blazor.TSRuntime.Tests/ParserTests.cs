@@ -3,144 +3,144 @@ using TSRuntime.Parsing;
 
 namespace TSRuntime.Tests;
 
-public static class ParserTests {
+public sealed class ParserTests {
     #region TSParamter
 
-    [Theory]
-    [InlineData("", "", false)]
-    [InlineData("a", "a", false)]
-    [InlineData("asdf", "asdf", false)]
-    [InlineData("a?", "a", true)]
-    [InlineData("asdf?", "asdf", true)]
-    public static void ParsingParameterName(string input, string name, bool optional) {
+    [Test]
+    [Arguments("", "", false)]
+    [Arguments("a", "a", false)]
+    [Arguments("asdf", "asdf", false)]
+    [Arguments("a?", "a", true)]
+    [Arguments("asdf?", "asdf", true)]
+    public async ValueTask ParsingParameterName(string input, string name, bool optional) {
         TSParameter parameter = new();
         parameter.ParseName(input);
 
-        Assert.Equal(name, parameter.name);
-        Assert.Equal(optional, parameter.optional);
+        await Assert.That(parameter.name).IsEqualTo(name);
+        await Assert.That(parameter.optional).IsEqualTo(optional);
     }
 
-    [Theory]
-    [InlineData("number", "number", false, false, false, false)]
-    [InlineData("string", "string", false, false, false, false)]
-    [InlineData("asdf", "asdf", false, false, false, false)]
+    [Test]
+    [Arguments("number", "number", false, false, false, false)]
+    [Arguments("string", "string", false, false, false, false)]
+    [Arguments("asdf", "asdf", false, false, false, false)]
 
-    [InlineData("number | null", "number", true, false, false, false)]
-    [InlineData("number | undefined", "number", false, false, false, true)]
-    [InlineData("number | null | undefined", "number", true, false, false, true)]
-    [InlineData("number | undefined | null", "number", true, false, false, true)]
-    [InlineData("null | undefined | number", "number", true, false, false, true)]
-    [InlineData("undefined | null | number", "number", true, false, false, true)]
-    [InlineData("null | number | undefined", "number", true, false, false, true)]
-    [InlineData("undefined | number | null", "number", true, false, false, true)]
+    [Arguments("number | null", "number", true, false, false, false)]
+    [Arguments("number | undefined", "number", false, false, false, true)]
+    [Arguments("number | null | undefined", "number", true, false, false, true)]
+    [Arguments("number | undefined | null", "number", true, false, false, true)]
+    [Arguments("null | undefined | number", "number", true, false, false, true)]
+    [Arguments("undefined | null | number", "number", true, false, false, true)]
+    [Arguments("null | number | undefined", "number", true, false, false, true)]
+    [Arguments("undefined | number | null", "number", true, false, false, true)]
 
 
-    [InlineData("number[]", "number", false, true, false, false)]
-    [InlineData("readonly number[]", "number", false, true, false, false)]
-    [InlineData("Array<number>", "number", false, true, false, false)]
-    [InlineData("readonly Array<number>", "number", false, true, false, false)]
-    [InlineData("number[] | null", "number", false, true, true, false)]
-    [InlineData("number[] | undefined", "number", false, true, false, true)]
-    [InlineData("number[] | null | undefined", "number", false, true, true, true)]
-    [InlineData("Array<number> | null", "number", false, true, true, false)]
-    [InlineData("Array<number> | undefined", "number", false, true, false, true)]
-    [InlineData("Array<number> | null | undefined", "number", false, true, true, true)]
+    [Arguments("number[]", "number", false, true, false, false)]
+    [Arguments("readonly number[]", "number", false, true, false, false)]
+    [Arguments("Array<number>", "number", false, true, false, false)]
+    [Arguments("readonly Array<number>", "number", false, true, false, false)]
+    [Arguments("number[] | null", "number", false, true, true, false)]
+    [Arguments("number[] | undefined", "number", false, true, false, true)]
+    [Arguments("number[] | null | undefined", "number", false, true, true, true)]
+    [Arguments("Array<number> | null", "number", false, true, true, false)]
+    [Arguments("Array<number> | undefined", "number", false, true, false, true)]
+    [Arguments("Array<number> | null | undefined", "number", false, true, true, true)]
 
-    [InlineData("(number | null)[]", "number", true, true, false, false)]
-    [InlineData("(number | undefined)[]", "number", true, true, false, false)]
-    [InlineData("(number | null | undefined)[]", "number", true, true, false, false)]
-    [InlineData("(number | null)[] | null", "number", true, true, true, false)]
-    [InlineData("(number | undefined)[] | undefined", "number", true, true, false, true)]
-    [InlineData("(number | null | undefined)[] | null | undefined", "number", true, true, true, true)]
-    [InlineData("readonly (number | null)[] | null", "number", true, true, true, false)]
-    [InlineData("readonly (number | undefined)[] | undefined", "number", true, true, false, true)]
-    [InlineData("readonly (number | null | undefined)[] | null | undefined", "number", true, true, true, true)]
+    [Arguments("(number | null)[]", "number", true, true, false, false)]
+    [Arguments("(number | undefined)[]", "number", true, true, false, false)]
+    [Arguments("(number | null | undefined)[]", "number", true, true, false, false)]
+    [Arguments("(number | null)[] | null", "number", true, true, true, false)]
+    [Arguments("(number | undefined)[] | undefined", "number", true, true, false, true)]
+    [Arguments("(number | null | undefined)[] | null | undefined", "number", true, true, true, true)]
+    [Arguments("readonly (number | null)[] | null", "number", true, true, true, false)]
+    [Arguments("readonly (number | undefined)[] | undefined", "number", true, true, false, true)]
+    [Arguments("readonly (number | null | undefined)[] | null | undefined", "number", true, true, true, true)]
 
-    [InlineData("[number, string]", "[number, string]", false, false, false, false)]
-    [InlineData("readonly [number, string]", "[number, string]", false, false, false, false)]
+    [Arguments("[number, string]", "[number, string]", false, false, false, false)]
+    [Arguments("readonly [number, string]", "[number, string]", false, false, false, false)]
 
-    [InlineData("number  |    null|undefined", "number", true, false, false, true)]
-    [InlineData("readonly     number    [   ]", "number", false, true, false, false)]
-    [InlineData("readonly   Array<   number  >", "number", false, true, false, false)]
-    [InlineData("(   number    |null|     undefined     )   [ ]|null|undefined", "number", true, true, true, true)]
-    public static void ParsingParameterType(string input, string type, bool typeNullable, bool array, bool arrayNullable, bool optional) {
+    [Arguments("number  |    null|undefined", "number", true, false, false, true)]
+    [Arguments("readonly     number    [   ]", "number", false, true, false, false)]
+    [Arguments("readonly   Array<   number  >", "number", false, true, false, false)]
+    [Arguments("(   number    |null|     undefined     )   [ ]|null|undefined", "number", true, true, true, true)]
+    public async ValueTask ParsingParameterType(string input, string type, bool typeNullable, bool array, bool arrayNullable, bool optional) {
         TSParameter parameter = new();
         parameter.ParseType(input);
 
-        Assert.Equal(type, parameter.type);
-        Assert.Equal(typeNullable, parameter.typeNullable);
-        Assert.Equal(array, parameter.array);
-        Assert.Equal(arrayNullable, parameter.arrayNullable);
-        Assert.Equal(optional, parameter.optional);
+        await Assert.That(parameter.type).IsEqualTo(type);
+        await Assert.That(parameter.typeNullable).IsEqualTo(typeNullable);
+        await Assert.That(parameter.array).IsEqualTo(array);
+        await Assert.That(parameter.arrayNullable).IsEqualTo(arrayNullable);
+        await Assert.That(parameter.optional).IsEqualTo(optional);
     }
 
-    [Theory]
-    [InlineData("(str: string) => number", (string[])["string", "number"], false)]
-    [InlineData("() => void", (string[])["void"], false)]
-    [InlineData("(str: string) => Promise<number>", (string[])["string", "number"], true)]
-    [InlineData("(a: boolean, b: number) => void", (string[])["boolean", "number", "void"], false)]
-    [InlineData("(a:boolean,b:number)=>void", (string[])["boolean", "number", "void"], false)]
-    [InlineData("(   a :      boolean ,  b  :   number    ) =>    void", (string[])["boolean", "number", "void"], false)]
-    public static void ParsingParameterTypeCallback(string input, string[] callbackTypes, bool typeCallbackPromise) {
+    [Test]
+    [Arguments("(str: string) => number", (string[])["string", "number"], false)]
+    [Arguments("() => void", (string[])["void"], false)]
+    [Arguments("(str: string) => Promise<number>", (string[])["string", "number"], true)]
+    [Arguments("(a: boolean, b: number) => void", (string[])["boolean", "number", "void"], false)]
+    [Arguments("(a:boolean,b:number)=>void", (string[])["boolean", "number", "void"], false)]
+    [Arguments("(   a :      boolean ,  b  :   number    ) =>    void", (string[])["boolean", "number", "void"], false)]
+    public async ValueTask ParsingParameterTypeCallback(string input, string[] callbackTypes, bool typeCallbackPromise) {
         TSParameter parameter = new();
         parameter.ParseType(input);
 
 
-        Assert.Null(parameter.type);
-        Assert.Equal(callbackTypes.Length, parameter.typeCallback.Length);
+        await Assert.That(parameter.type).IsNull();
+        await Assert.That(parameter.typeCallback.Length).IsEqualTo(callbackTypes.Length);
         for (int i = 0; i < parameter.typeCallback.Length; i++)
-            Assert.Equal(callbackTypes[i], parameter.typeCallback[i].type);
-        Assert.Equal(typeCallbackPromise, parameter.typeCallbackPromise);
+            await Assert.That(parameter.typeCallback[i].type).IsEqualTo(callbackTypes[i]);
+        await Assert.That(parameter.typeCallbackPromise).IsEqualTo(typeCallbackPromise);
     }
 
-    [Fact]
-    public static void ParsingParameterTypeCallbackWithArrayAndNull() {
+    [Test]
+    public async ValueTask ParsingParameterTypeCallbackWithArrayAndNull() {
         TSParameter parameter = new();
         parameter.ParseType("(str: (string | null)[] | null) => void");
 
-        Assert.Null(parameter.type);
-        Assert.False(parameter.typeCallbackPromise);
-        Assert.Equal(2, parameter.typeCallback.Length);
-        Assert.Equal("void", parameter.typeCallback[1].type);
+        await Assert.That(parameter.type).IsNull();
+        await Assert.That(parameter.typeCallbackPromise).IsFalse();
+        await Assert.That(parameter.typeCallback.Length).IsEqualTo(2);
+        await Assert.That(parameter.typeCallback[1].type).IsEqualTo("void");
 
-        Assert.Equal("string", parameter.typeCallback[0].type);
-        Assert.True(parameter.typeCallback[0].typeNullable);
-        Assert.True(parameter.typeCallback[0].array);
-        Assert.True(parameter.typeCallback[0].arrayNullable);
+        await Assert.That(parameter.typeCallback[0].type).IsEqualTo("string");
+        await Assert.That(parameter.typeCallback[0].typeNullable).IsTrue();
+        await Assert.That(parameter.typeCallback[0].array).IsTrue();
+        await Assert.That(parameter.typeCallback[0].arrayNullable).IsTrue();
     }
 
-    [Fact]
-    public static void ParsingParameterTypeCallbackNested() {
+    [Test]
+    public async ValueTask ParsingParameterTypeCallbackNested() {
         TSParameter parameter = new();
         parameter.ParseType("(str: () => () => number) => () => void");
 
-        Assert.Null(parameter.type);
-        Assert.False(parameter.typeCallbackPromise);
+        await Assert.That(parameter.type).IsNull();
+        await Assert.That(parameter.typeCallbackPromise).IsFalse();
 
-        Assert.Equal(2, parameter.typeCallback.Length);
+        await Assert.That(parameter.typeCallback.Length).IsEqualTo(2);
 
         {
             TSParameter nestedParameter = parameter.typeCallback[0];
-            Assert.Null(nestedParameter.type);
-            Assert.False(nestedParameter.typeCallbackPromise);
+            await Assert.That(nestedParameter.type).IsNull();
+            await Assert.That(nestedParameter.typeCallbackPromise).IsFalse();
 
-            Assert.Single(nestedParameter.typeCallback);
+            await Assert.That(nestedParameter.typeCallback).HasSingleItem();
 
             {
                 TSParameter nestednestedParameter = nestedParameter.typeCallback[0];
-                Assert.Null(nestednestedParameter.type);
-                Assert.False(nestednestedParameter.typeCallbackPromise);
-                Assert.Single(nestednestedParameter.typeCallback);
-                Assert.Equal("number", nestednestedParameter.typeCallback[0].type);
+                await Assert.That(nestednestedParameter.type).IsNull();
+                await Assert.That(nestednestedParameter.typeCallbackPromise).IsFalse();
+                await Assert.That(nestednestedParameter.typeCallback).HasSingleItem();
+                await Assert.That(nestednestedParameter.typeCallback[0].type).IsEqualTo("number");
             }
         }
 
         {
             TSParameter nestedParameter = parameter.typeCallback[1];
-            Assert.Null(nestedParameter.type);
-            Assert.False(nestedParameter.typeCallbackPromise);
-            Assert.Single(nestedParameter.typeCallback);
-            Assert.Equal("void", nestedParameter.typeCallback[0].type);
+            await Assert.That(nestedParameter.type).IsNull();
+            await Assert.That(nestedParameter.typeCallbackPromise).IsFalse();
+            await Assert.That(nestedParameter.typeCallback).HasSingleItem();
+            await Assert.That(nestedParameter.typeCallback[0].type).IsEqualTo("void");
         }
     }
 
@@ -149,275 +149,275 @@ public static class ParserTests {
 
     #region TSFunction
 
-    [Theory]
-    [InlineData("export declare function getCookies(): string;", "getCookies", "string", false, (string[])[])]
-    [InlineData("export function asdf(): qwer;", "asdf", "qwer", false, (string[])[])]
-    [InlineData("export function Test(a?: number): void;", "Test", "void", false, (string[])["a"])]
-    [InlineData("export function defaultValueTest(index: [number, string]=[5, '']): void;", "defaultValueTest", "void", false, (string[])["index"])]
-    [InlineData("export function longRunningTask(): Promise<void>;", "longRunningTask", "void", true, (string[])[])]
-    [InlineData("export function longRunningTask2(): Promise<something>;", "longRunningTask2", "something", true, (string[])[])]
-    [InlineData("export function Test(a: number, b: string, c:boolean): void;", "Test", "void", false, (string[])["a", "b", "c"])]
+    [Test]
+    [Arguments("export declare function getCookies(): string;", "getCookies", "string", false, (string[])[])]
+    [Arguments("export function asdf(): qwer;", "asdf", "qwer", false, (string[])[])]
+    [Arguments("export function Test(a?: number): void;", "Test", "void", false, (string[])["a"])]
+    [Arguments("export function defaultValueTest(index: [number, string]=[5, '']): void;", "defaultValueTest", "void", false, (string[])["index"])]
+    [Arguments("export function longRunningTask(): Promise<void>;", "longRunningTask", "void", true, (string[])[])]
+    [Arguments("export function longRunningTask2(): Promise<something>;", "longRunningTask2", "something", true, (string[])[])]
+    [Arguments("export function Test(a: number, b: string, c:boolean): void;", "Test", "void", false, (string[])["a", "b", "c"])]
 
-    [InlineData("export    declare  function   getCookies  (    )    :string;", "getCookies", "string", false, (string[])[])]
-    [InlineData("export   function  defaultValueTest (   index:[number, string]   =      [5, '']    ): void;", "defaultValueTest", "void", false, (string[])["index"])]
-    [InlineData("export function Test(a:number,b:       string,c:boolean)", "Test", "void", false, (string[])["a", "b", "c"])]
-    public static void ParsingTSFunction(string input, string name, string returnType, bool promise, string[] paramterNames) {
+    [Arguments("export    declare  function   getCookies  (    )    :string;", "getCookies", "string", false, (string[])[])]
+    [Arguments("export   function  defaultValueTest (   index:[number, string]   =      [5, '']    ): void;", "defaultValueTest", "void", false, (string[])["index"])]
+    [Arguments("export function Test(a:number,b:       string,c:boolean)", "Test", "void", false, (string[])["a", "b", "c"])]
+    public async ValueTask ParsingTSFunction(string input, string name, string returnType, bool promise, string[] paramterNames) {
         TSFunction function = TSFunction.ParseFunction(input)!;
 
-        Assert.Equal(name, function.Name);
-        Assert.Equal(returnType, function.ReturnType.type);
-        Assert.Equal(promise, function.ReturnPromise);
-        Assert.Equal(paramterNames.Length, function.ParameterList.Length);
+        await Assert.That(function.Name).IsEqualTo(name);
+        await Assert.That(function.ReturnType.type).IsEqualTo(returnType);
+        await Assert.That(function.ReturnPromise).IsEqualTo(promise);
+        await Assert.That(function.ParameterList.Length).IsEqualTo(paramterNames.Length);
         for (int i = 0; i < paramterNames.Length; i++)
-            Assert.Equal(paramterNames[i], function.ParameterList[i].name);
+            await Assert.That(function.ParameterList[i].name).IsEqualTo(paramterNames[i]);
     }
 
-    [Theory]
-    [InlineData("export function generic1<T>(): void;", "generic1", (string[])["T"])]
-    [InlineData("export function generic3<Type, Key, Value>(): void;", "generic3", (string[])["Type", "Key", "Value"])]
-    [InlineData("export function genericConstraint<Type extends HTMLElement>(): void;", "genericConstraint", (string[])["Type"])]
-    [InlineData("export function genericConstraint<Type extends HTMLElement, Key>(): void;", "genericConstraint", (string[])["Type", "Key"])]
-    [InlineData("export function genericConstraintGeneric<Type extends Map<K, V>>(): void;", "genericConstraintGeneric", (string[])["Type"])]
-    [InlineData("export function genericKeyofConstraint<Type, Key extends keyof Type>(): void;", "genericKeyofConstraint", (string[])["Type", "Key"])]
-    public static void ParsingTSGenericFunction(string input, string name, string[] generics) {
+    [Test]
+    [Arguments("export function generic1<T>(): void;", "generic1", (string[])["T"])]
+    [Arguments("export function generic3<Type, Key, Value>(): void;", "generic3", (string[])["Type", "Key", "Value"])]
+    [Arguments("export function genericConstraint<Type extends HTMLElement>(): void;", "genericConstraint", (string[])["Type"])]
+    [Arguments("export function genericConstraint<Type extends HTMLElement, Key>(): void;", "genericConstraint", (string[])["Type", "Key"])]
+    [Arguments("export function genericConstraintGeneric<Type extends Map<K, V>>(): void;", "genericConstraintGeneric", (string[])["Type"])]
+    [Arguments("export function genericKeyofConstraint<Type, Key extends keyof Type>(): void;", "genericKeyofConstraint", (string[])["Type", "Key"])]
+    public async ValueTask ParsingTSGenericFunction(string input, string name, string[] generics) {
         TSFunction function = TSFunction.ParseFunction(input)!;
 
-        Assert.Equal(name, function.Name);
-        Assert.Equal(generics.Length, function.Generics.Length);
+        await Assert.That(function.Name).IsEqualTo(name);
+        await Assert.That(function.Generics.Length).IsEqualTo(generics.Length);
         for (int i = 0; i < function.Generics.Length; i++)
-            Assert.Equal(generics[i], function.Generics[i].type);
+            await Assert.That(function.Generics[i].type).IsEqualTo(generics[i]);
     }
 
 
-    [Theory]
-    [InlineData("export function example() { }", "example", (string[])[])]
-    [InlineData("export   function  example2  (  ){}", "example2", (string[])[])]
-    [InlineData("export function exampleVar(   myNumber  ){}", "exampleVar", (string[])["myNumber"])]
-    [InlineData("export function exampleVar2(   myNumber  ,  str   ){}", "exampleVar2", (string[])["myNumber", "str"])]
-    [InlineData("export function defaultValueTest(myName = 5) { }", "defaultValueTest", (string[])["myName"])]
-    [InlineData("export function defaultValueTest(myName='wert') { }", "defaultValueTest", (string[])["myName"])]
-    [InlineData("export function defaultValueTest(myName      =  3.21) { }", "defaultValueTest", (string[])["myName"])]
-    public static void ParsingJSFunction(string input, string name, string[] paramterNames) {
+    [Test]
+    [Arguments("export function example() { }", "example", (string[])[])]
+    [Arguments("export   function  example2  (  ){}", "example2", (string[])[])]
+    [Arguments("export function exampleVar(   myNumber  ){}", "exampleVar", (string[])["myNumber"])]
+    [Arguments("export function exampleVar2(   myNumber  ,  str   ){}", "exampleVar2", (string[])["myNumber", "str"])]
+    [Arguments("export function defaultValueTest(myName = 5) { }", "defaultValueTest", (string[])["myName"])]
+    [Arguments("export function defaultValueTest(myName='wert') { }", "defaultValueTest", (string[])["myName"])]
+    [Arguments("export function defaultValueTest(myName      =  3.21) { }", "defaultValueTest", (string[])["myName"])]
+    public async ValueTask ParsingJSFunction(string input, string name, string[] paramterNames) {
         TSFunction function = TSFunction.ParseFunction(input)!;
 
-        Assert.Equal(name, function.Name);
-        Assert.Equal(new TSParameter() { name = "ReturnValue", type = "void" }, function.ReturnType);
+        await Assert.That(function.Name).IsEqualTo(name);
+        await Assert.That(function.ReturnType).IsEqualTo(new TSParameter() { name = "ReturnValue", type = "void" });
 
-        Assert.Equal(paramterNames.Length, function.ParameterList.Length);
+        await Assert.That(function.ParameterList.Length).IsEqualTo(paramterNames.Length);
         for (int i = 0; i < paramterNames.Length; i++)
-            Assert.Equal(paramterNames[i], function.ParameterList[i].name);
+            await Assert.That(function.ParameterList[i].name).IsEqualTo(paramterNames[i]);
     }
 
 
-    [Theory]
-    [InlineData("\n\n", "")]
-    [InlineData("/**/\n", "")]
-    [InlineData("/***/\n", "")]
-    [InlineData("/**example*/\n", "example")]
-    [InlineData("/**   example  */\n", "example")]
-    [InlineData("/**  * example  */\n", "example")]
-    [InlineData("/**  ** example  */\n", "* example")]
-    [InlineData("/**\n*\n* example  */\n", "example")]
-    [InlineData("/** example\n */\n", "example")]
-    [InlineData("/**\n * a legit example\n * some more text\n *\n * some note\n */\n", "a legit example<br/>some more text<br/><br/>some note")]
-    public static void ParsingSummary(string input, string summary) {
+    [Test]
+    [Arguments("\n\n", "")]
+    [Arguments("/**/\n", "")]
+    [Arguments("/***/\n", "")]
+    [Arguments("/**example*/\n", "example")]
+    [Arguments("/**   example  */\n", "example")]
+    [Arguments("/**  * example  */\n", "example")]
+    [Arguments("/**  ** example  */\n", "* example")]
+    [Arguments("/**\n*\n* example  */\n", "example")]
+    [Arguments("/** example\n */\n", "example")]
+    [Arguments("/**\n * a legit example\n * some more text\n *\n * some note\n */\n", "a legit example<br/>some more text<br/><br/>some note")]
+    public async ValueTask ParsingSummary(string input, string summary) {
         const string FUNCTION_DECLARATION = "export function test(): void;";
         TSFunction function = TSFunction.ParseFunction(FUNCTION_DECLARATION)!;
         function.ParseSummary($"{input}{FUNCTION_DECLARATION}", input.Length);
 
-        Assert.Equal(summary, function.Summary);
+        await Assert.That(function.Summary).IsEqualTo(summary);
     }
 
-    [Theory]
-    [InlineData("/**@remarks*/\n", "", "")]
-    [InlineData("/**@remarks example*/\n", "", "example")]
-    [InlineData("/**summaryExample @remarks example*/\n", "summaryExample", "example")]
-    [InlineData("/**summaryExample\n * @remarks example*/\n", "summaryExample", "example")]
-    [InlineData("/**summaryExample\n * @unkownT example*/\n", "summaryExample", "")]
-    [InlineData("/**summaryExample\n * @unkownT example@remarks ex*/\n", "summaryExample", "ex")]
-    [InlineData("/**summaryExample\n * @unkownT @remarks ex*/\n", "summaryExample", "ex")]
-    [InlineData("/**\n * a legit example\n * some more text\n *\n * @remarks example\n */\n", "a legit example<br/>some more text", "example")]
-    public static void ParsingSummaryWithTag(string input, string summary, string remarks) {
+    [Test]
+    [Arguments("/**@remarks*/\n", "", "")]
+    [Arguments("/**@remarks example*/\n", "", "example")]
+    [Arguments("/**summaryExample @remarks example*/\n", "summaryExample", "example")]
+    [Arguments("/**summaryExample\n * @remarks example*/\n", "summaryExample", "example")]
+    [Arguments("/**summaryExample\n * @unkownT example*/\n", "summaryExample", "")]
+    [Arguments("/**summaryExample\n * @unkownT example@remarks ex*/\n", "summaryExample", "ex")]
+    [Arguments("/**summaryExample\n * @unkownT @remarks ex*/\n", "summaryExample", "ex")]
+    [Arguments("/**\n * a legit example\n * some more text\n *\n * @remarks example\n */\n", "a legit example<br/>some more text", "example")]
+    public async ValueTask ParsingSummaryWithTag(string input, string summary, string remarks) {
         const string FUNCTION_DECLARATION = "export function test(): void;";
         TSFunction function = TSFunction.ParseFunction(FUNCTION_DECLARATION)!;
         function.ParseSummary($"{input}{FUNCTION_DECLARATION}", input.Length);
 
-        Assert.Equal(summary, function.Summary);
-        Assert.Equal(remarks, function.Remarks);
+        await Assert.That(function.Summary).IsEqualTo(summary);
+        await Assert.That(function.Remarks).IsEqualTo(remarks);
     }
 
-    [Theory]
-    [InlineData("/**@param*/\n", "", "", "")]
-    [InlineData("/**@param integer - example*/\n", "", "example", "")]
-    [InlineData("/**summaryExample @param integer example*/\n", "summaryExample", "example", "")]
-    [InlineData("/**summaryExample\n * @param integer - example*/\n", "summaryExample", "example", "")]
-    [InlineData("/**summaryExample\n * @param */\n", "summaryExample", "", "")]
-    [InlineData("/**summaryExample\n * @param example*/\n", "summaryExample", "", "")]
-    [InlineData("/**summaryExample\n * @param example @param integer ex*/\n", "summaryExample", "ex", "")]
-    [InlineData("/**summaryExample\n * @returns nothing*/\n", "summaryExample", "", "nothing")]
-    [InlineData("/**summaryExample\n * @param example @returns nothing*/\n", "summaryExample", "", "nothing")]
-    [InlineData("/**summaryExample\n * @param integer a\n * @returns nothing*/\n", "summaryExample", "a", "nothing")]
-    [InlineData("/**\n * a legit example\n * some more text\n *\n * @param integer - example\n */\n", "a legit example<br/>some more text", "example", "")]
-    public static void ParsingSummaryWithParamTag(string input, string summary, string parameter, string returns) {
+    [Test]
+    [Arguments("/**@param*/\n", "", "", "")]
+    [Arguments("/**@param integer - example*/\n", "", "example", "")]
+    [Arguments("/**summaryExample @param integer example*/\n", "summaryExample", "example", "")]
+    [Arguments("/**summaryExample\n * @param integer - example*/\n", "summaryExample", "example", "")]
+    [Arguments("/**summaryExample\n * @param */\n", "summaryExample", "", "")]
+    [Arguments("/**summaryExample\n * @param example*/\n", "summaryExample", "", "")]
+    [Arguments("/**summaryExample\n * @param example @param integer ex*/\n", "summaryExample", "ex", "")]
+    [Arguments("/**summaryExample\n * @returns nothing*/\n", "summaryExample", "", "nothing")]
+    [Arguments("/**summaryExample\n * @param example @returns nothing*/\n", "summaryExample", "", "nothing")]
+    [Arguments("/**summaryExample\n * @param integer a\n * @returns nothing*/\n", "summaryExample", "a", "nothing")]
+    [Arguments("/**\n * a legit example\n * some more text\n *\n * @param integer - example\n */\n", "a legit example<br/>some more text", "example", "")]
+    public async ValueTask ParsingSummaryWithParamTag(string input, string summary, string parameter, string returns) {
         const string FUNCTION_DECLARATION = "export function test(integer: number): void;";
         TSFunction function = TSFunction.ParseFunction(FUNCTION_DECLARATION)!;
         function.ParseSummary($"{input}{FUNCTION_DECLARATION}", input.Length);
 
-        Assert.Equal(summary, function.Summary);
-        Assert.Equal(parameter, function.ParameterList[0].summary);
-        Assert.Equal(returns, function.ReturnType.summary);
+        await Assert.That(function.Summary).IsEqualTo(summary);
+        await Assert.That(function.ParameterList[0].summary).IsEqualTo(parameter);
+        await Assert.That(function.ReturnType.summary).IsEqualTo(returns);
     }
 
-    [Theory]
-    [InlineData("/**@typeparam missing type example*/\n", "", false, "", "")]
-    [InlineData("/**summaryExample\n * @typeparam missing type example*/\n", "summaryExample", false, "", "")]
-    [InlineData("/**summaryExample\n * @typeparam {a}*/\n", "summaryExample", true, "a", "")]
-    [InlineData("/**summaryExample\n * @typeparam {T}*/\n", "summaryExample", true, "T", "")]
-    [InlineData("/**summaryExample\n * @typeparam {A} upper letter A*/\n", "summaryExample", true, "A", "upper letter A")]
-    public static void ParsingSummaryWithTypeParamTag(string input, string summary, bool success, string typeParameter, string typeParameterDescription) {
+    [Test]
+    [Arguments("/**@typeparam missing type example*/\n", "", false, "", "")]
+    [Arguments("/**summaryExample\n * @typeparam missing type example*/\n", "summaryExample", false, "", "")]
+    [Arguments("/**summaryExample\n * @typeparam {a}*/\n", "summaryExample", true, "a", "")]
+    [Arguments("/**summaryExample\n * @typeparam {T}*/\n", "summaryExample", true, "T", "")]
+    [Arguments("/**summaryExample\n * @typeparam {A} upper letter A*/\n", "summaryExample", true, "A", "upper letter A")]
+    public async ValueTask ParsingSummaryWithTypeParamTag(string input, string summary, bool success, string typeParameter, string typeParameterDescription) {
         const string FUNCTION_DECLARATION = "export function test<T>(): void;";
         TSFunction function = TSFunction.ParseFunction(FUNCTION_DECLARATION)!;
         function.ParseSummary($"{input}{FUNCTION_DECLARATION}", input.Length);
 
-        Assert.Equal(summary, function.Summary);
+        await Assert.That(function.Summary).IsEqualTo(summary);
 
         if (success) {
-            Assert.Equal(2, function.Generics.Length);
-            Assert.Equal(typeParameter, function.Generics[1].type);
-            Assert.Equal(typeParameterDescription, function.Generics[1].description);
+            await Assert.That(function.Generics.Length).IsEqualTo(2);
+            await Assert.That(function.Generics[1].type).IsEqualTo(typeParameter);
+            await Assert.That(function.Generics[1].description).IsEqualTo(typeParameterDescription);
         }
         else
-            Assert.Single(function.Generics);
+            await Assert.That(function.Generics).HasSingleItem();
     }
 
-    [Theory]
-    [InlineData("/**@param {number}*/\n", "", "object", "", "void", "")]
-    [InlineData("/**@param {number} integer - example*/\n", "", "number", "example", "void", "")]
-    [InlineData("/**summaryExample @param {number} integer example*/\n", "summaryExample", "number", "example", "void", "")]
-    [InlineData("/**summaryExample\n * @param {number} integer - example*/\n", "summaryExample", "number", "example", "void", "")]
-    [InlineData("/**summaryExample\n * @param {  number   } integer - example*/\n", "summaryExample", "number", "example", "void", "")]
-    [InlineData("/**summaryExample\n * @param {number} */\n", "summaryExample", "object", "", "void", "")]
-    [InlineData("/**summaryExample\n * @param {number} example*/\n", "summaryExample", "object", "", "void", "")]
-    [InlineData("/**summaryExample\n * @param {number} example @param integer ex*/\n", "summaryExample", "object", "ex", "void", "")]
-    [InlineData("/**summaryExample\n * @returns {number} nothing*/\n", "summaryExample", "object", "", "number", "nothing")]
-    [InlineData("/**summaryExample\n * @returns {Promise<number>} nothing*/\n", "summaryExample", "object", "", "number", "nothing")]
-    [InlineData("/**summaryExample\n * @param {number} example @returns {string} nothing*/\n", "summaryExample", "object", "", "string", "nothing")]
-    [InlineData("/**summaryExample\n * @param {number} integer a\n * @returns {string} nothing*/\n", "summaryExample", "number", "a", "string", "nothing")]
-    [InlineData("/**\n * a legit example\n * some more text\n *\n * @param {number} integer - example\n */\n", "a legit example<br/>some more text", "number", "example", "void", "")]
-    public static void ParsingSummaryWithTypes(string input, string summary, string paramterType, string parameterSummary, string returnType, string returnSummary) {
+    [Test]
+    [Arguments("/**@param {number}*/\n", "", "object", "", "void", "")]
+    [Arguments("/**@param {number} integer - example*/\n", "", "number", "example", "void", "")]
+    [Arguments("/**summaryExample @param {number} integer example*/\n", "summaryExample", "number", "example", "void", "")]
+    [Arguments("/**summaryExample\n * @param {number} integer - example*/\n", "summaryExample", "number", "example", "void", "")]
+    [Arguments("/**summaryExample\n * @param {  number   } integer - example*/\n", "summaryExample", "number", "example", "void", "")]
+    [Arguments("/**summaryExample\n * @param {number} */\n", "summaryExample", "object", "", "void", "")]
+    [Arguments("/**summaryExample\n * @param {number} example*/\n", "summaryExample", "object", "", "void", "")]
+    [Arguments("/**summaryExample\n * @param {number} example @param integer ex*/\n", "summaryExample", "object", "ex", "void", "")]
+    [Arguments("/**summaryExample\n * @returns {number} nothing*/\n", "summaryExample", "object", "", "number", "nothing")]
+    [Arguments("/**summaryExample\n * @returns {Promise<number>} nothing*/\n", "summaryExample", "object", "", "number", "nothing")]
+    [Arguments("/**summaryExample\n * @param {number} example @returns {string} nothing*/\n", "summaryExample", "object", "", "string", "nothing")]
+    [Arguments("/**summaryExample\n * @param {number} integer a\n * @returns {string} nothing*/\n", "summaryExample", "number", "a", "string", "nothing")]
+    [Arguments("/**\n * a legit example\n * some more text\n *\n * @param {number} integer - example\n */\n", "a legit example<br/>some more text", "number", "example", "void", "")]
+    public async ValueTask ParsingSummaryWithTypes(string input, string summary, string paramterType, string parameterSummary, string returnType, string returnSummary) {
         const string FUNCTION_DECLARATION = "export function test(integer): void;";
         TSFunction function = TSFunction.ParseFunction(FUNCTION_DECLARATION)!;
         function.ParseSummary($"{input}{FUNCTION_DECLARATION}", input.Length);
 
-        Assert.Equal(summary, function.Summary);
-        Assert.Equal(paramterType, function.ParameterList[0].type);
-        Assert.Equal(parameterSummary, function.ParameterList[0].summary);
-        Assert.Equal(returnType, function.ReturnType.type);
-        Assert.Equal(returnSummary, function.ReturnType.summary);
+        await Assert.That(function.Summary).IsEqualTo(summary);
+        await Assert.That(function.ParameterList[0].type).IsEqualTo(paramterType);
+        await Assert.That(function.ParameterList[0].summary).IsEqualTo(parameterSummary);
+        await Assert.That(function.ReturnType.type).IsEqualTo(returnType);
+        await Assert.That(function.ReturnType.summary).IsEqualTo(returnSummary);
     }
 
-    [Theory]
-    [InlineData("/** @param {string} str */\n", false)]
-    [InlineData("/** @param {string} [str] */\n", true)]
-    public static void ParsingSummaryOptional(string input, bool optional) {
+    [Test]
+    [Arguments("/** @param {string} str */\n", false)]
+    [Arguments("/** @param {string} [str] */\n", true)]
+    public async ValueTask ParsingSummaryOptional(string input, bool optional) {
         const string FUNCTION_DECLARATION = "export function test(str): void;";
         TSFunction function = TSFunction.ParseFunction(FUNCTION_DECLARATION)!;
         function.ParseSummary($"{input}{FUNCTION_DECLARATION}", input.Length);
 
-        Assert.Single(function.ParameterList);
-        Assert.Equal("str", function.ParameterList[0].name);
-        Assert.Equal("string", function.ParameterList[0].type);
-        Assert.Equal(optional, function.ParameterList[0].optional);
+        await Assert.That(function.ParameterList).HasSingleItem();
+        await Assert.That(function.ParameterList[0].name).IsEqualTo("str");
+        await Assert.That(function.ParameterList[0].type).IsEqualTo("string");
+        await Assert.That(function.ParameterList[0].optional).IsEqualTo(optional);
     }
 
 
-    [Fact]
-    public static void ParsingTSFunctionWithCallback() {
+    [Test]
+    public async ValueTask ParsingTSFunctionWithCallback() {
         TSFunction function = TSFunction.ParseFunction("export function asdf(a: () => qwer): yxcv;")!;
 
-        Assert.Equal("asdf", function.Name);
-        Assert.Equal("yxcv", function.ReturnType.type);
+        await Assert.That(function.Name).IsEqualTo("asdf");
+        await Assert.That(function.ReturnType.type).IsEqualTo("yxcv");
 
-        Assert.Single(function.ParameterList);
+        await Assert.That(function.ParameterList).HasSingleItem();
         {
             TSParameter parameter = function.ParameterList[0];
-            Assert.Null(parameter.type);
+            await Assert.That(parameter.type).IsNull();
 
-            Assert.Single(parameter.typeCallback);
+            await Assert.That(parameter.typeCallback).HasSingleItem();
             {
                 TSParameter callback = parameter.typeCallback[0];
-                Assert.Equal("qwer", callback.type);
+                await Assert.That(callback.type).IsEqualTo("qwer");
             }
         }
 
-        Assert.True(function.HasCallback);
+        await Assert.That(function.HasCallback).IsTrue();
     }
 
-    [Fact]
-    public static void ParsingSummaryWithCallback() {
+    [Test]
+    public async ValueTask ParsingSummaryWithCallback() {
         const string input = "/**\n * @param {() => qwer} a\n * @returns {yxcv}\n */\n";
         TSFunction function = TSFunction.ParseFunction("export function asdf(a) { }")!;
         function.ParseSummary(input, input.Length);
 
-        Assert.Equal("asdf", function.Name);
-        Assert.Equal("yxcv", function.ReturnType.type);
+        await Assert.That(function.Name).IsEqualTo("asdf");
+        await Assert.That(function.ReturnType.type).IsEqualTo("yxcv");
 
-        Assert.Single(function.ParameterList);
+        await Assert.That(function.ParameterList).HasSingleItem();
         {
             TSParameter parameter = function.ParameterList[0];
-            Assert.Null(parameter.type);
+            await Assert.That(parameter.type).IsNull();
 
-            Assert.Single(parameter.typeCallback);
+            await Assert.That(parameter.typeCallback).HasSingleItem();
             {
                 TSParameter callback = parameter.typeCallback[0];
-                Assert.Equal("qwer", callback.type);
+                await Assert.That(callback.type).IsEqualTo("qwer");
             }
         }
 
-        Assert.True(function.HasCallback);
+        await Assert.That(function.HasCallback).IsTrue();
     }
 
 
-    [Fact]
-    public static void ParsingTSFunction_WrongStartReturnsNull() {
+    [Test]
+    public async ValueTask ParsingTSFunction_WrongStartReturnsNull() {
         TSFunction? result = TSFunction.ParseFunction("asdf");
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact]
-    public static void ParsingTSFunction_MissingOpenBracketError() {
+    [Test]
+    public async ValueTask ParsingTSFunction_MissingOpenBracketError() {
         TSFunction? result = TSFunction.ParseFunction("export declare function Example[);");
 
         List<Diagnostic> errorList = [];
         errorList.AddFunctionParseError(result!.Error.descriptor!, "Example_Module", 1, result.Error.position);
-        Assert.Equal("invalid file: 'Example_Module' at line 1: missing '(' after column 24 (the token that indicates the start of function parameters)", errorList[0].GetMessage());
+        await Assert.That(errorList[0].GetMessage()).IsEqualTo("invalid file: 'Example_Module' at line 1: missing '(' after column 24 (the token that indicates the start of function parameters)");
     }
 
-    [Fact]
-    public static void ParsingTSFunction_MissingClosingGenericBracketError() {
+    [Test]
+    public async ValueTask ParsingTSFunction_MissingClosingGenericBracketError() {
         TSFunction? result = TSFunction.ParseFunction("export function Example<T]();");
 
         List<Diagnostic> errorList = [];
         errorList.AddFunctionParseError(result!.Error.descriptor!, "Example_Module", 1, result.Error.position);
-        Assert.Equal("invalid file: 'Example_Module' at line 1: missing '>' after column 23 (the token that marks the end of generics)", errorList[0].GetMessage());
+        await Assert.That(errorList[0].GetMessage()).IsEqualTo("invalid file: 'Example_Module' at line 1: missing '>' after column 23 (the token that marks the end of generics)");
     }
 
-    [Fact]
-    public static void ParsingTSFunction_NoParameterEndError() {
+    [Test]
+    public async ValueTask ParsingTSFunction_NoParameterEndError() {
         TSFunction? result = TSFunction.ParseFunction("export declare function Example(myNumber: number];");
 
         List<Diagnostic> errorList = [];
         errorList.AddFunctionParseError(result!.Error.descriptor!, "Example_Module", 1, result.Error.position);
-        Assert.Equal("invalid file: 'Example_Module' at line 1: missing ')' after column 42 (the token that marks end of parameters)", errorList[0].GetMessage());
+        await Assert.That(errorList[0].GetMessage()).IsEqualTo("invalid file: 'Example_Module' at line 1: missing ')' after column 42 (the token that marks end of parameters)");
     }
 
-    [Fact]
-    public static void ParsingTSFunction_MissingPromiseEndingBracketError() {
+    [Test]
+    public async ValueTask ParsingTSFunction_MissingPromiseEndingBracketError() {
         TSFunction? result = TSFunction.ParseFunction("export function Example(): Promise<   {");
 
         List<Diagnostic> errorList = [];
         errorList.AddFunctionParseError(result!.Error.descriptor!, "Example_Module", 1, result.Error.position);
-        Assert.Equal("invalid file: 'Example_Module' at line 1: missing '>' after column 35 (the token that marks the end of generics)", errorList[0].GetMessage());
+        await Assert.That(errorList[0].GetMessage()).IsEqualTo("invalid file: 'Example_Module' at line 1: missing '>' after column 35 (the token that marks the end of generics)");
     }
 
 
@@ -431,52 +431,52 @@ public static class ParserTests {
     private const string MODULE_CONTENT = "export declare function Test(a: number, b: string): number;\n";
     private const string SCRIPT_CONTENT = "               function Test(a: number, b: string): number;\n";
 
-    [Fact]
-    public static void ParsingModule_MetadataOnlyHasEmptyFunctionList() {
+    [Test]
+    public async ValueTask ParsingModule_MetadataOnlyHasEmptyFunctionList() {
         TSModule module = new($"{RootFolder}/{MODULE}.d.ts", null, []);
 
-        Assert.NotEqual(string.Empty, module.FilePath);
-        Assert.NotEqual(string.Empty, module.URLPath);
-        Assert.NotEqual(string.Empty, module.Name);
-        Assert.Empty(module.FunctionList);
+        await Assert.That(module.FilePath).IsNotEqualTo(string.Empty);
+        await Assert.That(module.URLPath).IsNotEqualTo(string.Empty);
+        await Assert.That(module.Name).IsNotEqualTo(string.Empty);
+        await Assert.That(module.FunctionList).IsEmpty();
     }
 
-    [Fact]
-    public static void ParsingModule_FunctionsOnlyHasEmptyMetaData() {
+    [Test]
+    public async ValueTask ParsingModule_FunctionsOnlyHasEmptyMetaData() {
         List<TSFunction> moduleFunctions = TSFunction.ParseFile(MODULE_CONTENT, isModule: true, null!, $"{RootFolder}/{MODULE}.d.ts");
-        Assert.NotEmpty(moduleFunctions);
+        await Assert.That(moduleFunctions).IsNotEmpty();
     }
 
-    [Fact]
-    public static void ParsingModuleWithModulePath() {
+    [Test]
+    public async ValueTask ParsingModuleWithModulePath() {
         const string modulePath = "somePath";
         TSModule module = new($"{RootFolder}/{MODULE}.d.ts", $"{modulePath}.js", []);
 
-        Assert.Equal($"{RootFolder}/{MODULE}.d.ts", module.FilePath);
-        Assert.Equal($"/{modulePath}.js", module.URLPath);
-        Assert.Equal(modulePath, module.Name);
+        await Assert.That(module.FilePath).IsEqualTo($"{RootFolder}/{MODULE}.d.ts");
+        await Assert.That(module.URLPath).IsEqualTo($"/{modulePath}.js");
+        await Assert.That(module.Name).IsEqualTo(modulePath);
     }
 
-    [Theory]
-    [InlineData("test.d.ts")]
-    [InlineData("/test.d.ts")]
-    [InlineData("test.js")]
-    [InlineData("/test.js")]
-    public static void ParseMetaDataModulePath(string input) {
+    [Test]
+    [Arguments("test.d.ts")]
+    [Arguments("/test.d.ts")]
+    [Arguments("test.js")]
+    [Arguments("/test.js")]
+    public async ValueTask ParseMetaDataModulePath(string input) {
         TSModule tSModule = new(input, null, []);
 
-        Assert.Equal($"/test.js", tSModule.URLPath);
-        Assert.Equal("test", tSModule.Name);
+        await Assert.That(tSModule.URLPath).IsEqualTo($"/test.js");
+        await Assert.That(tSModule.Name).IsEqualTo("test");
     }
 
 
-    [Fact]
-    public static void PasingScript() {
+    [Test]
+    public async ValueTask PasingScript() {
         List<TSFunction> moduleFunctions = TSFunction.ParseFile(MODULE_CONTENT, isModule: false, null!, $"{RootFolder}/{MODULE}.d.ts");
-        Assert.Empty(moduleFunctions);
+        await Assert.That(moduleFunctions).IsEmpty();
 
         List<TSFunction> scriptFunctions = TSFunction.ParseFile(SCRIPT_CONTENT, isModule: false, null!, $"{RootFolder}/{MODULE}.d.ts");
-        Assert.NotEmpty(scriptFunctions);
+        await Assert.That(scriptFunctions).IsNotEmpty();
     }
 
     #endregion
