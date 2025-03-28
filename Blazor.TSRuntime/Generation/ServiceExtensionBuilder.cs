@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using AssemblyVersionInfo;
+using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.ObjectPool;
 using System.Collections.Immutable;
 using System.Text;
@@ -40,7 +41,7 @@ public static class ServiceExtensionBuilder {
 
             namespace Microsoft.JSInterop;
 
-            [System.CodeDom.Compiler.GeneratedCodeAttribute("{{AssemblyInfo.NAME}}", "{{AssemblyInfo.VERSION}}")]
+            [System.CodeDom.Compiler.GeneratedCodeAttribute("{{Assembly.NAME}}", "{{Assembly.VERSION_MAJOR_MINOR_BUILD}}")]
             public static class TSRuntimeServiceExtension {
                 /// <summary>
                 /// Registers a scoped ITSRuntime with a TSRuntime as implementation and if available, registers the module interfaces with the same TSRuntime-object.

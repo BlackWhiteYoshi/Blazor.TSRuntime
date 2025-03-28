@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using AssemblyVersionInfo;
+using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.ObjectPool;
 using System.Text;
 using TSRuntime.Configs;
@@ -82,7 +83,7 @@ public static class InterfaceBuilder {
                     /// <para>Interface to JS-interop the module '{module.Name}'.</para>
                     /// <para>It contains invoke-methods for the js-functions and a preload-method for loading the module of '{module.Name}'.</para>
                     /// </summary>
-                    [System.CodeDom.Compiler.GeneratedCodeAttribute("{AssemblyInfo.NAME}", "{AssemblyInfo.VERSION}")]
+                    [System.CodeDom.Compiler.GeneratedCodeAttribute("{Assembly.NAME}", "{Assembly.VERSION_MAJOR_MINOR_BUILD}")]
                     public interface 
                     """);
                 config.ModuleGroupingNamePattern.AppendNaming(builder, module.Name);

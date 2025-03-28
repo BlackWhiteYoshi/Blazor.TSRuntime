@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using AssemblyVersionInfo;
+using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.ObjectPool;
 using System.Collections.Immutable;
 using System.Text;
@@ -70,7 +71,7 @@ public static class ClassBuilder {
 
             /// </para>
             /// </summary>
-            [System.CodeDom.Compiler.GeneratedCodeAttribute("{AssemblyInfo.NAME}", "{AssemblyInfo.VERSION}")]
+            [System.CodeDom.Compiler.GeneratedCodeAttribute("{Assembly.NAME}", "{Assembly.VERSION_MAJOR_MINOR_BUILD}")]
 
             """);
 

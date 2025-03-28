@@ -46,8 +46,8 @@ public static class GenerateSourceTextExtension {
 
         static CSharpCompilation CreateCompilation(string source) {
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
-            PortableExecutableReference metadataReference = MetadataReference.CreateFromFile(typeof(Binder).GetTypeInfo().Assembly.Location);
-            CSharpCompilationOptions compilationOptions = new(OutputKind.ConsoleApplication);
+            PortableExecutableReference metadataReference = MetadataReference.CreateFromFile(typeof(Binder).Assembly.Location);
+            CSharpCompilationOptions compilationOptions = new(OutputKind.DynamicallyLinkedLibrary);
 
             return CSharpCompilation.Create("compilation", [syntaxTree], [metadataReference], compilationOptions);
         }

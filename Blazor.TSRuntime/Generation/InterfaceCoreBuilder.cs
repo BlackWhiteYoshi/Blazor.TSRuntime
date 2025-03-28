@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using AssemblyVersionInfo;
+using Microsoft.CodeAnalysis;
 using TSRuntime.Configs;
 
 namespace TSRuntime.Generation;
@@ -330,7 +331,7 @@ public static class InterfaceCoreBuilder {
             namespace Microsoft.JSInterop;
 
             {{interfaceSummary}}
-            [System.CodeDom.Compiler.GeneratedCodeAttribute("{{AssemblyInfo.NAME}}", "{{AssemblyInfo.VERSION}}")]
+            [System.CodeDom.Compiler.GeneratedCodeAttribute("{{Assembly.NAME}}", "{{Assembly.VERSION_MAJOR_MINOR_BUILD}}")]
             public {{partialOrEmpty}}interface ITSRuntime {
                 /// <summary>
                 /// <para>Fetches all modules as javascript-modules.</para>
