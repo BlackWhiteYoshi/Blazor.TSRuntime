@@ -22,13 +22,13 @@ public sealed class GeneratorCallbackTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -54,13 +54,13 @@ public sealed class GeneratorCallbackTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -86,13 +86,13 @@ public sealed class GeneratorCallbackTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -118,13 +118,13 @@ public sealed class GeneratorCallbackTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -150,13 +150,13 @@ public sealed class GeneratorCallbackTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -189,13 +189,13 @@ public sealed class GeneratorCallbackTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -221,13 +221,13 @@ public sealed class GeneratorCallbackTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -253,13 +253,13 @@ public sealed class GeneratorCallbackTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module

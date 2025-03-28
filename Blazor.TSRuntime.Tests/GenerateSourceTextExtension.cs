@@ -4,11 +4,19 @@ using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace TSRuntime.Tests;
 
-public static class GenerateSourceTextExtension {
+public static partial class GenerateSourceTextExtension {
     public const string CONFIG_FOLDER_PATH = @"C:\SomeAbsolutePath";
+
+
+    [GeneratedRegex(@"(\d+\.\d+\.\d+)")]
+    private static partial Regex VersionNumberRegex();
+
+    public static string XVersionNumber(this string input) => VersionNumberRegex().Replace(input, "X.X.X");
+
 
     /// <summary>
     /// <para>Takes additional files as input and outputs the generated source code based on the given input.</para>

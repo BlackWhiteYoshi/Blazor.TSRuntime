@@ -24,13 +24,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -48,7 +48,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -95,13 +95,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -134,13 +134,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -158,7 +158,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -180,13 +180,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -204,7 +204,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -225,13 +225,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -249,7 +249,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -269,13 +269,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -293,7 +293,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -313,13 +313,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -337,7 +337,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -358,13 +358,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -382,7 +382,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -402,13 +402,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -426,7 +426,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -446,13 +446,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -470,7 +470,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -490,13 +490,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -514,7 +514,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -534,13 +534,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -558,7 +558,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -578,13 +578,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -602,7 +602,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -622,13 +622,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -646,7 +646,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -681,13 +681,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -705,7 +705,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -725,13 +725,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -749,7 +749,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -912,13 +912,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -936,7 +936,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -956,13 +956,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -980,7 +980,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -1000,13 +1000,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -1024,7 +1024,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -1045,31 +1045,31 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
             ------
 
-            {itsRuntimeModule}
+            {itsRuntimeModule.XVersionNumber()}
 
             -------------
             Nested Module
             -------------
 
-            {itsRuntimeNestedModule}
+            {itsRuntimeNestedModule.XVersionNumber()}
 
             ----------------
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -1089,31 +1089,31 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
             ------
 
-            {itsRuntimeModule}
+            {itsRuntimeModule.XVersionNumber()}
 
             -------------
             Nested Module
             -------------
 
-            {itsRuntimeNestedModule}
+            {itsRuntimeNestedModule.XVersionNumber()}
 
             ----------------
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -1133,31 +1133,31 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
             ------
 
-            {itsRuntimeModule}
+            {itsRuntimeModule.XVersionNumber()}
 
             -------------
             Nested Module
             -------------
 
-            {itsRuntimeNestedModule}
+            {itsRuntimeNestedModule.XVersionNumber()}
 
             ----------------
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -1178,13 +1178,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -1202,7 +1202,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -1222,13 +1222,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -1246,7 +1246,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -1266,13 +1266,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -1290,7 +1290,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 
@@ -1311,13 +1311,13 @@ public sealed class GeneratorConfigTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -1335,7 +1335,7 @@ public sealed class GeneratorConfigTests {
             ServiceExtension
             ----------------
 
-            {serviceExtension}
+            {serviceExtension.XVersionNumber()}
             """);
     }
 }

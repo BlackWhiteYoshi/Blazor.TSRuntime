@@ -20,13 +20,13 @@ public sealed class GeneratorGenericsTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -52,13 +52,13 @@ public sealed class GeneratorGenericsTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module
@@ -84,13 +84,13 @@ public sealed class GeneratorGenericsTests {
             TSRuntime
             ---------
 
-            {tsRuntime}
+            {tsRuntime.XVersionNumber()}
 
             ----------
             ITSRuntime
             ----------
 
-            {itsRuntimeCore}
+            {itsRuntimeCore.XVersionNumber()}
 
             ------
             Module

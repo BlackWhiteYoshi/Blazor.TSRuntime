@@ -21,7 +21,7 @@ namespace Microsoft.JSInterop;
 /// There are no modules available.
 /// </para>
 /// </summary>
-[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "1.0.1")]
+[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "X.X.X")]
 public sealed class TSRuntime(IJSRuntime jsRuntime) : ITSRuntime, IDisposable, IAsyncDisposable {
     private readonly CancellationTokenSource cancellationTokenSource = new();
 
@@ -178,7 +178,7 @@ namespace Microsoft.JSInterop;
 /// <para>Interface for JS-interop.</para>
 /// <para>It contains an invoke-method for every js-function, a preload-method for every module and a method to load all modules.</para>
 /// </summary>
-[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "1.0.1")]
+[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "X.X.X")]
 public partial interface ITSRuntime {
     /// <summary>
     /// <para>Fetches all modules as javascript-modules.</para>

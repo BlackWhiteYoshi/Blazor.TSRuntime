@@ -23,7 +23,7 @@ namespace Microsoft.JSInterop;
 /// - NestedTestModule
 /// </para>
 /// </summary>
-[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "1.0.1")]
+[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "X.X.X")]
 public sealed class TSRuntime(IJSRuntime jsRuntime) : TTT_TestModule, TTT_NestedTestModule, IDisposable, IAsyncDisposable {
     private readonly CancellationTokenSource cancellationTokenSource = new();
 
@@ -187,7 +187,7 @@ namespace Microsoft.JSInterop;
 /// <para>Interface to preload all modules.</para>
 /// <para>To invoke JS-interop methods or load a specific module, use the dedicated interface for the corresponding module.</para>
 /// </summary>
-[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "1.0.1")]
+[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "X.X.X")]
 public interface ITSRuntime {
     /// <summary>
     /// <para>Fetches all modules as javascript-modules.</para>
@@ -361,7 +361,7 @@ namespace Microsoft.JSInterop;
 /// <para>Interface to JS-interop the module 'TestModule'.</para>
 /// <para>It contains invoke-methods for the js-functions and a preload-method for loading the module of 'TestModule'.</para>
 /// </summary>
-[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "1.0.1")]
+[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "X.X.X")]
 public interface TTT_TestModule : ITSRuntime {
     protected Task<IJSObjectReference> GetTestModuleModule();
 
@@ -407,7 +407,7 @@ namespace Microsoft.JSInterop;
 /// <para>Interface to JS-interop the module 'NestedTestModule'.</para>
 /// <para>It contains invoke-methods for the js-functions and a preload-method for loading the module of 'NestedTestModule'.</para>
 /// </summary>
-[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "1.0.1")]
+[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "X.X.X")]
 public interface TTT_NestedTestModule : ITSRuntime {
     protected Task<IJSObjectReference> GetNestedTestModuleModule();
 
@@ -443,7 +443,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.JSInterop;
 
-[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "1.0.1")]
+[System.CodeDom.Compiler.GeneratedCodeAttribute("Blazor.TSRuntime", "X.X.X")]
 public static class TSRuntimeServiceExtension {
     /// <summary>
     /// Registers a scoped ITSRuntime with a TSRuntime as implementation and if available, registers the module interfaces with the same TSRuntime-object.
