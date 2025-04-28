@@ -162,7 +162,7 @@ Here is an example *jsconfig.json*:
 ```json
 {
   "compilerOptions": {
-    "target": "es2020",
+    "target": "es2022",
     "checkJs": true,
     "strictNullChecks": true,
     "noImplicitAny": true

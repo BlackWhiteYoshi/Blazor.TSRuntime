@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="TUnit" Version="0.18.60" />
-    <PackageReference Include="Verify.TUnit" Version="28.16.0" />
+    <PackageReference Include="TUnit" Version="0.19.32" />
+    <PackageReference Include="Verify.TUnit" Version="29.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
   </ItemGroup>
