@@ -16,7 +16,7 @@ Works with [*JavaScript JSDoc*](#get-started) and [*TypeScript*](#get-started).
 
 ### Invoke
 
-Each "export function" in TypeScript will generate up to 3 C#-methods:
+Each "export function" in JavaScript will generate up to 3 C#-methods:
 - **Invoke** - interops synchronous
 - **InvokeTrySync** - interops synchronous if possible, otherwise asynchronous
 - **InvokeAsync** - interops asynchronous
@@ -49,7 +49,7 @@ _ = PreloadAllModules(); // loads and caches all modules in the background
 await PreloadAllModules(); // awaits the loading of all modules, recommended when using sync-interop
 ```
 
-Furthermore you can prefetch your modules into JavaScript, so the Preload-methods will only get a reference to the module.
+Furthermore you can prefetch your modules on page load, so the Preload-methods will only get a reference to the module.
 ```html
 <head>
   ...
