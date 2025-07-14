@@ -141,7 +141,7 @@ Now you are ready to rumble, to make a "Hello World" test you can create 2 files
     [Inject]
     public required ITSRuntime TsRuntime { private get; init; }
     
-    private Task InvokeJS() => TsRuntime.Example();
+    private async Task InvokeJS() => await TsRuntime.Example();
 }
 ```
 
