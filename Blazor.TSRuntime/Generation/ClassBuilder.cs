@@ -52,17 +52,17 @@ public static class ClassBuilder {
             /// <para>An implementation for <see cref="ITSRuntime"/>.</para>
             /// <para>It manages JS-modules: It loads the modules, caches it in an array and disposing releases all modules.</para>
             /// <para>
-            /// 
+            ///
             """);
         switch (moduleList.Length) {
             case 0:
-                builder.Append("There are no modules available.");
+                builder.Append(" There are no modules available.");
                 break;
             case 1:
-                builder.AppendInterpolation($"There is 1 module available: {moduleList[0].Name}");
+                builder.AppendInterpolation($" There is 1 module available: {moduleList[0].Name}");
                 break;
             default:
-                builder.AppendInterpolation($"There are {moduleList.Length} modules available:");
+                builder.AppendInterpolation($" There are {moduleList.Length} modules available:");
                 foreach (TSModule module in moduleList)
                     builder.AppendInterpolation($"<br />\n/// - {module.Name}");
                 break;

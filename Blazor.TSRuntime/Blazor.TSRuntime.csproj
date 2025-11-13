@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>13</LangVersion>
+    <LangVersion>14</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
@@ -44,19 +44,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
     <PackageReference Include="PolySharp" Version="1.15.0" PrivateAssets="all" />
     <PackageReference Include="AssemblyVersionInfo" Version="1.0.2" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="9.0.3" GeneratePathProperty="true" />
-    
-    <PackageReference Include="System.Text.Json" Version="9.0.3" GeneratePathProperty="true" />
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.3" GeneratePathProperty="true" />
-    <PackageReference Include="System.IO.Pipelines" Version="9.0.3" GeneratePathProperty="true" />
-    <PackageReference Include="System.Text.Encodings.Web" Version="9.0.3" GeneratePathProperty="true" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="10.0.0" GeneratePathProperty="true" />
+
+    <PackageReference Include="System.Text.Json" Version="10.0.0" GeneratePathProperty="true" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.0" GeneratePathProperty="true" />
+    <PackageReference Include="System.IO.Pipelines" Version="10.0.0" GeneratePathProperty="true" />
+    <PackageReference Include="System.Text.Encodings.Web" Version="10.0.0" GeneratePathProperty="true" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -89,7 +89,7 @@ public sealed class GeneratorSummaryTests {
         const string jsonConfig = """{}""";
         const string moduleContent = """
             /**
-             * @returns a string 
+             * @returns a string
              */
             export function test(): string;
 
@@ -109,7 +109,7 @@ public sealed class GeneratorSummaryTests {
         const string jsonConfig = """{}""";
         const string moduleContent = """
             /**
-             * @returns {string} a string 
+             * @returns {string} a string
              */
             export function test() { }
 

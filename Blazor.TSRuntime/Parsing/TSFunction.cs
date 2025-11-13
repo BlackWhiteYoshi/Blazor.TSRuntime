@@ -9,7 +9,7 @@ namespace TSRuntime.Parsing;
 /// </summary>
 public sealed class TSFunction : IEquatable<TSFunction> {
     /// <summary>
-    /// The name of the js-function. 
+    /// The name of the js-function.
     /// </summary>
     public string Name { get; private set; } = string.Empty;
 
@@ -97,7 +97,7 @@ public sealed class TSFunction : IEquatable<TSFunction> {
     }
 
     /// <summary>
-    /// Creates a TSFunction if the given line represents a exported js-function. 
+    /// Creates a TSFunction if the given line represents a exported js-function.
     /// </summary>
     /// <param name="line">An Entire line in a .js/.ts/.d.ts file.</param>
     /// <param name="isModule"></param>

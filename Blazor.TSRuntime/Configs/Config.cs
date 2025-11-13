@@ -906,11 +906,7 @@ public sealed class Config : IEquatable<Config> {
         string usingStatements = UsingStatements.Length switch {
             0 => string.Empty,
             1 => $""" "{UsingStatements[0]}" """,
-            _ => $"""
-
-                        "{string.Join("\",\n    \"", UsingStatements)}"
-                      
-                    """
+            _ => $"\n    \"{string.Join("\",\n    \"", UsingStatements)}\"\n  "
         };
 
         string typeMap;

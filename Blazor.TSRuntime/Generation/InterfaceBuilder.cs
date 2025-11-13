@@ -47,6 +47,7 @@ public static class InterfaceBuilder {
         stringBuilderPool.Return(builder);
     }
 
+
     /// <summary>
     /// Datastructure used in <see cref="BuildInterfaceModule"/> and <see cref="BuildInterfaceScript"/>.
     /// </summary>
@@ -84,8 +85,9 @@ public static class InterfaceBuilder {
                     /// <para>It contains invoke-methods for the js-functions and a preload-method for loading the module of '{module.Name}'.</para>
                     /// </summary>
                     [System.CodeDom.Compiler.GeneratedCodeAttribute("{Assembly.NAME}", "{Assembly.VERSION_MAJOR_MINOR_BUILD}")]
-                    public interface 
+                    public interface
                     """);
+                builder.Append(' ');
                 config.ModuleGroupingNamePattern.AppendNaming(builder, module.Name);
                 builder.Append(" : ITSRuntime {\n");
             }
@@ -100,8 +102,9 @@ public static class InterfaceBuilder {
                         /// <para>If already loading, it does not trigger a second loading and if already loaded, it returns a completed task.</para>
                         /// </summary>
                         /// <returns>A Task that will complete when the module import have completed.</returns>
-                        public Task 
+                        public Task
                     """);
+                builder.Append(' ');
                 config.PreloadNamePattern.AppendNaming(builder, module.Name);
                 builder.AppendInterpolation($"() => Get{module.Name}Module();\n\n\n");
             }

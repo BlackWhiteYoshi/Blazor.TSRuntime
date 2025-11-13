@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -326,7 +326,7 @@ public sealed class ConfigTests {
     #endregion
 
     [Test]
-    [Arguments("", (string[])[], true, null, """
+    [Arguments("", new string[0], true, null, """
         [
             {
               "include": "",
@@ -335,7 +335,7 @@ public sealed class ConfigTests {
             }
           ]
         """)]
-    [Arguments("", (string[])[], false, "", """
+    [Arguments("", new string[0], false, "", """
         [
             {
               "include": "",
@@ -345,7 +345,7 @@ public sealed class ConfigTests {
             }
           ]
         """)]
-    [Arguments("qwer", (string[])["asdf"], true, "yxcv", """
+    [Arguments("qwer", new[] { "asdf" }, true, "yxcv", """
         [
             {
               "include": "qwer",
@@ -355,7 +355,7 @@ public sealed class ConfigTests {
             }
           ]
         """)]
-    [Arguments("qwer", (string[])["asdf", "ghjk"], false, "yxcv", """
+    [Arguments("qwer", new[] { "asdf", "ghjk" }, false, "yxcv", """
         [
             {
               "include": "qwer",
@@ -421,11 +421,11 @@ public sealed class ConfigTests {
 
 
     [Test]
-    [Arguments(""" "" """, (string[])[""])]
-    [Arguments(""" "Something" """, (string[])["Something"])]
-    [Arguments(""" [] """, (string[])[])]
-    [Arguments(""" ["Something"] """, (string[])["Something"])]
-    [Arguments(""" ["Something", "More"] """, (string[])["Something", "More"])]
+    [Arguments(""" "" """, new[] { "" })]
+    [Arguments(""" "Something" """, new[] { "Something" })]
+    [Arguments(""" [] """, new string[0])]
+    [Arguments(""" ["Something"] """, new[] { "Something" })]
+    [Arguments(""" ["Something", "More"] """, new[] { "Something", "More" })]
     public async ValueTask Config_FromJson_UsingStatementsWork(string usingStatementsValue, string[] expected) {
         string json = $$"""
             {
@@ -439,9 +439,9 @@ public sealed class ConfigTests {
     }
 
     [Test]
-    [Arguments((string[])[], """[]""")]
-    [Arguments((string[])["Microsoft.AspNetCore.Components"], """[ "Microsoft.AspNetCore.Components" ]""")]
-    [Arguments((string[])["qwer", "asdf", "yxcv"], """
+    [Arguments(new string[0], """[]""")]
+    [Arguments(new[] { "Microsoft.AspNetCore.Components" }, """[ "Microsoft.AspNetCore.Components" ]""")]
+    [Arguments(new[] { "qwer", "asdf", "yxcv" }, """
                                                         [
                                                             "qwer",
                                                             "asdf",
@@ -459,14 +459,14 @@ public sealed class ConfigTests {
 
 
     [Test]
-    [Arguments(""" "test": "Test" """, "test", "Test", (string?[])[])]
-    [Arguments(""" "test": { "type": "Test" } """, "test", "Test", (string?[])[])]
-    [Arguments(""" "test": { "type": "Test", "generic types": [] } """, "test", "Test", (string?[])[])]
-    [Arguments(""" "test": { "type": "Test", "generic types": "TTest" } """, "test", "Test", (string?[])["TTest", null])]
-    [Arguments(""" "test": { "type": "Test", "generic types": { "name": "TTest" } } """, "test", "Test", (string?[])["TTest", null])]
-    [Arguments(""" "test": { "type": "Test", "generic types": { "name": "TTest", "constraint": "ITest" } } """, "test", "Test", (string?[])["TTest", "ITest"])]
-    [Arguments(""" "test": { "type": "Test", "generic types": [ { "name": "TTest", "constraint": "ITest" } ] } """, "test", "Test", (string?[])["TTest", "ITest"])]
-    [Arguments(""" "test": { "type": "Test", "generic types": [ { "name": "TTest1", "constraint": "ITest1" }, { "name": "TTest2", "constraint": "ITest2" } ] } """, "test", "Test", (string?[])["TTest1", "ITest1", "TTest2", "ITest2"])]
+    [Arguments(""" "test": "Test" """, "test", "Test", new string?[0])]
+    [Arguments(""" "test": { "type": "Test" } """, "test", "Test", new string?[0])]
+    [Arguments(""" "test": { "type": "Test", "generic types": [] } """, "test", "Test", new string?[0])]
+    [Arguments(""" "test": { "type": "Test", "generic types": "TTest" } """, "test", "Test", new[] { "TTest", null })]
+    [Arguments(""" "test": { "type": "Test", "generic types": { "name": "TTest" } } """, "test", "Test", new[] { "TTest", null })]
+    [Arguments(""" "test": { "type": "Test", "generic types": { "name": "TTest", "constraint": "ITest" } } """, "test", "Test", new[] { "TTest", "ITest" })]
+    [Arguments(""" "test": { "type": "Test", "generic types": [ { "name": "TTest", "constraint": "ITest" } ] } """, "test", "Test", new[] { "TTest", "ITest" })]
+    [Arguments(""" "test": { "type": "Test", "generic types": [ { "name": "TTest1", "constraint": "ITest1" }, { "name": "TTest2", "constraint": "ITest2" } ] } """, "test", "Test", new[] { "TTest1", "ITest1", "TTest2", "ITest2" })]
     public async ValueTask Config_FromJson_TypeMapWorks(string typeMapItemJson, string expectedKey, string expectedType, string?[] expectedGenericTypes) {
         // expected = [genericType1, constraint1, genericType2, constraint2, ...]
 
@@ -488,13 +488,13 @@ public sealed class ConfigTests {
     }
 
     [Test]
-    [Arguments((string?[])[], """{ }""")]
-    [Arguments((string?[])["key", "value"], """
+    [Arguments(new string?[0], """{ }""")]
+    [Arguments(new[] { "key", "value" }, """
                                                 {
                                                       "key": "value"
                                                     }
                                                 """)]
-    [Arguments((string?[])["a", "b", "c", "d", "e", "f"], """
+    [Arguments(new[] { "a", "b", "c", "d", "e", "f" }, """
                                                             {
                                                                   "a": "b",
                                                                   "c": "d",
@@ -517,7 +517,7 @@ public sealed class ConfigTests {
     }
 
     [Test]
-    [Arguments("test", "Test", (string?[])["TTest", null], """
+    [Arguments("test", "Test", new[] { "TTest", null }, """
                                                                       "test": {
                                                                         "type": "Test",
                                                                         "generic types": [
@@ -528,7 +528,7 @@ public sealed class ConfigTests {
                                                                         ]
                                                                       }
                                                                 """)]
-    [Arguments("test", "Test", (string?[])["TTest", "ITest"], """
+    [Arguments("test", "Test", new[] { "TTest", "ITest" }, """
                                                                       "test": {
                                                                         "type": "Test",
                                                                         "generic types": [
@@ -539,7 +539,7 @@ public sealed class ConfigTests {
                                                                         ]
                                                                       }
                                                                 """)]
-    [Arguments("test", "Test", (string?[])["TTest1", "ITest1", "TTest2", "ITest2"], """
+    [Arguments("test", "Test", new[] { "TTest1", "ITest1", "TTest2", "ITest2" }, """
                                                                                               "test": {
                                                                                                 "type": "Test",
                                                                                                 "generic types": [

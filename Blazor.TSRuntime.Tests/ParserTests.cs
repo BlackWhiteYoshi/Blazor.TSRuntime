@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using TSRuntime.Parsing;
 
 namespace TSRuntime.Tests;
@@ -75,12 +75,12 @@ public sealed class ParserTests {
     }
 
     [Test]
-    [Arguments("(str: string) => number", (string[])["string", "number"], false)]
-    [Arguments("() => void", (string[])["void"], false)]
-    [Arguments("(str: string) => Promise<number>", (string[])["string", "number"], true)]
-    [Arguments("(a: boolean, b: number) => void", (string[])["boolean", "number", "void"], false)]
-    [Arguments("(a:boolean,b:number)=>void", (string[])["boolean", "number", "void"], false)]
-    [Arguments("(   a :      boolean ,  b  :   number    ) =>    void", (string[])["boolean", "number", "void"], false)]
+    [Arguments("(str: string) => number", new[] { "string", "number" }, false)]
+    [Arguments("() => void", new[] { "void" }, false)]
+    [Arguments("(str: string) => Promise<number>", new[] { "string", "number" }, true)]
+    [Arguments("(a: boolean, b: number) => void", new[] { "boolean", "number", "void" }, false)]
+    [Arguments("(a:boolean,b:number)=>void", new[] { "boolean", "number", "void" }, false)]
+    [Arguments("(   a :      boolean ,  b  :   number    ) =>    void", new[] { "boolean", "number", "void" }, false)]
     public async ValueTask ParsingParameterTypeCallback(string input, string[] callbackTypes, bool typeCallbackPromise) {
         TSParameter parameter = new();
         parameter.ParseType(input);
@@ -150,17 +150,17 @@ public sealed class ParserTests {
     #region TSFunction
 
     [Test]
-    [Arguments("export declare function getCookies(): string;", "getCookies", "string", false, (string[])[])]
-    [Arguments("export function asdf(): qwer;", "asdf", "qwer", false, (string[])[])]
-    [Arguments("export function Test(a?: number): void;", "Test", "void", false, (string[])["a"])]
-    [Arguments("export function defaultValueTest(index: [number, string]=[5, '']): void;", "defaultValueTest", "void", false, (string[])["index"])]
-    [Arguments("export function longRunningTask(): Promise<void>;", "longRunningTask", "void", true, (string[])[])]
-    [Arguments("export function longRunningTask2(): Promise<something>;", "longRunningTask2", "something", true, (string[])[])]
-    [Arguments("export function Test(a: number, b: string, c:boolean): void;", "Test", "void", false, (string[])["a", "b", "c"])]
+    [Arguments("export declare function getCookies(): string;", "getCookies", "string", false, new string[0])]
+    [Arguments("export function asdf(): qwer;", "asdf", "qwer", false, new string[0])]
+    [Arguments("export function Test(a?: number): void;", "Test", "void", false, new[] { "a" })]
+    [Arguments("export function defaultValueTest(index: [number, string]=[5, '']): void;", "defaultValueTest", "void", false, new[] { "index" })]
+    [Arguments("export function longRunningTask(): Promise<void>;", "longRunningTask", "void", true, new string[0])]
+    [Arguments("export function longRunningTask2(): Promise<something>;", "longRunningTask2", "something", true, new string[0])]
+    [Arguments("export function Test(a: number, b: string, c:boolean): void;", "Test", "void", false, new[] { "a", "b", "c" })]
 
-    [Arguments("export    declare  function   getCookies  (    )    :string;", "getCookies", "string", false, (string[])[])]
-    [Arguments("export   function  defaultValueTest (   index:[number, string]   =      [5, '']    ): void;", "defaultValueTest", "void", false, (string[])["index"])]
-    [Arguments("export function Test(a:number,b:       string,c:boolean)", "Test", "void", false, (string[])["a", "b", "c"])]
+    [Arguments("export    declare  function   getCookies  (    )    :string;", "getCookies", "string", false, new string[0])]
+    [Arguments("export   function  defaultValueTest (   index:[number, string]   =      [5, '']    ): void;", "defaultValueTest", "void", false, new[] { "index" })]
+    [Arguments("export function Test(a:number,b:       string,c:boolean)", "Test", "void", false, new[] { "a", "b", "c" })]
     public async ValueTask ParsingTSFunction(string input, string name, string returnType, bool promise, string[] paramterNames) {
         TSFunction function = TSFunction.ParseFunction(input)!;
 
@@ -173,12 +173,12 @@ public sealed class ParserTests {
     }
 
     [Test]
-    [Arguments("export function generic1<T>(): void;", "generic1", (string[])["T"])]
-    [Arguments("export function generic3<Type, Key, Value>(): void;", "generic3", (string[])["Type", "Key", "Value"])]
-    [Arguments("export function genericConstraint<Type extends HTMLElement>(): void;", "genericConstraint", (string[])["Type"])]
-    [Arguments("export function genericConstraint<Type extends HTMLElement, Key>(): void;", "genericConstraint", (string[])["Type", "Key"])]
-    [Arguments("export function genericConstraintGeneric<Type extends Map<K, V>>(): void;", "genericConstraintGeneric", (string[])["Type"])]
-    [Arguments("export function genericKeyofConstraint<Type, Key extends keyof Type>(): void;", "genericKeyofConstraint", (string[])["Type", "Key"])]
+    [Arguments("export function generic1<T>(): void;", "generic1", new[] { "T" })]
+    [Arguments("export function generic3<Type, Key, Value>(): void;", "generic3", new[] { "Type", "Key", "Value" })]
+    [Arguments("export function genericConstraint<Type extends HTMLElement>(): void;", "genericConstraint", new[] { "Type" })]
+    [Arguments("export function genericConstraint<Type extends HTMLElement, Key>(): void;", "genericConstraint", new[] { "Type", "Key" })]
+    [Arguments("export function genericConstraintGeneric<Type extends Map<K, V>>(): void;", "genericConstraintGeneric", new[] { "Type" })]
+    [Arguments("export function genericKeyofConstraint<Type, Key extends keyof Type>(): void;", "genericKeyofConstraint", new[] { "Type", "Key" })]
     public async ValueTask ParsingTSGenericFunction(string input, string name, string[] generics) {
         TSFunction function = TSFunction.ParseFunction(input)!;
 
@@ -190,13 +190,13 @@ public sealed class ParserTests {
 
 
     [Test]
-    [Arguments("export function example() { }", "example", (string[])[])]
-    [Arguments("export   function  example2  (  ){}", "example2", (string[])[])]
-    [Arguments("export function exampleVar(   myNumber  ){}", "exampleVar", (string[])["myNumber"])]
-    [Arguments("export function exampleVar2(   myNumber  ,  str   ){}", "exampleVar2", (string[])["myNumber", "str"])]
-    [Arguments("export function defaultValueTest(myName = 5) { }", "defaultValueTest", (string[])["myName"])]
-    [Arguments("export function defaultValueTest(myName='wert') { }", "defaultValueTest", (string[])["myName"])]
-    [Arguments("export function defaultValueTest(myName      =  3.21) { }", "defaultValueTest", (string[])["myName"])]
+    [Arguments("export function example() { }", "example", new string[0])]
+    [Arguments("export   function  example2  (  ){}", "example2", new string[0])]
+    [Arguments("export function exampleVar(   myNumber  ){}", "exampleVar", new[] { "myNumber" })]
+    [Arguments("export function exampleVar2(   myNumber  ,  str   ){}", "exampleVar2", new[] { "myNumber", "str" })]
+    [Arguments("export function defaultValueTest(myName = 5) { }", "defaultValueTest", new[] { "myName" })]
+    [Arguments("export function defaultValueTest(myName='wert') { }", "defaultValueTest", new[] { "myName" })]
+    [Arguments("export function defaultValueTest(myName      =  3.21) { }", "defaultValueTest", new[] { "myName" })]
     public async ValueTask ParsingJSFunction(string input, string name, string[] paramterNames) {
         TSFunction function = TSFunction.ParseFunction(input)!;
 
