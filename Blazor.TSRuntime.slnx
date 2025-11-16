@@ -1,4 +1,4 @@
-﻿<Solution>
+<Solution>
   <Project Path="Blazor.TSRuntime/Blazor.TSRuntime.csproj" />
   <Project Path="Blazor.TSRuntime.Tests/Blazor.TSRuntime.Tests.csproj" />
 </Solution>

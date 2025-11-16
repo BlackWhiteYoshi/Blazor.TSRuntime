@@ -1,4 +1,4 @@
-﻿namespace TSRuntime.Configs;
+namespace TSRuntime.Configs;
 
 public readonly struct MappedType(string type, GenericType[] genericTypes) : IEquatable<MappedType> {
     public readonly string Type { get; init; } = type;

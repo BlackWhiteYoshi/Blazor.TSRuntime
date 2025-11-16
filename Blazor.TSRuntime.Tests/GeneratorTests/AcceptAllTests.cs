@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env dotnet
+#!/usr/bin/env dotnet
 
 /**
  * goes throgh the folder and subfolders

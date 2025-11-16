@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 using System.Text.Json.Nodes;

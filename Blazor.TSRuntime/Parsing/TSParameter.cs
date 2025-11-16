@@ -1,4 +1,4 @@
-﻿namespace TSRuntime.Parsing;
+namespace TSRuntime.Parsing;
 
 /// <summary>
 /// Represents a parameter inside a <see cref="TSFunction"/>.

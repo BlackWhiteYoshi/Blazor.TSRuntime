@@ -1,4 +1,4 @@
-﻿namespace TSRuntime.Configs.NamePattern;
+namespace TSRuntime.Configs.NamePattern;
 
 /// <summary>
 /// Transforms a placeholder in the name pattern.

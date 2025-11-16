@@ -1,4 +1,4 @@
-﻿namespace TSRuntime.Parsing;
+namespace TSRuntime.Parsing;
 
 /// <summary>
 /// Represents a js/ts/d.ts-file.

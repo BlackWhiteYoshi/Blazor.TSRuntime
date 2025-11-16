@@ -1,4 +1,4 @@
-﻿namespace TSRuntime.Configs.NamePattern;
+namespace TSRuntime.Configs.NamePattern;
 
 internal enum Output {
     Function,

@@ -1,4 +1,4 @@
-﻿namespace TSRuntime.Configs;
+namespace TSRuntime.Configs;
 
 public readonly struct InputPath(string include, string[] excludes) : IEquatable<InputPath> {
     /// <summary>

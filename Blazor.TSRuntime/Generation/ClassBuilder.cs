@@ -1,4 +1,4 @@
-﻿using AssemblyVersionInfo;
+using AssemblyVersionInfo;
 using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.ObjectPool;
 using System.Collections.Immutable;
