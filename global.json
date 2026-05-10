@@ -1,0 +1,6 @@
+// command line support: "dotnet test"
+{
+    "test": {
+        "runner": "Microsoft.Testing.Platform"
+    }
+}
