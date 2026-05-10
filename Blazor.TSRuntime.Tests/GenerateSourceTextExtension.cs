@@ -9,7 +9,11 @@ using System.Text.RegularExpressions;
 namespace TSRuntime.Tests;
 
 public static partial class GenerateSourceTextExtension {
+#if WINDOWS
     public const string CONFIG_FOLDER_PATH = @"C:\SomeAbsolutePath";
+#else
+    public const string CONFIG_FOLDER_PATH = "/SomeAbsolutePath";
+#endif
 
 
     [GeneratedRegex(@"(\d+\.\d+\.\d+)")]

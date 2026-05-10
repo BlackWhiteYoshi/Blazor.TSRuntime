@@ -12,3 +12,5 @@ foreach (string fileName in Directory.GetFiles(Directory.GetCurrentDirectory(), 
         File.Move(fileName, $"{baseName}.verified.txt", overwrite: true);
         Console.WriteLine($"accepted {Path.GetFileName(baseName)}");
     }
+
+Console.WriteLine("done");
